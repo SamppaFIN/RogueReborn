@@ -213,6 +213,9 @@ window.startGame = function (className) {
     player.class = className; // #VIII store class
     player.killCount = 0;     // track kills for perks
     player.combatSurgeTimer = 0; // Warrior perk
+    player.inventory = [];    // FIX: Clear inventory on start to avoid duplication
+    player.equipment = { weapon: null, armor: null, helm: null, ring: null, amulet: null, offhand: null };
+    currentFloor = 0;         // FIX: Ensure we start in town
 
     if (className === 'Warrior') {
         player.maxHp = 40; player.hp = 40; player.atk = 7; player.def = 4; player.speed = 8;
@@ -234,6 +237,10 @@ window.startGame = function (className) {
     }
     const modal = document.getElementById('charCreateModal');
     if (modal) modal.classList.remove('active');
+    
+    // Drop focus so Spacebar doesn't click the start button again!
+    if (document.activeElement) document.activeElement.blur();
+
     gameState = 'PLAYING';
     generateTown();
     computeFOV();
@@ -252,6 +259,20 @@ window.showGameOverModal = function (killerName) {
     document.getElementById('go-level').innerText = player.level;
     document.getElementById('go-gold').innerText = player.gold;
     document.getElementById('go-score').innerText = score;
+
+    // Record Score to Guildhall
+    let scores = JSON.parse(localStorage.getItem('tomenet_highscores') || '[]');
+    scores.push({
+        score: score,
+        name: player.name,
+        class: player.class || 'Unknown',
+        level: player.level,
+        floor: currentFloor === 0 ? "Town" : currentFloor,
+        killer: killerName
+    });
+    scores.sort((a,b) => b.score - a.score);
+    scores = scores.slice(0, 10); // keep top 10
+    localStorage.setItem('tomenet_highscores', JSON.stringify(scores));
 
     // Reveal all items
     const list = document.getElementById('go-items');
@@ -494,6 +515,164 @@ window.openBank = function () {
     document.getElementById('bank-vault-gold').innerText = vaultGold + "g";
     document.getElementById('bankModal').classList.add('active');
 };
+// --- Alchemist Modal ---
+let alchemistInventory = [];
+function generateAlchemistInventory() {
+    alchemistInventory = [];
+    const potionItems = ITEM_DB.filter(i => i.type === 'potion');
+    for (let i = 0; i < 4; i++) {
+        const t = potionItems[Math.floor(Math.random() * potionItems.length)];
+        alchemistInventory.push({ ...t });
+    }
+}
+
+window.openAlchemist = function () {
+    gameState = 'ALCHEMIST';
+    if (alchemistInventory.length === 0) generateAlchemistInventory();
+
+    document.getElementById('alchemistGold').innerText = player.gold;
+    const list = document.getElementById('alchemistItems');
+    list.innerHTML = '';
+
+    alchemistInventory.forEach((item, idx) => {
+        const canAfford = player.gold >= item.cost;
+        const btnClass = canAfford ? 'shop-btn' : 'shop-btn-disabled';
+        
+        // Alchemist always sells identified potions
+        identifiedTypes[item.name] = true;
+
+        list.innerHTML += `
+            <li>
+                <span><span style="color:${item.color}">${item.name}</span> - ${item.cost}g</span>
+                <button class="${btnClass}" onclick="buyAlchemistItem(${idx})" ${!canAfford ? 'disabled' : ''}>Buy</button>
+            </li>
+        `;
+    });
+
+    // Check for 2 minor healing potions for transmute
+    const minorHeals = player.inventory.filter(i => i.name === 'Potion of Minor Healing');
+    const transmuteBtn = document.getElementById('btn-transmute-heal');
+    if (minorHeals.length >= 2 && player.gold >= 50) {
+        transmuteBtn.disabled = false;
+        transmuteBtn.className = 'btn shop-btn';
+    } else {
+        transmuteBtn.disabled = true;
+        transmuteBtn.className = 'btn shop-btn-disabled';
+    }
+
+    document.getElementById('alchemistModal').classList.add('active');
+};
+
+window.buyAlchemistItem = function(idx) {
+    const item = alchemistInventory[idx];
+    if (player.gold >= item.cost) {
+        if (player.inventory.length >= 18) {
+            logMessage(`Inventory full!`, 'damage');
+            return;
+        }
+        player.gold -= item.cost;
+        let pItem = { ...item, identified: true };
+        player.inventory.push(pItem);
+        logMessage(`Bought ${pItem.name}.`, 'magic');
+        openAlchemist();
+    }
+}
+
+window.transmutePotions = function() {
+    const minorHeals = player.inventory.filter(i => i.name === 'Potion of Minor Healing');
+    if (minorHeals.length >= 2 && player.gold >= 50) {
+        player.gold -= 50;
+        // Remove two minor heals
+        let removed = 0;
+        for (let i = player.inventory.length - 1; i >= 0; i--) {
+            if (player.inventory[i].name === 'Potion of Minor Healing' && removed < 2) {
+                player.inventory.splice(i, 1);
+                removed++;
+            }
+        }
+        // Add greater healing
+        const greaterHeal = { ...ITEM_DB.find(i => i.name === 'Potion of Greater Healing'), identified: true };
+        identifiedTypes['Potion of Greater Healing'] = true;
+        player.inventory.push(greaterHeal);
+        
+        logMessage("The Alchemist brews your potions together. Transmutation successful!", "magic");
+        openAlchemist();
+    }
+};
+
+window.closeAlchemist = function () {
+    gameState = 'PLAYING';
+    document.getElementById('alchemistModal').classList.remove('active');
+    updateUI();
+};
+
+// --- Trainer Modal ---
+window.openTrainer = function () {
+    gameState = 'TRAINER';
+    document.getElementById('trainerGold').innerText = player.gold;
+    document.getElementById('trainerModal').classList.add('active');
+};
+
+window.buyStatTraining = function(stat, cost) {
+    if (player.gold >= cost) {
+        player.gold -= cost;
+        if (stat === 'hp') {
+            player.maxHp += 10;
+            player.hp += 10;
+            logMessage("You feel hardier! (+10 Max HP)", "magic");
+        } else if (stat === 'atk') {
+            player.atk += 1;
+            logMessage("Your strikes are more precise! (+1 ATK)", "magic");
+        } else if (stat === 'def') {
+            player.def += 1;
+            logMessage("Your footwork improves! (+1 DEF)", "magic");
+        }
+        openTrainer();
+    } else {
+        logMessage("Trainer: 'Come back when you have the coin.'", "damage");
+    }
+};
+
+window.closeTrainer = function () {
+    gameState = 'PLAYING';
+    document.getElementById('trainerModal').classList.remove('active');
+    updateUI();
+};
+
+// --- Cartographer Modal ---
+window.openCartographer = function () {
+    gameState = 'CARTOGRAPHER';
+    document.getElementById('cartGold').innerText = player.gold;
+    document.getElementById('cartographerModal').classList.add('active');
+};
+
+window.buyIntel = function() {
+    if (player.gold >= 100) {
+        player.gold -= 100;
+        const targetFloor = currentFloor + Math.floor(Math.random() * 3) + 1;
+        const elites = ENEMY_TYPES.filter(e => e.elite || e.miniBoss);
+        const randomElite = elites[Math.floor(Math.random() * elites.length)];
+        
+        document.getElementById('cart-intel-text').innerText = `"Beware... My scouts report a ${randomElite.name} roaming around Floor ${targetFloor}..."`;
+        document.getElementById('btn-buy-intel').disabled = true;
+        document.getElementById('btn-buy-intel').className = 'btn shop-btn-disabled';
+        
+        logMessage(`Cartographer sold you intel on ${randomElite.name}.`, "magic");
+        document.getElementById('cartGold').innerText = player.gold;
+    } else {
+        logMessage("Cartographer: 'No gold, no secrets.'", "damage");
+    }
+};
+
+window.closeCartographer = function () {
+    gameState = 'PLAYING';
+    document.getElementById('cartographerModal').classList.remove('active');
+    // Reset intel button for next time
+    document.getElementById('cart-intel-text').innerText = `"Pay me, and I'll tell you what hazards lie ahead..."`;
+    document.getElementById('btn-buy-intel').disabled = false;
+    document.getElementById('btn-buy-intel').className = 'btn shop-btn';
+    updateUI();
+};
 
 window.depositGold = function (amount) {
     let vaultGold = parseInt(localStorage.getItem('vaultGold') || '0');
@@ -524,6 +703,102 @@ window.withdrawGold = function (amount) {
 window.closeBank = function () {
     gameState = 'PLAYING';
     document.getElementById('bankModal').classList.remove('active');
+    updateUI();
+};
+
+// --- Stash Modal ---
+window.openStash = function () {
+    gameState = 'STASH';
+    document.getElementById('stashModal').classList.add('active');
+    renderStashModal();
+};
+
+window.renderStashModal = function() {
+    let stashItems = JSON.parse(localStorage.getItem('tomenet_stash') || '[]');
+    
+    document.getElementById('stash-count').innerText = stashItems.length;
+    
+    const sList = document.getElementById('stash-list');
+    sList.innerHTML = '';
+    stashItems.forEach((item, idx) => {
+        sList.innerHTML += `
+            <li style="display:flex; justify-content:space-between; margin-bottom: 5px;">
+                <span style="color:${item.color}">${getItemName(item)}</span>
+                <button class="btn" style="padding:2px 5px; font-size:0.7em;" onclick="takeFromStash(${idx})">Take</button>
+            </li>
+        `;
+    });
+
+    const bList = document.getElementById('stash-inv-list');
+    bList.innerHTML = '';
+    player.inventory.forEach((item, idx) => {
+        // Can't stash equipped items directly
+        if (Object.values(player.equipment).includes(item)) return;
+        bList.innerHTML += `
+            <li style="display:flex; justify-content:space-between; margin-bottom: 5px;">
+                <span style="color:${item.color}">${getItemName(item)}</span>
+                <button class="btn" style="padding:2px 5px; font-size:0.7em;" onclick="putInStash(${idx})">Store</button>
+            </li>
+        `;
+    });
+};
+
+window.putInStash = function(invIdx) {
+    let stashItems = JSON.parse(localStorage.getItem('tomenet_stash') || '[]');
+    if (stashItems.length >= 5) {
+        logMessage("Stash is full (Max 5 items).", "damage");
+        return;
+    }
+    const item = player.inventory[invIdx];
+    stashItems.push(item);
+    localStorage.setItem('tomenet_stash', JSON.stringify(stashItems));
+    player.inventory.splice(invIdx, 1);
+    logMessage(`Stored ${getItemName(item)} in Stash.`, "magic");
+    renderStashModal();
+};
+
+window.takeFromStash = function(stashIdx) {
+    let stashItems = JSON.parse(localStorage.getItem('tomenet_stash') || '[]');
+    if (player.inventory.length >= 18) {
+        logMessage("Inventory full!", "damage");
+        return;
+    }
+    const item = stashItems[stashIdx];
+    player.inventory.push(item);
+    stashItems.splice(stashIdx, 1);
+    localStorage.setItem('tomenet_stash', JSON.stringify(stashItems));
+    logMessage(`Took ${getItemName(item)} from Stash.`, "pickup");
+    renderStashModal();
+};
+
+window.closeStash = function () {
+    gameState = 'PLAYING';
+    document.getElementById('stashModal').classList.remove('active');
+    updateUI();
+};
+
+// --- Guildhall Modal ---
+window.openGuildhall = function () {
+    gameState = 'GUILDHALL';
+    
+    let scores = JSON.parse(localStorage.getItem('tomenet_highscores') || '[]');
+    const list = document.getElementById('guildhall-scores');
+    list.innerHTML = '';
+    
+    if (scores.length === 0) {
+        list.innerHTML = "<li>No legends recorded yet.</li>";
+    } else {
+        scores.forEach(s => {
+            list.innerHTML += `<li><span style="color:#f1c40f">${s.score} pts</span> - <span style="color:#66fcf1">${s.name}</span> the Lvl ${s.level} ${s.class} (Floor ${s.floor})</li>`;
+        });
+    }
+
+    document.getElementById('guildhallModal').classList.add('active');
+};
+
+window.closeGuildhall = function () {
+    gameState = 'PLAYING';
+    document.getElementById('guildhallModal').classList.remove('active');
     updateUI();
 };
 
@@ -686,6 +961,7 @@ const TICK_RATE = 1000 / 60; // 60 ticks per second baseline
 
 // Auto-run state
 let isAutoRunning = false;
+let isAutoExploring = false; // persistent auto-explore mode
 let runDirX = 0;
 let runDirY = 0;
 let activePath = null;
@@ -807,6 +1083,11 @@ window.addEventListener('keydown', e => {
         if (gameState === 'WIZARD') closeWizard();
         if (gameState === 'BANK') closeBank();
         if (gameState === 'INVENTORY') closeInventory();
+        if (gameState === 'ALCHEMIST') closeAlchemist();
+        if (gameState === 'TRAINER') closeTrainer();
+        if (gameState === 'CARTOGRAPHER') closeCartographer();
+        if (gameState === 'GUILDHALL') closeGuildhall();
+        if (gameState === 'STASH') closeStash();
         // if (gameState === 'HISTORY') closeHistory(); // Assuming closeHistory exists elsewhere
     }
 
@@ -962,25 +1243,24 @@ window.addEventListener('keydown', e => {
             logMessage("DEBUG: Added 1000 Gold.", "pickup");
             updateUI();
         }
-        if (e.key === '3') { // Full Heal
+        if (e.ctrlKey && e.key === '3') { // Full Heal
             player.hp = player.maxHp;
             logMessage("DEBUG: Full Heal Applied.", "magic");
             updateUI();
         }
-        if (e.key === '4') { // Level Up
+        if (e.ctrlKey && e.key === '4') { // Level Up
             player.xp += 1000;
             logMessage("DEBUG: Added 1000 XP.", "magic");
-            checkLevelUp(); // Assuming this is the level up check function name based on usage in spells
             updateUI();
         }
-        if (e.key === '5') { // Reveal Map
+        if (e.ctrlKey && e.key === '5') { // Reveal Map
             for (let x = 0; x < MAP_WIDTH; x++) {
                 for (let y = 0; y < MAP_HEIGHT; y++) map[x][y].explored = true;
             }
             logMessage("DEBUG: Map Revealed.", "hint");
             render();
         }
-        if (e.key === '6') { // Nuke Floor
+        if (e.ctrlKey && e.key === '6') { // Nuke Floor
             entities.forEach(ent => {
                 if (!ent.isPlayer && ent.hp > 0) {
                     ent.hp = 0;
@@ -991,7 +1271,7 @@ window.addEventListener('keydown', e => {
             logMessage("DEBUG: Floor Nuked!", "damage");
             render();
         }
-        if (e.key === '7') { // God Gear
+        if (e.ctrlKey && e.key === '7') { // God Gear
             const gear = [
                 ITEM_DB.find(i => i.name === 'Vorpal Sword'),
                 ITEM_DB.find(i => i.name === 'Mithril Plate'),
@@ -1010,7 +1290,7 @@ window.addEventListener('keydown', e => {
             logMessage("DEBUG: God Gear Equipped.", "magic");
             updateUI();
         }
-        if (e.key === '8') { // Recall to Town
+        if (e.ctrlKey && e.key === '8') { // Recall to Town
             currentFloor = 0;
             generateTown();
             logMessage("DEBUG: Recalled to Town.", "magic");
@@ -1040,6 +1320,28 @@ window.addEventListener('keydown', e => {
     // F5 — Save Game, F9 — Load Game
     if (e.key === 'F5' && gameState === 'PLAYING') { e.preventDefault(); saveGame(); }
     if (e.key === 'F9' && gameState === 'PLAYING') { e.preventDefault(); loadGame(); }
+
+    if (gameState === 'PLAYING') {
+        if (e.key === '<') {
+            if (map[player.x][player.y].type === 'stairs_up') {
+                checkStairs(player.x, player.y, true);
+            } else {
+                logMessage("There are no stairs up here.", "hint");
+            }
+        }
+        if (e.key === '>') {
+            if (map[player.x][player.y].type === 'stairs_down') {
+                checkStairs(player.x, player.y, true);
+            } else {
+                logMessage("There are no stairs down here.", "hint");
+            }
+        }
+        if (e.key === 'Enter') {
+            if (map[player.x][player.y].type === 'stairs_down' || map[player.x][player.y].type === 'stairs_up') {
+                checkStairs(player.x, player.y, true);
+            }
+        }
+    }
 });
 window.addEventListener('keyup', e => {
     keys[e.key] = false;
@@ -1083,10 +1385,11 @@ function getPendingAction() {
         if (keys[k]) cancelKeysPressed = true;
     }
 
-    // Cancel pathing/running on movement key press
+    // Cancel pathing/running/exploring on any directional keypress
     if (cancelKeysPressed) {
         activePath = null;
         isAutoRunning = false;
+        isAutoExploring = false;
     }
 
     // Process active path if no cancel keys pressed
@@ -1127,21 +1430,43 @@ function getPendingAction() {
                 return { type: 'move', dx: e.x - player.x, dy: e.y - player.y };
             }
         }
+        // 5 = wait, Space = toggle auto-explore
+        if (keys['5']) return { type: 'wait' };
+        if (keys[' '] && !isAutoExploring) {
+            isAutoExploring = true;
+            activePath = null; // force path recalc
+        }
+    }
+    if ((keys['o'] || keys['O']) && !isAutoExploring) {
+        isAutoExploring = true;
+        activePath = null;
+    }
 
-        // Auto-explore
+    // Persistent auto-explore
+    if (isAutoExploring) {
+        // Stop if HP is low
+        if (player.hp <= Math.floor(player.maxHp * 0.3)) {
+            isAutoExploring = false;
+            logMessage("Auto-explore halted — low HP!", "damage");
+            return null;
+        }
         if (!activePath || activePath.length === 0) {
             const path = findNearestUnexplored(player.x, player.y);
             if (path && path.length > 0) {
                 activePath = path;
-                logMessage("Auto-exploring...", "magic");
-                const nextNode = activePath.shift();
-                return { type: 'move', dx: nextNode.x - player.x, dy: nextNode.y - player.y };
             } else {
-                logMessage("Nothing left to explore.", "hint");
+                isAutoExploring = false;
+                logMessage("Nothing left to explore!", "hint");
+                return null;
             }
         }
+        // Let the activePath branch in the game loop handle movement
+        return null;
+    }
 
-        return { type: 'wait' };
+    // Auto-retaliate
+    if (player.lastAttackedBy && player.lastAttackedBy.hp > 0 && Math.abs(player.lastAttackedBy.x - player.x) <= 1 && Math.abs(player.lastAttackedBy.y - player.y) <= 1) {
+        return { type: 'move', dx: player.lastAttackedBy.x - player.x, dy: player.lastAttackedBy.y - player.y };
     }
 
     return null;
@@ -1500,6 +1825,38 @@ function generateTown() {
         map[c.x + 6][c.y - 6].isTown = true;
     }
 
+    // Phase II - New NPCs
+
+    // Place Alchemist (Top Right)
+    map[c.x + 6][c.y - 4].type = 'alchemist';
+    map[c.x + 6][c.y - 4].char = 'A';
+    map[c.x + 6][c.y - 4].color = '#2ecc71';
+    map[c.x + 6][c.y - 4].isTown = true;
+
+    // Place Class Trainer (Top Left)
+    map[c.x - 6][c.y - 3].type = 'trainer';
+    map[c.x - 6][c.y - 3].char = 'T';
+    map[c.x - 6][c.y - 3].color = '#f39c12';
+    map[c.x - 6][c.y - 3].isTown = true;
+
+    // Place Cartographer (Near Stairs)
+    map[c.x + 3][c.y + 1].type = 'cartographer';
+    map[c.x + 3][c.y + 1].char = 'C';
+    map[c.x + 3][c.y + 1].color = '#3498db';
+    map[c.x + 3][c.y + 1].isTown = true;
+
+    // Place Guildhall (Bottom Left)
+    map[c.x - 5][c.y + 3].type = 'guildhall';
+    map[c.x - 5][c.y + 3].char = '{';
+    map[c.x - 5][c.y + 3].color = '#bdc3c7';
+    map[c.x - 5][c.y + 3].isTown = true;
+
+    // Place Stash (Next to Bank)
+    map[c.x + 6][c.y - 3].type = 'stash';
+    map[c.x + 6][c.y - 3].char = '[';
+    map[c.x + 6][c.y - 3].color = '#e67e22';
+    map[c.x + 6][c.y - 3].isTown = true;
+
     // Place Town Well
     map[c.x - 3][c.y + 5].type = 'well';
     map[c.x - 3][c.y + 5].char = 'O';
@@ -1741,8 +2098,8 @@ function spawnMonsterAt(x, y) {
 
         // Difficulty scaling — proper indices mapping
         let allowedTypes = [];
-        if (currentFloor <= 2)      allowedTypes = [0, 1, 10, 19, 14]; // Rat, Goblin, Spider, Giant Rat, Skeleton
-        else if (currentFloor <= 4) allowedTypes = [1, 2, 3, 10, 11, 12, 13, 14, 15]; // +Cube, Vampire, Necro, Rust
+        if (currentFloor <= 2)      allowedTypes = [0, 1, 2, 14]; // Rat, Goblin, Kobold, Skeleton (No Poison 10/19 on 1-2)
+        else if (currentFloor <= 4) allowedTypes = [1, 2, 3, 10, 11, 12, 13, 14, 15, 19]; // +Cube, Vampire, Necro, Rust, Giant Spider, Giant Rat
         else if (currentFloor <= 6) allowedTypes = [2, 3, 4, 5, 12, 15, 16]; // +Blink Dog, Orc, Elf
         else if (currentFloor <= 8) allowedTypes = [4, 5, 6, 7, 13, 17, 18]; // +Troll, Wraith, Beholder, Flayer
         else allowedTypes = [6, 7, 8, 12, 17, 18]; // Deep: Trolls, Wraiths, Dragons, Flayers, Beholders
@@ -1988,6 +2345,16 @@ function attemptAction(entity, action) {
                     } else {
                         logMessage("Gambler sneers: 'Come back when you're rich.'");
                     }
+                } else if (mapTile.type === 'alchemist') {
+                    openAlchemist();
+                } else if (mapTile.type === 'trainer') {
+                    openTrainer();
+                } else if (mapTile.type === 'cartographer') {
+                    openCartographer();
+                } else if (mapTile.type === 'guildhall') {
+                    openGuildhall();
+                } else if (mapTile.type === 'stash') {
+                    openStash();
                 } else if (mapTile.type === 'well') {
                     if (!mapTile.used) {
                         mapTile.used = true;
@@ -2089,7 +2456,16 @@ function attemptAction(entity, action) {
 function checkStairs(x, y, force = false) {
     if (!force) {
         isAutoRunning = false;
+        activePath = null;
+        if (map[x][y].type === 'stairs_down') {
+            logMessage(`There are stairs here. Press '>' or 'Enter' to descend.`, 'hint');
+        } else if (map[x][y].type === 'stairs_up') {
+            logMessage(`There are stairs here. Press '<' or 'Enter' to ascend.`, 'hint');
+        }
+        return;
     }
+    const tile = map[x][y];
+    // DEBUG: console.log(`Checking stairs at ${x},${y}: ${tile.type}`);
     if (map[x][y].type === 'stairs_down') {
         currentFloor++;
         logMessage(`You dive to Dungeon Level ${currentFloor}.`, 'pickup');
@@ -2147,6 +2523,8 @@ function collectItems(x, y) {
         }
         items.splice(itemIdx, 1);
         isAutoRunning = false;
+        // Stop auto-explore when picking up items (gold is silent, real items warrant a pause)
+        if (item.type !== 'gold') isAutoExploring = false;
     }
 }
 
@@ -2214,6 +2592,7 @@ function combat(attacker, defender) {
 
     // Phase III Special Monster Effects
     if (!attacker.isPlayer && defender.isPlayer) {
+        defender.lastAttackedBy = attacker;
         // #23 Vampire drains max HP
         if (attacker.drainMaxHp && Math.random() < 0.2) {
             defender.maxHp = Math.max(10, defender.maxHp - 1);
@@ -2623,7 +3002,7 @@ function gameLoop(timestamp) {
     if (dt >= TICK_RATE) {
         lastTime = timestamp;
 
-        let stepsThisFrame = (isAutoRunning || activePath) ? 20 : 1;
+        let stepsThisFrame = (isAutoRunning || activePath || isAutoExploring) ? 20 : 1;
 
         while (stepsThisFrame > 0 && gameState === 'PLAYING') {
             stepsThisFrame--;
@@ -2668,9 +3047,19 @@ function gameLoop(timestamp) {
                     checkAutoRunStop(player.x, player.y);
                     if (isAutoRunning) act = { type: 'move', dx: runDirX, dy: runDirY };
                     else stepsThisFrame = 0;
-                } else if (activePath) {
+                } else if (activePath && activePath.length > 0) {
+                    const nextNode = activePath.shift();
+                    act = { type: 'move', dx: nextNode.x - player.x, dy: nextNode.y - player.y };
+                    if (activePath.length === 0 && isAutoExploring) {
+                        // Path exhausted — let getPendingAction recalc next path
+                        activePath = null;
+                    } else if (!activePath || activePath.length === 0) {
+                        stepsThisFrame = 0;
+                    }
+                } else if (isAutoExploring) {
+                    // Trigger getPendingAction to find the next unexplored path
                     act = getPendingAction();
-                    if (!act || !activePath) stepsThisFrame = 0;
+                    if (!isAutoExploring && !activePath) stepsThisFrame = 0;
                 } else {
                     act = getPendingAction();
                     stepsThisFrame = 0; // Need fresh input, wait for next frame
@@ -2706,7 +3095,7 @@ function gameLoop(timestamp) {
             }
 
             // Re-check conditions incase player attacked or ran into wall
-            if (!(isAutoRunning || activePath)) stepsThisFrame = 0;
+            if (!(isAutoRunning || activePath || isAutoExploring)) stepsThisFrame = 0;
         }
 
         updateParticles(dt);
@@ -2844,9 +3233,10 @@ function updateVisibleMonsters() {
         }
     }
     visibleMonsters = nowVisible;
-    if (newMonsterSpotted && (isAutoRunning || activePath)) {
+    if (newMonsterSpotted && (isAutoRunning || activePath || isAutoExploring)) {
         isAutoRunning = false;
         activePath = null;
+        isAutoExploring = false;
         logMessage("A monster comes into view!", 'damage');
     }
 }

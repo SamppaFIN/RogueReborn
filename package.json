@@ -1,0 +1,23 @@
+{
+  "name": "autonomous_rogue",
+  "version": "1.0.0",
+  "description": "A fully-featured, turn-based HTML5 roguelike game built from the ground up, featuring deep town mechanics, an infinite scaling dungeon abyss, complex combat mechanics, and a massive array of items, monsters, and spells.",
+  "main": "engine.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SamppaFIN/RogueReborn.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/SamppaFIN/RogueReborn/issues"
+  },
+  "homepage": "https://github.com/SamppaFIN/RogueReborn#readme",
+  "dependencies": {
+    "playwright": "^1.58.2"
+  }
+}

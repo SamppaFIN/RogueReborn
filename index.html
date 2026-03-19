@@ -495,6 +495,80 @@
         </div>
     </div>
 
+    <!-- Alchemist Modal -->
+    <div id="alchemistModal" class="modal">
+        <div class="modal-content" style="width: 600px; position: relative;">
+            <button onclick="closeAlchemist()"
+                style="position: absolute; top: 10px; right: 10px; background: transparent; border: none; color: #e74c3c; font-size: 1.5rem; cursor: pointer;">&times;</button>
+            <h2 style="color: #2ecc71; text-shadow: 0 0 20px rgba(46, 204, 113, 0.5);">THE ALCHEMIST</h2>
+            <p>Potions, Elixirs, and Transmutation.</p>
+            <p>Your Gold: <span id="alchemistGold" style="color: #f1c40f; font-weight: bold;">0</span></p>
+            
+            <div style="display: flex; gap: 20px; justify-content: center; margin-top: 20px;">
+                <div style="flex: 1; border: 1px solid #1f2833; padding: 10px; background: #0b0c10;">
+                    <h3 style="color: #f1c40f; margin-top: 0;">Brew Shop</h3>
+                    <ul class="shop-list" id="alchemistItems" style="max-height: 150px;">
+                        <!-- Injected via JS -->
+                    </ul>
+                </div>
+                <div style="flex: 1; border: 1px solid #1f2833; padding: 10px; background: #0b0c10;">
+                    <h3 style="color: #3498db; margin-top: 0;">Transmute</h3>
+                    <p style="font-size: 0.9em; color: #888;">Combine 2 Minor Healing Potions into 1 Greater Healing Potion.</p>
+                    <button class="btn shop-btn" id="btn-transmute-heal" onclick="transmutePotions()" style="width: 100%; margin-top: 10px;">Transmute (50g)</button>
+                </div>
+            </div>
+
+            <button class="btn" onclick="closeAlchemist()" style="margin-top:20px;">Leave [Esc]</button>
+        </div>
+    </div>
+
+    <!-- Trainer Modal -->
+    <div id="trainerModal" class="modal">
+        <div class="modal-content" style="width: 500px; position: relative;">
+            <button onclick="closeTrainer()"
+                style="position: absolute; top: 10px; right: 10px; background: transparent; border: none; color: #e74c3c; font-size: 1.5rem; cursor: pointer;">&times;</button>
+            <h2 style="color: #f39c12; text-shadow: 0 0 20px rgba(243, 156, 18, 0.5);">CLASS TRAINER</h2>
+            <p>Hone your skills. Push beyond your limits.</p>
+            <p>Your Gold: <span id="trainerGold" style="color: #f1c40f; font-weight: bold;">0</span></p>
+            
+            <ul class="shop-list" style="max-height: 250px;">
+                <li>
+                    <span style="color:#ff3b3b">Vitality Training (+10 Max HP)</span>
+                    <button class="btn shop-btn" onclick="buyStatTraining('hp', 500)">Train (500g)</button>
+                </li>
+                <li>
+                    <span style="color:#2ecc71">Strength Training (+1 ATK)</span>
+                    <button class="btn shop-btn" onclick="buyStatTraining('atk', 1000)">Train (1000g)</button>
+                </li>
+                <li>
+                    <span style="color:#3498db">Defense Training (+1 DEF)</span>
+                    <button class="btn shop-btn" onclick="buyStatTraining('def', 1000)">Train (1000g)</button>
+                </li>
+            </ul>
+
+            <button class="btn" onclick="closeTrainer()">Leave [Esc]</button>
+        </div>
+    </div>
+
+    <!-- Cartographer Modal -->
+    <div id="cartographerModal" class="modal">
+        <div class="modal-content" style="width: 500px; position: relative;">
+            <button onclick="closeCartographer()"
+                style="position: absolute; top: 10px; right: 10px; background: transparent; border: none; color: #e74c3c; font-size: 1.5rem; cursor: pointer;">&times;</button>
+            <h2 style="color: #3498db; text-shadow: 0 0 20px rgba(52, 152, 219, 0.5);">CARTOGRAPHER</h2>
+            <p>Information is the key to survival.</p>
+            <p>Your Gold: <span id="cartGold" style="color: #f1c40f; font-weight: bold;">0</span></p>
+            
+            <div style="border: 1px solid #1f2833; padding: 15px; margin: 20px 0; background: #0b0c10; text-align: left;">
+                <h3 style="margin-top: 0; color: #f1c40f;">Dungeon Intel (100g)</h3>
+                <p id="cart-intel-text" style="color: #888; font-style: italic;">"Pay me, and I'll tell you what hazards lie ahead..."</p>
+                <button class="btn shop-btn" id="btn-buy-intel" onclick="buyIntel()" style="width: 100%; margin-top: 10px;">Buy Intel</button>
+            </div>
+
+            <button class="btn" onclick="closeCartographer()">Leave [Esc]</button>
+        </div>
+    </div>
+
     <!-- Bank Modal -->
     <div id="bankModal" class="modal">
         <div class="modal-content" style="width: 500px; position: relative;">
@@ -520,6 +594,53 @@
                 </div>
             </div>
             <button class="btn" style="margin-top: 20px;" onclick="closeBank()">Leave [Esc]</button>
+        </div>
+    </div>
+
+    <!-- Guildhall Modal -->
+    <div id="guildhallModal" class="modal">
+        <div class="modal-content" style="width: 600px; position: relative;">
+            <button onclick="closeGuildhall()"
+                style="position: absolute; top: 10px; right: 10px; background: transparent; border: none; color: #e74c3c; font-size: 1.5rem; cursor: pointer;">&times;</button>
+            <h2 style="color: #bdc3c7; text-shadow: 0 0 20px rgba(189, 195, 199, 0.5);">THE GUILDHALL</h2>
+            <p>A record of those who ventured before.</p>
+            <div style="border: 1px solid #1f2833; padding: 15px; margin: 20px 0; background: #0b0c10; text-align: left;">
+                <h3 style="margin-top: 0; color: #45a29e; border-bottom: 1px solid #1f2833; padding-bottom: 5px;">Legendary Runs</h3>
+                <ol id="guildhall-scores" style="color: #c5c6c7; line-height: 1.8; margin: 0; padding-left: 20px;">
+                    <!-- Injected via JS -->
+                </ol>
+            </div>
+            <button class="btn" onclick="closeGuildhall()">Leave [Esc]</button>
+        </div>
+    </div>
+
+    <!-- Stash Modal -->
+    <div id="stashModal" class="modal">
+        <div class="modal-content" style="width: 700px; display: flex; flex-direction: column; position: relative;">
+            <button onclick="closeStash()"
+                style="position: absolute; top: 10px; right: 10px; background: transparent; border: none; color: #e74c3c; font-size: 1.5rem; cursor: pointer;">&times;</button>
+            <h2 style="color: #e67e22; text-shadow: 0 0 20px rgba(230, 126, 34, 0.5);">PERSISTENT STASH</h2>
+            <p>Store up to 5 items safely across lifetimes.</p>
+            <div style="display: flex; gap: 20px; text-align: left; margin-top: 10px;">
+                <!-- Stash Column -->
+                <div style="flex: 1; border: 1px solid #1f2833; padding: 10px; background: #0b0c10;">
+                    <h3 style="color: #e67e22; border-bottom: 1px solid #1f2833; padding-bottom: 5px; margin-top: 0;">
+                        Stash (<span id="stash-count">0</span>/5)</h3>
+                    <ul id="stash-list" style="list-style: none; padding: 0; margin: 0; line-height: 1.8; max-height: 300px; overflow-y: auto;">
+                        <!-- Injected via JS -->
+                    </ul>
+                </div>
+                <!-- Backpack Column -->
+                <div style="flex: 1; border: 1px solid #1f2833; padding: 10px; background: #0b0c10;">
+                    <h3 style="color: #45a29e; border-bottom: 1px solid #1f2833; padding-bottom: 5px; margin-top: 0;">
+                        Backpack</h3>
+                    <ul id="stash-inv-list"
+                        style="list-style: none; padding: 0; margin: 0; line-height: 1.8; max-height: 300px; overflow-y: auto;">
+                        <!-- Injected via JS -->
+                    </ul>
+                </div>
+            </div>
+            <button class="btn" style="margin-top: 20px; align-self: center;" onclick="closeStash()">Close [Esc]</button>
         </div>
     </div>
 
