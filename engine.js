@@ -315,10 +315,22 @@ window.openShop = function () {
     renderShop();
 };
 
-window.closeShop = function () {
-    document.getElementById('shopModal').classList.remove('active');
+window.closeAllModals = function () {
+    const modals = [
+        'shopModal', 'innkeeperModal', 'blacksmithModal', 'wizardModal',
+        'bankModal', 'inventoryModal', 'alchemistModal', 'trainerModal',
+        'cartographerModal', 'guildhallModal', 'stashModal', 'deathModal'
+    ];
+    modals.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.remove('active');
+    });
     gameState = 'PLAYING';
     updateUI();
+};
+
+window.closeShop = function () {
+    closeAllModals();
 };
 
 window.buyItem = function buyItem(idx, isWizard = false) {
@@ -382,9 +394,7 @@ window.buyHeal = function () {
 };
 
 window.closeInnkeeper = function () {
-    gameState = 'PLAYING';
-    document.getElementById('innkeeperModal').classList.remove('active');
-    updateUI();
+    closeAllModals();
 };
 
 // --- Blacksmith Modal ---
@@ -1077,18 +1087,12 @@ window.addEventListener('keydown', e => {
 
     // Close Modals
     if (e.key === 'Escape') {
-        if (gameState === 'SHOP') closeShop();
-        if (gameState === 'INNKEEPER') closeInnkeeper();
-        if (gameState === 'BLACKSMITH') closeBlacksmith();
-        if (gameState === 'WIZARD') closeWizard();
-        if (gameState === 'BANK') closeBank();
-        if (gameState === 'INVENTORY') closeInventory();
-        if (gameState === 'ALCHEMIST') closeAlchemist();
-        if (gameState === 'TRAINER') closeTrainer();
-        if (gameState === 'CARTOGRAPHER') closeCartographer();
-        if (gameState === 'GUILDHALL') closeGuildhall();
-        if (gameState === 'STASH') closeStash();
-        // if (gameState === 'HISTORY') closeHistory(); // Assuming closeHistory exists elsewhere
+        closeAllModals();
+        if (gameState === 'TARGETING' || gameState === 'RANGED_TARGETING') {
+            logMessage("Cancelled action.", "hint");
+            gameState = 'PLAYING';
+            render();
+        }
     }
 
     if (e.key === 'i' || e.key === 'I') {
@@ -1154,7 +1158,8 @@ window.addEventListener('keydown', e => {
         if (gameState === 'PLAYING') {
             const wep = player.equipment.weapon;
             if (!wep || !wep.reach) {
-                logMessage("You need a polearm (Spear/Halberd) to reach-attack!", "damage");
+                // Remove noisy log during normal movement; only log if explicitly trying to reach-attack
+                // logMessage("You need a polearm (Spear/Halberd) to reach-attack!", "damage");
                 return;
             }
             // Find targets within reach
@@ -1451,12 +1456,33 @@ function getPendingAction() {
             return null;
         }
         if (!activePath || activePath.length === 0) {
-            const path = findNearestUnexplored(player.x, player.y);
-            if (path && path.length > 0) {
-                activePath = path;
+            const now = performance.now();
+            if (typeof lastAutoExploreCheck === 'undefined' || now - lastAutoExploreCheck > 500) {
+                lastAutoExploreCheck = now;
+                
+                let path = findNearestUnexplored(player.x, player.y);
+                
+                // Floor 0 (Town) specific: explicitly target stairs if no unexplored tiles found
+                if (!path && currentFloor === 0) {
+                    for(let x=0; x<MAP_WIDTH; x++) {
+                        for(let y=0; y<MAP_HEIGHT; y++) {
+                            if (map[x][y].type === 'stairs_down') {
+                                path = findPath(player.x, player.y, x, y);
+                                break;
+                            }
+                        }
+                        if (path) break;
+                    }
+                }
+
+                if (path && path.length > 0) {
+                    activePath = path;
+                } else {
+                    isAutoExploring = false;
+                    logMessage("Nothing left to explore!", "hint");
+                    return null;
+                }
             } else {
-                isAutoExploring = false;
-                logMessage("Nothing left to explore!", "hint");
                 return null;
             }
         }
@@ -1502,7 +1528,11 @@ function findPath(sx, sy, tx, ty) {
                     // Path through explored floor, stairs, or target entity (to attack)
                     // Treat unknown as wall.
                     const tile = map[nx][ny];
-                    if (tile.explored && (tile.type !== 'wall' || (nx === tx && ny === ty))) {
+                    const ent = getEntityAt(nx, ny);
+                    const hasKey = player.inventory.some(i => i.name === 'Dungeon Key');
+                    const blockingTypes = ['wall', 'locked_door', 'shop', 'healer', 'blacksmith', 'wizard', 'bank', 'well', 'mayor', 'gambler', 'shrine'];
+                    const isPassable = !blockingTypes.includes(tile.type) || (tile.type === 'locked_door' && hasKey);
+                    if (tile.explored && (isPassable || (nx === tx && ny === ty)) && (!ent || !ent.isTownNPC || !ent.blocksMovement || (nx === tx && ny === ty))) {
                         visited.add(key);
                         queue.push({ x: nx, y: ny, path: [...curr.path, { x: nx, y: ny }] });
                     }
@@ -1521,14 +1551,22 @@ function findNearestUnexplored(sx, sy) {
         { dx: -1, dy: -1 }, { dx: 1, dy: -1 }, { dx: -1, dy: 1 }, { dx: 1, dy: 1 }
     ];
 
+    let stairsPath = null;
     let iteration = 0;
-    while (queue.length > 0 && iteration < 3000) {
+    while (queue.length > 0 && iteration < 30000) {
         iteration++;
         const curr = queue.shift();
 
         const cTile = map[curr.x][curr.y];
+        // Priority: Unexplored tiles
         if (!cTile.explored && cTile.type !== 'wall') {
             return curr.path;
+        }
+
+        // Secondary: Find nearest stairs down (if we haven't found one yet)
+        if (!stairsPath && (cTile.type === 'stairs_down' || cTile.type === 'stairs_up')) {
+            // Only follow stairs if the current floor is explored enough or specifically stairs_down
+            if (cTile.type === 'stairs_down') stairsPath = curr.path;
         }
 
         for (let d of dirs) {
@@ -1539,15 +1577,21 @@ function findNearestUnexplored(sx, sy) {
                 if (!visited.has(key)) {
                     visited.add(key);
                     const tile = map[nx][ny];
-                    // Path through explored floors or into the first unexplored tile
-                    if ((tile.explored && tile.type !== 'wall') || (!tile.explored && tile.type !== 'wall')) {
+                    const ent = getEntityAt(nx, ny);
+                    const hasKey = player.inventory.some(i => i.name === 'Dungeon Key');
+                    const blockingTypes = ['wall', 'locked_door', 'shop', 'healer', 'blacksmith', 'wizard', 'bank', 'well', 'mayor', 'gambler', 'shrine'];
+                    const isPassable = !blockingTypes.includes(tile.type) || (tile.type === 'locked_door' && hasKey);
+                    // Path through explored floors, avoid blocking Town NPCs specifically
+                    if (((tile.explored && isPassable) || (!tile.explored && !blockingTypes.includes(tile.type))) && (!ent || !ent.isTownNPC || !ent.blocksMovement)) {
                         queue.push({ x: nx, y: ny, path: [...curr.path, { x: nx, y: ny }] });
                     }
                 }
             }
         }
     }
-    return null;
+    if (!stairsPath && iteration >= 30000) console.log(`(DEBUG) findNearestUnexplored: limit reached at ${sx},${sy}, queue: ${queue.length}`);
+    if (!stairsPath && queue.length === 0) console.log(`(DEBUG) findNearestUnexplored: queue empty at ${sx},${sy}`);
+    return stairsPath; // Fallback to stairs if no unexplored tiles found
 }
 
 // --- Spells ---
@@ -1879,65 +1923,98 @@ function generateTown() {
 
     // Local flavor log
     logMessage("Town Services: Shop(S), Healer(H), Blacksmith(B), Wizard(W), Bank(£)", "hint");
+
+    // Pre-explore town
+    for (let x = 0; x < MAP_WIDTH; x++) {
+        for (let y = 0; y < MAP_HEIGHT; y++) {
+            if (map[x][y].type !== 'wall') map[x][y].explored = true;
+        }
+    }
 }
 
 function generateDungeon() {
-    initMap();
-    if (currentFloor >= 3 && Math.random() < 0.35) {
-        generateCave();
-        return;
-    }
-
-    const rooms = [];
-    const MAX_ROOMS = 20;
-
-    for (let i = 0; i < MAX_ROOMS; i++) {
-        let w = Math.floor(Math.random() * 8) + 4;
-        let h = Math.floor(Math.random() * 8) + 4;
-        let x = Math.floor(Math.random() * (MAP_WIDTH - w - 2)) + 1;
-        let y = Math.floor(Math.random() * (MAP_HEIGHT - h - 2)) + 1;
-        let newRoom = new Rect(x, y, w, h);
-
-        let failed = false;
-        for (let r of rooms) {
-            if (newRoom.x <= r.x + r.w && newRoom.x + newRoom.w >= r.x &&
-                newRoom.y <= r.y + r.h && newRoom.y + newRoom.h >= r.y) {
-                failed = true; break;
-            }
+    let connected = false;
+    let tries = 0;
+    while (!connected && tries < 100) {
+        tries++;
+        initMap();
+        if (currentFloor >= 3 && Math.random() < 0.35) {
+            generateCave(); // Cave has its own connectivity check
+            return;
         }
 
-        if (!failed) {
-            createRoom(newRoom);
-            const c = newRoom.center();
+        const rooms = [];
+        const MAX_ROOMS = 20;
 
-            if (rooms.length === 0) {
-                player.x = c.x; player.y = c.y;
-                map[c.x - 1][c.y].type = 'stairs_up';
-                map[c.x - 1][c.y].char = CHARS.STAIRS_UP;
-            } else {
-                const prev = rooms[rooms.length - 1].center();
-                if (Math.random() > 0.5) {
-                    createHTunnel(prev.x, c.x, prev.y); createVTunnel(prev.y, c.y, c.x);
-                } else {
-                    createVTunnel(prev.y, c.y, prev.x); createHTunnel(prev.x, c.x, c.y);
+        for (let i = 0; i < MAX_ROOMS; i++) {
+            let w = Math.floor(Math.random() * 8) + 4;
+            let h = Math.floor(Math.random() * 8) + 4;
+            let x = Math.floor(Math.random() * (MAP_WIDTH - w - 2)) + 1;
+            let y = Math.floor(Math.random() * (MAP_HEIGHT - h - 2)) + 1;
+            let newRoom = new Rect(x, y, w, h);
+
+            let failed = false;
+            for (let r of rooms) {
+                if (newRoom.x <= r.x + r.w && newRoom.x + newRoom.w >= r.x &&
+                    newRoom.y <= r.y + r.h && newRoom.y + newRoom.h >= r.y) {
+                    failed = true; break;
                 }
-
-                // Spawn monsters & items
-                if (Math.random() < 0.6) spawnMonsters(newRoom);
-                if (Math.random() < 0.4) spawnRandomItem(newRoom);
             }
-            rooms.push(newRoom);
+
+            if (!failed) {
+                createRoom(newRoom);
+                const c = newRoom.center();
+
+                if (rooms.length === 0) {
+                    player.x = c.x; player.y = c.y;
+                    map[c.x - 1][c.y].type = 'stairs_up';
+                    map[c.x - 1][c.y].char = CHARS.STAIRS_UP;
+                } else {
+                    const prev = rooms[rooms.length - 1].center();
+                    if (Math.random() > 0.5) {
+                        createHTunnel(prev.x, c.x, prev.y); createVTunnel(prev.y, c.y, c.x);
+                    } else {
+                        createVTunnel(prev.y, c.y, prev.x); createHTunnel(prev.x, c.x, c.y);
+                    }
+
+                    // Spawn monsters & items
+                    if (Math.random() < 0.6) spawnMonsters(newRoom);
+                    if (Math.random() < 0.4) spawnRandomItem(newRoom);
+                }
+                rooms.push(newRoom);
+            }
+        }
+
+        if (rooms.length > 0) {
+            const last = rooms[rooms.length - 1].center();
+            map[last.x][last.y].type = 'stairs_down';
+            map[last.x][last.y].char = CHARS.STAIRS_DOWN;
+        }
+
+        // Phase IV — Dungeon Hazards
+        generateHazards(rooms);
+
+        // Connectivity Check
+        const sx = player.x, sy = player.y;
+        let tx = -1, ty = -1;
+        for(let x=0; x<MAP_WIDTH; x++) {
+            for(let y=0; y<MAP_HEIGHT; y++) {
+                if (map[x][y].type === 'stairs_down') { tx=x; ty=y; break; }
+            }
+            if (tx !== -1) break;
+        }
+        
+        if (tx !== -1) {
+            const path = findPath(sx, sy, tx, ty);
+            if (path && path.length > 0) {
+                connected = true;
+            } else {
+                console.log("(DEBUG) Disconnected dungeon detected, regenerating...");
+            }
+        } else {
+            connected = true; // No stairs_down (shouldn't happen)
         }
     }
-
-    if (rooms.length > 0) {
-        const last = rooms[rooms.length - 1].center();
-        map[last.x][last.y].type = 'stairs_down';
-        map[last.x][last.y].char = CHARS.STAIRS_DOWN;
-    }
-
-    // Phase IV — Dungeon Hazards
-    generateHazards(rooms);
 }
 
 function generateHazards(rooms) {
@@ -1946,6 +2023,8 @@ function generateHazards(rooms) {
         if (Math.random() > 0.2) continue;
         let hx = Math.floor(Math.random() * (room.w - 2)) + room.x + 1;
         let hy = Math.floor(Math.random() * (room.h - 2)) + room.y + 1;
+        const center = room.center();
+        if (hx === center.x && hy === center.y) continue;
         if (!map[hx] || map[hx][hy].type !== 'floor' || getEntityAt(hx, hy)) continue;
         const roll = Math.random();
         if (roll < 0.15 && currentFloor >= 2) {
@@ -2005,43 +2084,52 @@ function generateHazards(rooms) {
 }
 
 function generateCave() {
-    let floorCount = 0;
-    const targetFloors = Math.floor(MAP_WIDTH * MAP_HEIGHT * 0.45);
-    let cx = Math.floor(MAP_WIDTH / 2);
-    let cy = Math.floor(MAP_HEIGHT / 2);
+    let connected = false;
+    let tries = 0;
+    while (!connected && tries < 100) {
+        tries++;
+        initMap();
+        let floorCount = 0;
+        const targetFloors = Math.floor(MAP_WIDTH * MAP_HEIGHT * 0.45);
+        let cx = Math.floor(MAP_WIDTH / 2);
+        let cy = Math.floor(MAP_HEIGHT / 2);
 
-    while (floorCount < targetFloors) {
-        if (map[cx][cy].type === 'wall') {
-            map[cx][cy].type = 'floor';
-            map[cx][cy].char = CHARS.FLOOR;
-            floorCount++;
+        while (floorCount < targetFloors) {
+            if (map[cx][cy].type === 'wall') {
+                map[cx][cy].type = 'floor';
+                map[cx][cy].char = CHARS.FLOOR;
+                floorCount++;
+            }
+            let dir = Math.floor(Math.random() * 4);
+            if (dir === 0) cx++; else if (dir === 1) cx--; else if (dir === 2) cy++; else cy--;
+
+            if (cx <= 1 || cx >= MAP_WIDTH - 2 || cy <= 1 || cy >= MAP_HEIGHT - 2) {
+                cx = Math.floor(MAP_WIDTH / 2);
+                cy = Math.floor(MAP_HEIGHT / 2);
+            }
         }
-        let dir = Math.floor(Math.random() * 4);
-        if (dir === 0) cx++; else if (dir === 1) cx--; else if (dir === 2) cy++; else cy--;
 
-        if (cx <= 1 || cx >= MAP_WIDTH - 2 || cy <= 1 || cy >= MAP_HEIGHT - 2) {
-            cx = Math.floor(MAP_WIDTH / 2);
-            cy = Math.floor(MAP_HEIGHT / 2);
+        // Place Stairs Up & Down
+        let sx, sy, ex, ey;
+        do { sx = Math.floor(Math.random() * MAP_WIDTH); sy = Math.floor(Math.random() * MAP_HEIGHT); } while (map[sx][sy].type !== 'floor');
+        map[sx][sy].type = 'stairs_up'; map[sx][sy].char = CHARS.STAIRS_UP;
+        player.x = sx; player.y = sy;
+
+        do { ex = Math.floor(Math.random() * MAP_WIDTH); ey = Math.floor(Math.random() * MAP_HEIGHT); } while (map[ex][ey].type !== 'floor' || (Math.abs(sx - ex) + Math.abs(sy - ey) < 20));
+        map[ex][ey].type = 'stairs_down'; map[ex][ey].char = CHARS.STAIRS_DOWN;
+
+        for (let i = 0; i < 15 + currentFloor; i++) {
+            let mx, my; do { mx = Math.floor(Math.random() * MAP_WIDTH); my = Math.floor(Math.random() * MAP_HEIGHT); } while (map[mx][my].type !== 'floor' || getEntityAt(mx, my) || (mx === sx && my === sy));
+            spawnMonsterAt(mx, my);
         }
-    }
 
-    // Place Stairs Up & Down
-    let sx, sy, ex, ey;
-    do { sx = Math.floor(Math.random() * MAP_WIDTH); sy = Math.floor(Math.random() * MAP_HEIGHT); } while (map[sx][sy].type !== 'floor');
-    map[sx][sy].type = 'stairs_up'; map[sx][sy].char = CHARS.STAIRS_UP;
-    player.x = sx; player.y = sy;
-
-    do { ex = Math.floor(Math.random() * MAP_WIDTH); ey = Math.floor(Math.random() * MAP_HEIGHT); } while (map[ex][ey].type !== 'floor' || (Math.abs(sx - ex) + Math.abs(sy - ey) < 20));
-    map[ex][ey].type = 'stairs_down'; map[ex][ey].char = CHARS.STAIRS_DOWN;
-
-    for (let i = 0; i < 15 + currentFloor; i++) {
-        let mx, my; do { mx = Math.floor(Math.random() * MAP_WIDTH); my = Math.floor(Math.random() * MAP_HEIGHT); } while (map[mx][my].type !== 'floor' || getEntityAt(mx, my) || (mx === sx && my === sy));
-        spawnMonsterAt(mx, my);
-    }
-
-    for (let i = 0; i < 10; i++) {
-        let ix, iy; do { ix = Math.floor(Math.random() * MAP_WIDTH); iy = Math.floor(Math.random() * MAP_HEIGHT); } while (map[ix][iy].type !== 'floor' || (ix === sx && iy === sy));
-        spawnRandomItemAt(ix, iy);
+        // Connectivity Check
+        const path = findPath(sx, sy, ex, ey);
+        if (path && path.length > 0) {
+            connected = true;
+        } else {
+            console.log("(DEBUG) Disconnected cave detected, regenerating...");
+        }
     }
 }
 
@@ -2205,6 +2293,21 @@ class Entity {
     }
 }
 
+function getNearestMonster(mx, my) {
+    let nearest = null;
+    let minDist = Infinity;
+    for (let e of entities) {
+        if (!e.isPlayer && e.hp > 0 && e.blocksMovement && !e.isTownNPC && !e.isMerchant) {
+            const d = Math.abs(e.x - mx) + Math.abs(e.y - my);
+            if (d < minDist) {
+                minDist = d;
+                nearest = e;
+            }
+        }
+    }
+    return nearest;
+}
+
 function getEntityAt(x, y) {
     return entities.find(e => e.x === x && e.y === y && e.blocksMovement && e.hp > 0);
 }
@@ -2326,14 +2429,17 @@ function attemptAction(entity, action) {
                     if (timeOfDay === 'Day') openBank();
                     else logMessage("The bank is closed until morning.", "hint");
                 } else if (mapTile.type === 'mayor') {
-                    if (!bountyTarget) {
-                        const targets = ['Rat', 'Goblin', 'Kobold', 'Fire Hound', 'Orc'];
-                        bountyTarget = targets[Math.floor(Math.random() * targets.length)];
-                        logMessage(`Mayor says: "Bounty active for a ${bountyTarget}! Return when it's dead."`, 'magic');
-                    } else if (bountyClaimed) {
-                        logMessage(`Mayor says: "Excellent work! Wait for the next bounty."`, 'hint');
-                    } else {
-                        logMessage(`Mayor says: "Have you slain the ${bountyTarget} yet?"`, 'hint');
+                    // Only bark if the player isn't in high-speed auto-explore mode
+                    if (!isAutoExploring && !activePath) {
+                        if (!bountyTarget) {
+                            const targets = ['Rat', 'Goblin', 'Kobold', 'Fire Hound', 'Orc'];
+                            bountyTarget = targets[Math.floor(Math.random() * targets.length)];
+                            logMessage(`Mayor says: "Bounty active for a ${bountyTarget}! Return when it's dead."`, 'magic');
+                        } else if (bountyClaimed) {
+                            logMessage(`Mayor says: "Excellent work! Wait for the next bounty."`, 'hint');
+                        } else {
+                            logMessage(`Mayor says: "Have you slain the ${bountyTarget} yet?"`, 'hint');
+                        }
                     }
                 } else if (mapTile.type === 'gambler') {
                     logMessage("Gambler: '50g for a mystery box?'", 'hint');
@@ -2388,6 +2494,19 @@ function attemptAction(entity, action) {
                             spawnParticle(player.x, player.y, 'CURSED!', '#e74c3c');
                         }
                     } else { logMessage('The shrine is spent.', 'hint'); }
+                } else if (mapTile.type === 'well') {
+                    logMessage("The Town Well is cool and refreshing.", "magic");
+                    if (player.hp < player.maxHp) {
+                        player.hp = Math.min(player.maxHp, player.hp + 5);
+                        logMessage("You drink from the well and feel better.", "magic");
+                        spawnParticle(player.x, player.y, "+5 HP", "#2ecc71");
+                    }
+                    if (Math.random() < 0.1) {
+                         logMessage("You toss a coin into the well for luck.");
+                         player.gold = Math.max(0, player.gold - 1);
+                    }
+                    entity.energy -= ENERGY_THRESHOLD;
+                    return;
                 } else if (mapTile.type === 'lava') {
                     // #38 Lava does not block, but damages
                     entity.x = tx; entity.y = ty; entity.energy -= ENERGY_THRESHOLD;
@@ -2468,6 +2587,7 @@ function checkStairs(x, y, force = false) {
     // DEBUG: console.log(`Checking stairs at ${x},${y}: ${tile.type}`);
     if (map[x][y].type === 'stairs_down') {
         currentFloor++;
+        console.log(`(DEBUG) Descending to Floor ${currentFloor}`);
         logMessage(`You dive to Dungeon Level ${currentFloor}.`, 'pickup');
         generateDungeon();
         computeFOV();
@@ -3003,6 +3123,20 @@ function gameLoop(timestamp) {
         lastTime = timestamp;
 
         let stepsThisFrame = (isAutoRunning || activePath || isAutoExploring) ? 20 : 1;
+        
+        // Safety check for auto-explore: Stop earlier if monster is very close
+        if (isAutoExploring) {
+            const nearest = getNearestMonster(player.x, player.y);
+            if (nearest) {
+                const dist = Math.abs(nearest.x - player.x) + Math.abs(nearest.y - player.y);
+                if (dist <= 2) { 
+                    isAutoExploring = false; 
+                    activePath = null;
+                    logMessage("Danger ahead! Auto-explore halted.", "damage");
+                    stepsThisFrame = 0;
+                }
+            }
+        }
 
         while (stepsThisFrame > 0 && gameState === 'PLAYING') {
             stepsThisFrame--;
@@ -3085,6 +3219,12 @@ function gameLoop(timestamp) {
             // 2. Process Monsters
             for (let e of entities) {
                 if (!e.isPlayer && e.hp > 0 && e.blocksMovement) {
+                    // NPC Barks (Aurora suggestion)
+                    if (e.isTownNPC && Math.random() < 0.005) {
+                        const barks = ["Lovely day for a walk!", "Heard there's a Balrog downstairs...", "Prices at the shop are rising.", "Stay safe, traveler.", "Nice weather today!"];
+                        const dist = Math.abs(e.x - player.x) + Math.abs(e.y - player.y);
+                        if (dist < 8) logMessage(`${e.name} says: "${barks[Math.floor(Math.random()*barks.length)]}"`, 'hint');
+                    }
                     if (e.name === 'Balrog' && e.hp < 150) e.hp = Math.min(150, e.hp + 2); // Regen
                     if (e.energy >= ENERGY_THRESHOLD) {
                         processMonsterAI(e);
@@ -3129,7 +3269,12 @@ function processMonsterAI(e) {
     const dx = player.x - e.x;
     const dy = player.y - e.y;
     const dist = Math.abs(dx) + Math.abs(dy);
-    const visible = map[e.x][e.y].visible;
+    const visible = (map[e.x] && map[e.x][e.y]) ? map[e.x][e.y].visible : false;
+
+    // Energy check — processMonsterAI is only called if e.energy >= 100
+    // We should NOT subtract energy here if attemptAction(e, ...) is called,
+    // as attemptAction handles its own energy subtraction.
+    // Only subtract here if we do a special non-move action (like summoning).
 
     // #27 Blink Dog — teleport randomly when adjacent and hurt
     if (e.blinker && dist <= 2 && e.hp < e.maxHp * 0.5) {
@@ -3153,7 +3298,7 @@ function processMonsterAI(e) {
                         ne.element = sk.element; ne.baseXP = sk.baseXP;
                         entities.push(ne);
                         logMessage('Necromancer summons a Skeleton!', 'damage');
-                        e.energy -= ENERGY_THRESHOLD;
+                        e.energy -= ENERGY_THRESHOLD; // Manual subtraction for non-attemptAction summons
                         return;
                     }
                     break;
@@ -3169,7 +3314,7 @@ function processMonsterAI(e) {
         if (debuff === 'slow')    { player.speed = Math.max(2, player.speed - 2); spawnParticle(player.x, player.y, 'SLOW!', '#3498db'); logMessage('Beholder eye-ray slows you!', 'damage'); }
         if (debuff === 'confuse') { player.confusedTimer = (player.confusedTimer || 0) + 8; spawnParticle(player.x, player.y, 'CONFUSED!', '#9b59b6'); logMessage('Beholder eye-ray confuses you!', 'damage'); }
         if (debuff === 'blind')   { player.blindTimer = (player.blindTimer || 0) + 5; spawnParticle(player.x, player.y, 'BLIND!', '#888'); logMessage('Beholder eye-ray blinds you!', 'damage'); }
-        e.energy -= ENERGY_THRESHOLD;
+        e.energy -= ENERGY_THRESHOLD; // Manual subtraction for debuff ray
         return;
     }
 
@@ -3280,8 +3425,9 @@ function updateUI() {
     document.getElementById('ui-maxhp').innerText = player.maxHp;
     document.getElementById('ui-hp-bar').style.width = `${Math.max(0, (player.hp / player.maxHp) * 100)}%`;
 
-    document.getElementById('ui-energy').innerText = Math.floor(player.energy);
-    document.getElementById('ui-energy-bar').style.width = `${Math.min(100, player.energy)}%`;
+    const displayEnergy = Math.max(0, Math.min(110, Math.floor(player.energy)));
+    document.getElementById('ui-energy').innerText = displayEnergy;
+    document.getElementById('ui-energy-bar').style.width = `${Math.min(100, (player.energy / 100) * 100)}%`;
 
     // Inventory
     const invDom = document.getElementById('ui-inventory');
@@ -3349,8 +3495,11 @@ function render() {
                     color = tile.type === 'wall' ? COLORS.TOWN_WALL : COLORS.TOWN_FLOOR;
                 }
                 if (tile.type === 'stairs_up' || tile.type === 'stairs_down') color = tile.visible ? COLORS.STAIRS : '#666';
-                if (tile.type === 'shop') color = tile.visible ? COLORS.GOLD : '#666';
-                if (tile.type === 'healer') color = tile.visible ? '#e74c3c' : '#666';
+                if (tile.type === 'shop' || tile.type === 'healer' || tile.type === 'blacksmith' || tile.type === 'wizard' || tile.type === 'alchemist' || tile.type === 'trainer' || tile.type === 'bank' || tile.type === 'cartographer') {
+                    if (timeOfDay === 'Night' && tile.visible) color = '#f1c40f'; // Glow yellow at night
+                    else if (tile.type === 'healer') color = tile.visible ? '#e74c3c' : '#666';
+                    else if (tile.type === 'shop') color = tile.visible ? COLORS.GOLD : '#666';
+                }
 
                 ctx.fillStyle = color;
                 ctx.fillText(tile.char, offsetX + x * TILE_SIZE, offsetY + y * TILE_SIZE);
