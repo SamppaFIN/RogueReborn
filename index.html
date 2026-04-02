@@ -686,7 +686,17 @@
         </div>
     </div>
 
-    <script src="engine.js?v=8"></script>
+    <!-- Module Loading Order (Surgical Refactoring v2) -->
+    <script src="src/data/constants.js?v=2"></script>
+    <script src="src/data/enemies.js?v=2"></script>
+    <script src="src/data/items.js?v=2"></script>
+    <script src="src/ui/shops.js?v=2"></script>
+    <script src="src/ui/renderer.js?v=1"></script>
+    <script src="src/systems/combat.js?v=2"></script>
+    <script src="src/systems/ai.js?v=2"></script>
+    <script src="src/world/generation.js?v=2"></script>
+    <script src="engine.js?v=10"></script>
+    <script src="src/ui/input.js?v=1"></script>
 </body>
 
 </html>

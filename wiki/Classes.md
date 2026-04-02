@@ -38,7 +38,13 @@ A swift, cunning combatant who strikes from the shadows.
 ---
 
 ## 📈 Leveling & XP
-- Experience is gained by killing monsters.
-- Every level grants `+10 Max HP`, fully heals the player, and slightly increases base stats.
+- Experience is gained by killing monsters. XP scales with floor depth: `baseXP × (1 + floor × 0.2)`.
+- Every level grants **+5 Max HP**, **+1 ATK**, fully heals the player, and increases XP threshold by 1.8×.
+- Non-levelup kills heal **+2 HP** as a combat reward.
 - Higher-tier monsters (Mind Flayers, Dragons, Beholders) yield exponentially more XP.
 - *Beware*: **Mind Flayers** can permanently drain your accumulated XP with each strike!
+
+## ⚡ Passive HP Regeneration
+- While not poisoned, the player regenerates **1 HP every 15 acted turns**.
+- The **Potion of Regeneration** grants a temporary boost: **+1 HP per tick for 30 ticks**.
+- The **Amulet of Regeneration** provides permanent passive healing.
