@@ -167,5 +167,85 @@ const SIDE_QUESTS = [
             offer: "The Guild values daring. Open 3 of those ancient vaults in the deep.",
             complete: "Three vaults! You're a legend of the Guild now."
         }
+    },
+    // Phase VI — New Side Quests
+    {
+        id: 'side_frost_hunt',
+        title: 'Frost Wolf Hunt',
+        description: 'Kill 4 Frost Wolves that threaten the trade routes.',
+        type: 'kill',
+        target: 'Frost Wolf',
+        count: 4,
+        giver: 'mayor',
+        repeatable: false,
+        minFloor: 3,
+        rewards: { xp: 80, gold: 200, item: 'Potion of Frost Resistance' },
+        dialogue: {
+            offer: "Frost Wolves are attacking merchants on the lower roads. Kill 4 of them.",
+            complete: "The trade routes are safe again. Take this frost ward."
+        }
+    },
+    {
+        id: 'side_golem_breaker',
+        title: 'Golem Breaker',
+        description: 'Destroy 2 Iron Golems in the deep vaults.',
+        type: 'kill',
+        target: 'Iron Golem',
+        count: 2,
+        giver: 'trainer',
+        repeatable: false,
+        minFloor: 6,
+        rewards: { xp: 250, gold: 500, skillPoints: 1 },
+        dialogue: {
+            offer: "The ancient Golems guard treasures we need. Break through 2 of them.",
+            complete: "Incredible strength! Here — you've earned this."
+        }
+    },
+    {
+        id: 'side_wyvern_legacy',
+        title: "Wyvern Rider's Legacy",
+        description: 'Slay a Wyvern and recover its venom sac.',
+        type: 'kill',
+        target: 'Wyvern',
+        count: 1,
+        giver: 'alchemist',
+        repeatable: false,
+        minFloor: 6,
+        rewards: { xp: 200, gold: 400, item: 'Potion of Greater Healing' },
+        dialogue: {
+            offer: "Wyvern venom is incredibly valuable for my potions. Slay one and bring me its sac.",
+            complete: "This venom is pure! I can make wonders with this."
+        }
+    },
+    {
+        id: 'side_demon_hunter',
+        title: 'Demon Hunter',
+        description: 'Destroy a Demon Lord.',
+        type: 'kill',
+        target: 'Demon Lord',
+        count: 1,
+        giver: 'wizard',
+        repeatable: false,
+        minFloor: 8,
+        rewards: { xp: 500, gold: 1000, skillPoints: 2 },
+        dialogue: {
+            offer: "A Demon Lord has been sighted in the deep. It must be destroyed before it opens a portal.",
+            complete: "The demon is banished! You've prevented a catastrophe."
+        }
+    },
+    {
+        id: 'side_wyrm_seeker',
+        title: 'Wyrm Seeker',
+        description: 'Reach Floor 13 where the Ancient Wyrm dwells.',
+        type: 'reach_floor',
+        target: 13,
+        giver: 'cartographer',
+        repeatable: false,
+        minFloor: 10,
+        rewards: { xp: 600, gold: 1200, skillPoints: 2 },
+        dialogue: {
+            offer: "The prophecy speaks of Floor 13. I need someone brave enough to confirm it exists.",
+            complete: "Floor 13 is real... The Wyrm Prophecy is true. We must prepare."
+        }
     }
 ];

@@ -6,7 +6,7 @@ const TH_PATH = path.join(__dirname, 'test_harness.js');
 const thCode = fs.readFileSync(TH_PATH, 'utf8');
 
 (async () => {
-    console.log("🚀 Starting Final Balanced Playtest (12 runs)...");
+    console.log("🚀 Starting Phase V: Skills, Quests & Lore Simulation (Fixed) (12 runs)...");
     const url = 'http://127.0.0.1:8234/index.html';
     const browser = await chromium.launch({ headless: true });
     const page = await browser.newPage();
@@ -28,11 +28,33 @@ const thCode = fs.readFileSync(TH_PATH, 'utf8');
             }
         };
         window.computeFOV = () => {
-            const r = 10;
+            const r = 12;
             for(let x = Math.max(0, player.x-r); x < Math.min(MAP_WIDTH, player.x+r); x++) {
                 for(let y = Math.max(0, player.y-r); y < Math.min(MAP_HEIGHT, player.y+r); y++) {
                     map[x][y].visible = true; map[x][y].explored = true;
                 }
+            }
+        };
+
+        // Phase V Bot Logic: Auto-Unlock Skills
+        window.TH.autoUnlockSkills = () => {
+            if (!player.class || !SKILL_TREES[player.class]) return;
+            const tree = SKILL_TREES[player.class];
+            if (!player.unlockedSkills) player.unlockedSkills = [];
+            for (const skill of tree.skills) {
+                if (!player.unlockedSkills.includes(skill.id) && player.level >= skill.level && player.skillPoints >= skill.cost) {
+                    window.unlockSkill(skill.id);
+                }
+            }
+        };
+
+        // Phase V Bot Logic: Handle Quests
+        window.TH.checkQuestNPCs = () => {
+            if (currentFloor === 0) {
+                const npcs = ['mayor', 'wizard', 'healer', 'trainer', 'alchemist', 'cartographer', 'guildhall'];
+                npcs.forEach(type => {
+                    if (typeof window.handleQuestNPC === 'function') window.handleQuestNPC(type);
+                });
             }
         };
     });
@@ -45,56 +67,53 @@ const thCode = fs.readFileSync(TH_PATH, 'utf8');
         try {
             const res = await page.evaluate(async (c) => {
                 window.startGame(c);
-                // Baseline: grant Short Sword
-                const weapon = ITEM_DB.find(itm => itm.name === 'Short Sword');
-                if (weapon) {
-                    const sword = { ...weapon, identified: true };
-                    player.inventory.push(sword);
-                    window.useItem(player.inventory.indexOf(sword));
-                }
-                
-                // Skip town
-                let stairs = null;
-                for(let x=0; x<70; x++) for(let y=0; y<50; y++) if(map[x][y].type==='stairs_down') stairs={x,y};
-                if(stairs) { player.x = stairs.x; player.y = stairs.y; window.checkStairs(player.x, player.y, true); }
-                
-                let floorCount = 0;
-                while(gameState === 'PLAYING' && currentFloor < 10 && floorCount < 1000) {
-                   floorCount++;
+                if (typeof window.initQuestSystem === 'function') window.initQuestSystem();
+                window.TH.checkQuestNPCs(); // Initial quests
+
+                let moveCount = 0;
+                while(gameState === 'PLAYING' && currentFloor < 15 && moveCount < 1000) {
+                   moveCount++;
+                   
+                   // Every 100 moves, check if in town and try to talk to NPCs
+                   if (moveCount % 100 === 0 && currentFloor === 0) window.TH.checkQuestNPCs();
+                   
+                   window.TH.autoUnlockSkills();
+
                    const step = await window.TH.autoPlayFloor();
                    
-                   // STICKINESS FIX: if portaita ei löydy (stair unreachable or floor timeout), 
-                   // force finding stairs or teleport to them.
-                   if (!step || step.phase !== 'ready_to_descend') {
-                       // Find stairs manually
-                       let s = null;
-                       for(let x=0; x<70; x++) for(let y=0; y<50; y++) if(map[x][y].type==='stairs_down') s={x,y};
-                       if (s) {
-                           // Teleport to stairs and descend
-                           player.x = s.x; player.y = s.y;
-                           await window.TH.descendStairs();
-                           continue; // Keep going
-                       }
-                       break; 
+                   if (step && step.phase === 'ready_to_descend') {
+                       await window.TH.descendStairs();
                    }
-                   await window.TH.descendStairs();
+                   
+                   if (moveCount % 20 === 0 && player.skillCooldown === 0) {
+                       window.useClassSkill();
+                   }
+
+                   if (gameState === 'PLAYER_DEAD') break;
                 }
 
                 return {
-                    class: c, floor: currentFloor, level: player.level, gold: player.gold,
+                    class: c, 
+                    floor: currentFloor, 
+                    level: player.level, 
+                    gold: player.gold,
+                    skillPoints: player.skillPoints,
+                    unlockedSkillsCount: (player.unlockedSkills || []).length,
+                    questsCompletedCount: Object.values(player.quests || {}).filter(s => s === 'REWARDED').length,
+                    loreCount: (player.discoveredLore || []).length,
                     result: gameState === 'VICTORY' ? 'VICTORY' : (gameState === 'PLAYER_DEAD' ? 'DEAD' : 'STOPPED'),
-                    killer: document.getElementById('go-killer')?.innerText.split('killed by ')[1] || "Unknown"
+                    killer: document.getElementById('go-killer')?.innerText.split('killed by ')[1] || "None"
                 };
             }, cls);
 
             results.push(res);
-            console.log(`📈 Run ${i+1}/12: ${cls} → Floor ${res.floor} (${res.result}) Killed by: ${res.killer}`);
+            console.log(`📈 Run ${i+1}/12: ${cls} → Floor ${res.floor} (Lvl ${res.level}) Skills: ${res.unlockedSkillsCount} Quests: ${res.questsCompletedCount} Lore: ${res.loreCount} [${res.result}]`);
         } catch (e) {
-            console.error(`❌ Run ${i+1} failed.`);
+            console.error(`❌ Run ${i+1} failed:`, e.message);
         }
     }
 
-    fs.writeFileSync('mass_stats.json', JSON.stringify(results, null, 2));
+    fs.writeFileSync('mass_stats_phase5.json', JSON.stringify(results, null, 2));
     await browser.close();
-    console.log("\n📊 Balanced Test Runs complete.");
+    console.log("\n📊 Phase V Simulation complete.");
 })();

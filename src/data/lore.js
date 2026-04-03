@@ -72,11 +72,44 @@ const LORE_FRAGMENTS = {
         title: "Alchemist's Secret Notes",
         text: "BREAKTHROUGH: Mimic tissue, when dissolved in moonwater, produces a potent regeneration compound. If only I could harvest enough without being eaten...",
         color: '#2ecc71'
+    },
+    // Phase VI — Round 6: New Lore Fragments
+    lore_frost_wolves: {
+        title: "The Frost Wolf Pack",
+        text: "They came from the frozen north when the mines opened. The cold air rising from the depths drew them in. Now they hunt in packs, their howls echoing through caverns of ice.",
+        color: '#85c1e9'
+    },
+    lore_golem_makers: {
+        title: "The Golem Forge",
+        text: "The dwarves built Iron Golems to guard their deepest vaults. When the dwarves fell, the Golems kept patrolling. They will forever guard treasures whose owners turned to dust.",
+        color: '#aab7b8'
+    },
+    lore_hydra_lair: {
+        title: "Warning: Hydra Nesting Ground",
+        text: "DANGER — Multiple heads, multiple deaths. The Hydra regenerates if you don't kill it fast. Use fire or ice to seal the wounds. DO NOT ENGAGE ALONE.",
+        color: '#1abc9c'
+    },
+    lore_wyvern_riders: {
+        title: "The Wyvern Riders",
+        text: "Once, an order of knights rode Wyverns into battle against the Dragon hordes. The last rider fell here, his mount gone feral. Their poison is slow but certain.",
+        color: '#16a085'
+    },
+    lore_demon_gate: {
+        title: "The Demon Gate",
+        text: "This inscription is burned into the stone: 'WHEN THE BALROG FALLS, THE GATE OPENS. WHAT COMES AFTER IS WORSE.' Someone has tried to scratch it out.",
+        color: '#c0392b'
+    },
+    lore_wyrm_prophecy: {
+        title: "The Wyrm Prophecy",
+        text: "And in the deepest dark, the Ancient Wyrm sleeps. Older than the Balrog. Older than the mountains. When it wakes, fire and shadow will be as children before it.",
+        color: '#f39c12'
     }
 };
 
 // Pool of random lore keys for dungeon altar spawning
 const RANDOM_LORE_POOL = [
     'lore_miners', 'lore_wizard_warning', 'lore_old_hero', 'lore_orc_tribes',
-    'lore_ancient_map', 'lore_balrog_origin', 'lore_town_history', 'lore_alchemy_notes'
+    'lore_ancient_map', 'lore_balrog_origin', 'lore_town_history', 'lore_alchemy_notes',
+    'lore_frost_wolves', 'lore_golem_makers', 'lore_hydra_lair', 'lore_wyvern_riders',
+    'lore_demon_gate', 'lore_wyrm_prophecy'
 ];
