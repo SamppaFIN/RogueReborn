@@ -1,6 +1,11 @@
 # 🏘️ Town Mechanics
 
-Floor 0 is your safe haven, the Town. Here you can prepare for your long delve into the Endless Abyss.
+Floor 0 is your safe haven, the Town. In Rogue Reborn, the town is built in the **TomeNET style**, featuring distinct, solid buildings for each shop.
+
+## 🏘️ Town Structure
+Unlike the open-air stalls of most roguelikes, each shop in this town is a solid structure built of brick (`#`).
+- **Doors**: Shops are accessed through specific door tiles marked with numbers (e.g., `1`, `4`, `6`).
+- **Identification**: Building characters (the doors) help you navigate quickly: `1` is the Shop, `3` is the Forge, `6` is the Wizard, etc.
 
 ## 🏪 Core Services
 

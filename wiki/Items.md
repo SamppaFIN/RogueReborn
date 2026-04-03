@@ -97,7 +97,7 @@ Rogue Reborn features **96 items** across weapons, armor, shields, rings, amulet
 | Name | Floor | Effect | Cost |
 |------|-------|--------|------|
 | Scroll of Confusion | 3 | Confuses nearest visible monster (12 turns) | 60g |
-| Word of Recall | 1 | Returns to Town (1 second delay) | 50g |
+| Word of Recall | 1 | Returns to Town. From Town, returns to your deepest reached floor. | 250g |
 | Scroll of Identify | 1 | Identifies all inventory items | 30g |
 | Scroll of Remove Curse | 2 | Purifies all cursed equipped items | 40g |
 | Scroll of Summon Monster | 2 | Spawns 3 random monsters at your location! | 5g |
@@ -129,15 +129,15 @@ All wands target a tile or enemy. Select with cursor, click or press Enter to fi
 Dropped by Elite monsters (50% chance on death). Used to unlock `locked_door` tiles.
 
 ## 🌟 Legendary Artifacts
-1% drop rate from floor-appropriate monsters. Cannot spawn from normal item pool.
-
-| Name | ATK | Floor | Special | Cost |
-|------|-----|-------|---------|------|
 | **Sting** | +8 | 4 | +5 bonus damage vs Orcs. Glows blue. | 2000g |
 | **Glamdring** | +12 | 7 | Fire element. Random +0-3 bonus damage per hit. | 5000g |
 | **Anduril** | +15 | 9 | The legendary blade of kings. | 8000g |
+| **Ringil** | +18 | 12 | Ice element. **+3 Speed**. The fastest blade. | 12000g |
+| **Aeglos** | +14 | 10 | **2-tile Reach**. The spear of kings. | 9500g |
+| **Crown of Kings** (Helm) | +6 DEF | 11 | The master crown. Massive defense. | 7500g |
 
-## ✨ Cursed & Blessed Items
+## ✨ Drop Mechanics
 Equipment can spawn with modifiers:
 - **Cursed** (15% chance): Stats are inverted (ATK/DEF become negative). Cannot be unequipped without a Scroll of Remove Curse.
 - **Blessed** (8% chance): +1-2 extra ATK or DEF bonus.
+- **Artifact Drops**: Artifact drop rates now **scale with depth** (`0.5% + floor × 0.2%`). The deeper you go, the more likely you are to find legendaries!

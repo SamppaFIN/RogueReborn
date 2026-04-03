@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Rogue Reborn - Combat System
  * Entity class, combat mechanics, item usage, death handling.
  * Extracted from engine.js for modularity.
@@ -312,6 +312,9 @@ function checkStairs(x, y, force = false) {
     // DEBUG: console.log(`Checking stairs at ${x},${y}: ${tile.type}`);
     if (map[x][y].type === 'stairs_down') {
         currentFloor++;
+        if (currentFloor > (player.maxFloor || 0)) {
+            player.maxFloor = currentFloor;
+        }
         console.log(`(DEBUG) Descending to Floor ${currentFloor}`);
         logMessage(`You dive to Dungeon Level ${currentFloor}.`, 'pickup');
         generateDungeon();
@@ -354,6 +357,16 @@ function collectItems(x, y) {
     const itemIdx = items.findIndex(i => i.x === x && i.y === y);
     if (itemIdx !== -1) {
         const item = items[itemIdx];
+        if (item.isMimic) {
+            logMessage(`The ${item.name} comes alive! It's a Mimic!`, "damage");
+            items.splice(itemIdx, 1);
+            let m = new Entity(x, y, 'm', '#d35400', "Mimic", 40 + Math.floor((currentFloor || 1) * 7), 8 + Math.floor((currentFloor || 1) * 1.5), 5, 9);
+            m.baseXP = 40;
+            entities.push(m);
+            isAutoRunning = false;
+            return;
+        }
+
         if (item.type === 'gold') {
             player.gold += item.amount;
             logMessage(`You pick up ${item.amount} gold.`, 'pickup');
@@ -516,6 +529,12 @@ function handleMonsterDeath(defender) {
     }
 
     logMessage(`${defender.name} is destroyed.`, 'kill');
+    
+    // Phase IV: AI Reputation tracking
+    let baseName = defender.name.replace('Elite ', '').replace('Mini-Boss ', '');
+    if (!player.killsByType) player.killsByType = {};
+    player.killsByType[baseName] = (player.killsByType[baseName] || 0) + 1;
+    
     defender.char = '%'; defender.color = '#888'; defender.blocksMovement = false;
 
     // Bounty Check
@@ -594,6 +613,36 @@ function handleMonsterDeath(defender) {
 
 // === useItem + dropItem (appended) ===
 
+window.attemptIdentify = function(index) {
+    const item = player.inventory[index];
+    if (item.identified || identifiedTypes[item.name]) return;
+
+    if (item.idAttemptedAtLevel && item.idAttemptedAtLevel >= player.level) {
+        logMessage("This item is currently too complex for you to identify.", "damage");
+        return;
+    }
+
+    let chance = 0.15;
+    if (player.class === 'Mage') chance += 0.30;
+    if (player.class === 'Rogue' && ['weapon', 'armor', 'helm', 'ring', 'amulet', 'shield'].includes(item.type)) chance += 0.10;
+    chance += (player.level * 0.02);
+
+    if (Math.random() < chance) {
+        if (['potion', 'scroll', 'wand'].includes(item.type)) {
+            identifiedTypes[item.name] = true;
+        } else {
+            item.identified = true;
+        }
+        logMessage(`Success! You identified: ${item.name}`, "kill");
+    } else {
+        item.idAttemptedAtLevel = player.level;
+        logMessage("You failed to identify it. It looks too complex for now.", "damage");
+    }
+    
+    player.energy -= ENERGY_THRESHOLD; // Takes a turn!
+    updateUI();
+};
+
 function useItem(index) {
     const item = player.inventory[index];
     if (item.equip) {
@@ -654,6 +703,21 @@ function useItem(index) {
         player.poisonTimer = (player.poisonTimer || 0) + 10;
         spawnParticle(player.x, player.y, "Poison!", '#2ecc71');
         logMessage(`You drink ${getItemName(item)}... It's poison!`, 'damage');
+    } else if (item.effect === 'recall') {
+        logMessage(`You read the ${getItemName(item)}!`, 'magic');
+        spawnParticle(player.x, player.y, "RECALL!", '#3498db');
+        if (currentFloor > 0) {
+            logMessage("You are pulled back to the safety of Town.", "pickup");
+            currentFloor = 0;
+            generateTown();
+        } else {
+            let targetFloor = player.maxFloor || 1;
+            logMessage(`You are pulled back to Dungeon Level ${targetFloor}.`, "damage");
+            currentFloor = targetFloor;
+            generateDungeon();
+        }
+        computeFOV();
+        updateUI();
     } else if (item.effect === 'uncurse') {
         logMessage(`You read the ${getItemName(item)}! A pure light washes over you.`, 'magic');
         let uncursedAny = false;
@@ -753,9 +817,22 @@ function useItem(index) {
             logMessage("The wand is empty.", "damage");
             return;
         }
-        targetX = player.x; targetY = player.y;
         activeSpell = item.spell;
         activeItemIndex = index;
+        
+        const nearest = getNearestMonster(player.x, player.y);
+        if (nearest) {
+            targetX = nearest.x; 
+            targetY = nearest.y;
+            if (typeof executeTargetSpell === 'function') {
+                executeTargetSpell();
+            } else if (typeof window.executeTargetSpell === 'function') {
+                window.executeTargetSpell();
+            }
+            return;
+        }
+
+        targetX = player.x; targetY = player.y;
         gameState = 'TARGETING';
         logMessage("Select target (mouse or arrows, Enter/Click to fire)", "hint");
         return;

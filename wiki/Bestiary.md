@@ -21,6 +21,7 @@ Rogue Reborn features **24 unique monsters** with different behaviors, mechanics
 | `C` | Gelatinous Cube | 30 | 6 | 3 | 5 | — | 40 | **Invisible** unless adjacent |
 | `X` | Rust Monster | 16 | 3 | 0 | 10 | Rust | 50 | **Degrades armor** (-1 DEF permanently) |
 | `n` | Blink Dog | 12 | 5 | 2 | 15 | — | 45 | **Teleports** when below 50% HP |
+| `m` | Mimic | 40+ | 8+ | 5 | 9 | — | 40 | **Disguised** as gold/items (Floor 3+). High HP. |
 
 ## 🧛 The Mid-Depths (Floors 5-8)
 | Glyph | Name | HP | ATK | DEF | Speed | Element | XP | Special |
@@ -38,13 +39,14 @@ Rogue Reborn features **24 unique monsters** with different behaviors, mechanics
 | `D` | Dragon | 50 | 12 | 7 | 8 | Fire 🔥 | 150 | Fire breath, massive HP |
 | `B` | Balrog | 150 | 18 | 12 | 10 | Fire 🔥 | 500 | **Boss** — regenerates 2 HP/tick when below 150 HP |
 
-## 🏰 The Infinite Abyss (Floors 11+)
-Once past Floor 10, the dungeon loops into the Infinite Abyss where all monster types respawn randomly — including bosses. Allowed types: Wraith, Dragon, Balrog, Beholder, Mind Flayer, and the below:
-
-| Glyph | Name | HP | ATK | DEF | Speed | Element | XP | Special |
-|-------|------|----|-----|-----|-------|---------|----|---------|
-| `O` | Champion Orc | 45 | 10 | 6 | 9 | — | 80 | Abyss-tier elite |
 | `Q` | Cave Champion | 70 | 13 | 8 | 7 | — | 110 | Abyss-tier brute |
+
+## 🛡️ Special Encounter: Elite Vault Guards
+Vicious guards that protect magical vaults in the deep dungeon.
+- **Glyphs**: Varies (Random Elite monster)
+- **Stats**: **3× HP**, **+5 ATK**, **4× XP**
+- These monsters are only found inside the purple-walled **Vaults** starting from Floor 3.
+- They are significantly more dangerous than their floor-appropriate peers.
 
 ---
 
@@ -60,8 +62,17 @@ Any normal monster has a **10% chance** to spawn as a glowing gold **Elite** var
 - 50% chance to drop a **Dungeon Key** (`!`) on death
 - Identified by their golden glow `#f1c40f`
 
-## ⚔️ Monster Scaling
-All monster stats scale with floor depth:
-- HP: `base HP + random(0, floor × 2)`
-- ATK: `base ATK + current floor`
-- Deeper floors unlock progressively stronger monster pools
+## 🧠 AI Personalities & Reputation
+The monsters of Rogue Reborn are not just simple automatons. They adapt based on their specific personality traits and your reputation (kill count) within their species.
+
+| Personality | Effect | Triggers |
+|-------------|--------|----------|
+| **Cowardly** | Shrieks and runs away from the player. | Kill Count ≥ 5 |
+| **Vengeful** | Gains **RAGE! (+2 ATK)** and rushes the player. | Kill Count ≥ 5 |
+| **Stealthy** | Waits motionless in the dark. | Dist > 3, HP Full |
+| **Pack** | Howls to alert all nearby pack members. | HP < 40% |
+| **Fear** | Any monster might panic and flee. | HP < 25% |
+
+- **Species Tracking**: The player's kills are tracked per species (Rat, Goblin, etc.).
+- **Dynamic Barks**: Monsters will shout or howl depending on their state.
+- **Pack Alert**: Alerted pack members will wake from sleep/confusion and move to engage.

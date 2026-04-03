@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Rogue Reborn - Shop, NPC & Modal Systems
  * Extracted from engine.js for modularity.
  * Dependencies: constants.js, items.js, enemies.js (loaded before this)
@@ -46,7 +46,8 @@ window.startGame = function (className) {
     player.nextXp = 50;
 
     player.class = className; // #VIII store class
-    player.killCount = 0;     // track kills for perks
+    player.killCount = 0;     // track total kills for perks
+    player.killsByType = {};  // Phase IV: track kills per species for AI reputation
     player.combatSurgeTimer = 0; // Warrior perk
     player.inventory = [];    // FIX: Clear inventory on start to avoid duplication
     player.equipment = { weapon: null, armor: null, helm: null, ring: null, amulet: null, offhand: null };
@@ -741,9 +742,13 @@ window.renderInventoryModal = function () {
     const slotLabels = { weapon: 'WEAPON', offhand: 'OFFHAND (Shield)', armor: 'ARMOR', helm: 'HELM', ring: 'RING', amulet: 'AMULET' };
     slots.forEach(slot => {
         const item = player.equipment[slot];
-        let h = `<li style="display:flex; justify-content:space-between; margin-bottom: 5px;"><strong>${slotLabels[slot] || slot.toUpperCase()}:</strong> `;
+        let h = `<li style="display:flex; justify-content:space-between; margin-bottom: 5px; align-items: center;"><strong>${slotLabels[slot] || slot.toUpperCase()}:</strong> `;
         if (item) {
-            h += `<span><span style="color:${item.color}">${getItemName(item)}</span> <button class="btn" style="padding:2px 5px; font-size:0.7em" onclick="unequipSlot('${slot}')">Unequip</button></span>`;
+            h += `<span>
+                <span style="color:${item.color}; margin-right: 10px;">${getItemName(item)}</span> 
+                <button class="btn" style="padding:2px 5px; font-size:0.7em; color:#bd93f9; margin-right: 5px;" onclick="openItemModal(player.inventory.indexOf(player.equipment['${slot}'])); closeInventory();">Info</button>
+                <button class="btn" style="padding:2px 5px; font-size:0.7em" onclick="unequipSlot('${slot}')">Unequip</button>
+            </span>`;
         } else {
             h += `<span style="color:#666">Empty</span>`;
         }
@@ -760,9 +765,10 @@ window.renderInventoryModal = function () {
     player.inventory.forEach((item, i) => {
         if (Object.values(player.equipment).includes(item)) return;
 
-        let h = `<li style="display:flex; justify-content:space-between; margin-bottom: 5px;">
-            <span style="color:${item.color}">${getItemName(item)}</span>
+        let h = `<li style="display:flex; justify-content:space-between; margin-bottom: 5px; align-items: center;">
+            <span style="color:${item.color}; cursor:pointer;" title="Click for Info" onclick="openItemModal(${i}); closeInventory();">${getItemName(item)}</span>
             <span>`;
+        h += `<button class="btn" style="padding:2px 5px; font-size:0.7em; margin-right:5px; color:#bd93f9;" onclick="openItemModal(${i}); closeInventory();">Info</button>`;
         if (item.equip) h += `<button class="btn" style="padding:2px 5px; font-size:0.7em; margin-right:5px;" onclick="useItem(${i}); renderInventoryModal();">Equip</button>`;
         else h += `<button class="btn" style="padding:2px 5px; font-size:0.7em; margin-right:5px;" onclick="useItem(${i}); renderInventoryModal();">Use</button>`;
 
@@ -783,6 +789,117 @@ window.unequipSlot = function (slot) {
         if (item.effect === 'esp') player.hasESP = false;
         logMessage(`You unequip ${getItemName(item)}.`, 'magic');
         renderInventoryModal();
+    }
+};
+
+// --- Item Info Modal ---
+let currentItemModalIndex = -1;
+
+window.openItemModal = function (index) {
+    if (index < 0 || index >= player.inventory.length) return;
+    const item = player.inventory[index];
+    if (!item) return;
+
+    currentItemModalIndex = index;
+    gameState = 'ITEM_MODAL';
+
+    document.getElementById('itemModalName').innerText = getItemName(item);
+    document.getElementById('itemModalName').style.color = item.color;
+
+    // Flavor text & Stats
+    let flavor = "A mundane object.";
+    let stats = "";
+
+    if (item.identified || identifiedTypes[item.name]) {
+        if (item.type === 'weapon') flavor = `A deadly ${item.name}.`;
+        if (item.type === 'armor') flavor = `Sturdy protective gear.`;
+        if (item.type === 'potion') flavor = `A magical concoction. Effect: ${(item.effect || '').replace('_', ' ')}.`;
+        if (item.type === 'scroll') flavor = `Ancestral magic inscribed on parchment. Effect: ${item.effect}.`;
+        if (item.type === 'wand') flavor = `A channel completely focused on a specific spell.`;
+        
+        if (item.atkBonus) stats += `ATK ${item.atkBonus > 0 ? '+' : ''}${item.atkBonus} `;
+        if (item.defBonus) stats += `DEF ${item.defBonus > 0 ? '+' : ''}${item.defBonus} `;
+        if (item.speedBonus) stats += `SPD ${item.speedBonus > 0 ? '+' : ''}${item.speedBonus} `;
+        if (item.speedPenalty) stats += `SPD -${item.speedPenalty} `;
+        if (item.charges !== undefined) stats += `Charges: ${item.charges} `;
+        if (item.range) stats += `Range: ${item.range} `;
+    } else {
+        if (['weapon', 'armor', 'helm', 'ring', 'amulet', 'shield'].includes(item.type)) {
+            flavor = `An unidentified piece of equipment. You must equip it or use a Scroll of Identify to reveal its properties.`;
+        } else {
+            flavor = `An unknown ${item.type}. Quaffing or reading it might be dangerous.`;
+        }
+        stats = "Stats: ???";
+    }
+
+    document.getElementById('itemModalFlavor').innerText = flavor;
+    document.getElementById('itemModalStats').innerText = stats || "No additional stats.";
+
+    // Gut feeling
+    const feelingEl = document.getElementById('itemModalFeeling');
+    if (!item.identified && item.gutFeeling) {
+        feelingEl.style.display = 'block';
+        feelingEl.innerText = item.gutFeeling;
+    } else {
+        feelingEl.style.display = 'none';
+        feelingEl.innerText = "";
+    }
+
+    // Buttons
+    const btnID = document.getElementById('btnItemIdentify');
+    if (item.identified || identifiedTypes[item.name]) {
+        btnID.style.display = 'none';
+    } else {
+        btnID.style.display = 'inline-block';
+        if (item.idAttemptedAtLevel && item.idAttemptedAtLevel >= player.level) {
+            btnID.disabled = true;
+            btnID.innerText = "Too complex (Level up to retry)";
+            btnID.style.opacity = '0.5';
+        } else {
+            btnID.disabled = false;
+            btnID.innerText = "Try to Identify";
+            btnID.style.opacity = '1';
+        }
+    }
+
+    let isEquir = Object.values(player.equipment).includes(item);
+    document.getElementById('btnItemUse').innerText = isEquir ? 'Unequip' : (item.equip ? 'Equip' : 'Use');
+
+    document.getElementById('itemModal').classList.add('active');
+};
+
+window.closeItemModal = function () {
+    gameState = 'PLAYING';
+    document.getElementById('itemModal').classList.remove('active');
+    currentItemModalIndex = -1;
+    updateUI();
+};
+
+window.modalUseItem = function () {
+    if (currentItemModalIndex >= 0) {
+        let idx = currentItemModalIndex;
+        closeItemModal(); // Need to close first so gameState allows useItem
+        useItem(idx);
+    }
+};
+
+window.modalDropItem = function () {
+    if (currentItemModalIndex >= 0) {
+        let idx = currentItemModalIndex;
+        closeItemModal();
+        dropItem(idx);
+    }
+};
+
+window.modalIdentifyItem = function () {
+    if (currentItemModalIndex >= 0) {
+        if (typeof attemptIdentify === 'function') {
+            attemptIdentify(currentItemModalIndex);
+            // Refresh modal directly
+            openItemModal(currentItemModalIndex);
+        } else {
+            logMessage("Identify mechanic missing!", "damage");
+        }
     }
 };
 

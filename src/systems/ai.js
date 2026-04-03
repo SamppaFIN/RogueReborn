@@ -171,6 +171,74 @@ function processMonsterAI(e) {
         return;
     }
 
+    // Phase IV: AI Personalities & Reputation
+    let baseName = e.name.replace('Elite ', '').replace('Mini-Boss ', '');
+    let kills = (player.killsByType && player.killsByType[baseName]) ? player.killsByType[baseName] : 0;
+    
+    // Attempt to get personality
+    let template = typeof ENEMY_TYPES !== 'undefined' ? ENEMY_TYPES.find(t => t.name === baseName) : null;
+    let pers = e.personality || (template && template.personality) || null;
+
+    if (pers && map[e.x] && map[e.x][e.y] && map[e.x][e.y].visible) {
+        if (!e.chattedTimer) e.chattedTimer = 0;
+        if (e.chattedTimer > 0) e.chattedTimer--;
+
+        // Cowardly: Run away if kills >= 5
+        if (pers === 'cowardly' && kills >= 5) {
+            if (e.chattedTimer === 0 && Math.random() < 0.2) {
+                logMessage(`${e.name} shrieks: "The madman is here! RUN!"`, 'damage');
+                e.chattedTimer = 30; // Rate limit barks
+            }
+            if (dist <= 6) {
+                let mdx = Math.sign(e.x - player.x), mdy = Math.sign(e.y - player.y);
+                if (mdx === 0 && mdy === 0) mdx = 1;
+                attemptAction(e, { type: 'move', dx: mdx, dy: mdy });
+                return;
+            }
+        }
+        
+        // Vengeful: Get +2 ATK buff and rush if kills >= 5
+        if (pers === 'vengeful' && kills >= 5 && !e.surged) {
+            if (e.chattedTimer === 0) {
+                logMessage(`${e.name} roars: "For our fallen brothers! DIE!"`, 'damage');
+                e.chattedTimer = 100;
+            }
+            e.atk += 2;
+            e.surged = true;
+            spawnParticle(e.x, e.y, 'RAGE!', '#e74c3c');
+            // Continues to attack naturally
+        }
+
+        // Stealthy: Wait in darkness if distance > 3
+        if (pers === 'stealthy' && dist > 3 && e.hp === e.maxHp) {
+            if (e.chattedTimer === 0 && Math.random() < 0.05) {
+                logMessage(`You hear whispers in the dark...`, 'hint');
+                e.chattedTimer = 40;
+            }
+            attemptAction(e, { type: 'wait' });
+            return;
+        }
+
+        // Pack: Call for help if HP < 40%
+        if (pers === 'pack' && e.hp < e.maxHp * 0.4 && !e.hasHowled) {
+            logMessage(`${e.name} howls for the pack!`, 'damage');
+            e.hasHowled = true;
+            spawnParticle(e.x, e.y, 'AWOO!', '#3498db');
+            
+            // Wake/Alert other pack members within radius 10
+            entities.forEach(other => {
+                if (!other.isPlayer && other.hp > 0 && Math.abs(other.x - e.x) + Math.abs(other.y - e.y) < 10) {
+                    let oBase = other.name.replace('Elite ', '').replace('Mini-Boss ', '');
+                    let oTemp = typeof ENEMY_TYPES !== 'undefined' ? ENEMY_TYPES.find(t => t.name === oBase) : null;
+                    if (oTemp && oTemp.personality === 'pack' && other !== e) {
+                        other.confusedTimer = 0; // Snap out of confusion/sleep
+                        spawnParticle(other.x, other.y, '!', '#e74c3c');
+                    }
+                }
+            });
+        }
+    }
+
     // #54 Fear â€” flee behaviour for wounded monsters
     if (e.hp < e.maxHp * 0.25 && Math.random() < 0.5) {
         // Move AWAY from player

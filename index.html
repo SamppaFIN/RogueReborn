@@ -597,6 +597,29 @@
         </div>
     </div>
 
+    <!-- Item Info Modal -->
+    <div id="itemModal" class="modal">
+        <div class="modal-content" style="width: 450px; position: relative;">
+            <button onclick="closeItemModal()"
+                style="position: absolute; top: 10px; right: 10px; background: transparent; border: none; color: #66fcf1; font-size: 1.5rem; cursor: pointer;">&times;</button>
+            <h2 id="itemModalName" style="color: #bd93f9; text-shadow: 0 0 20px rgba(189, 147, 249, 0.5); font-size: 2rem;">Item Name</h2>
+            
+            <div style="border: 1px solid #1f2833; padding: 15px; margin: 20px 0; background: #0b0c10; text-align: left;">
+                <p id="itemModalFlavor" style="color: #c5c6c7; font-style: italic; margin-bottom: 10px;">"A strange object..."</p>
+                <p id="itemModalFeeling" style="color: #e67e22; font-weight: bold; margin-bottom: 10px; display: none;">You get a strange feeling about this...</p>
+                <p id="itemModalStats" style="color: #2ecc71; margin-bottom: 0;">Stats go here.</p>
+            </div>
+
+            <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;" id="itemModalActions">
+                <button class="btn" id="btnItemUse" onclick="modalUseItem()">Use / Equip</button>
+                <button class="btn" id="btnItemDrop" onclick="modalDropItem()">Drop</button>
+                <button class="btn" id="btnItemIdentify" onclick="modalIdentifyItem()">Try Identify</button>
+            </div>
+
+            <button class="btn" style="margin-top: 20px; width: 100%; border-color: #1f2833; color: #888;" onclick="closeItemModal()">Close [Esc]</button>
+        </div>
+    </div>
+
     <!-- Guildhall Modal -->
     <div id="guildhallModal" class="modal">
         <div class="modal-content" style="width: 600px; position: relative;">
@@ -693,6 +716,7 @@
     <script src="src/ui/shops.js?v=2"></script>
     <script src="src/ui/renderer.js?v=1"></script>
     <script src="src/systems/combat.js?v=2"></script>
+    <script src="src/systems/skills.js?v=1"></script>
     <script src="src/systems/ai.js?v=2"></script>
     <script src="src/world/generation.js?v=2"></script>
     <script src="engine.js?v=10"></script>

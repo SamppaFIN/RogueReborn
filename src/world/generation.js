@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Rogue Reborn - World Generation (Town + Dungeon)
  * Extracted from engine.js for modularity.
  * Dependencies: constants.js, items.js, enemies.js, Entity class
@@ -19,16 +19,17 @@ function initMap() {
 function generateTown() {
     initMap();
     logMessage("You rise in the safety of the Town.", 'magic');
-    const townRect = new Rect(10, 10, MAP_WIDTH - 20, MAP_HEIGHT - 20);
+    const townRect = new Rect(4, 4, MAP_WIDTH - 8, MAP_HEIGHT - 8);
 
     for (let x = 0; x < MAP_WIDTH; x++) {
         for (let y = 0; y < MAP_HEIGHT; y++) {
             if (x >= townRect.x && x < townRect.x + townRect.w && y >= townRect.y && y < townRect.y + townRect.h) {
                 map[x][y].type = 'floor';
-                map[x][y].char = CHARS.FLOOR;
+                map[x][y].char = CHARS.FLOOR; // e.g. '.'
                 map[x][y].isTown = true;
                 map[x][y].color = timeOfDay === 'Day' ? COLORS.TOWN_FLOOR : '#2c1e14';
             } else {
+                map[x][y].type = 'wall';
                 map[x][y].isTown = true;
                 map[x][y].color = timeOfDay === 'Day' ? COLORS.TOWN_WALL : '#4a321d';
             }
@@ -54,107 +55,84 @@ function generateTown() {
     }
 
     // Place stairs down
-    map[c.x + 5][c.y].type = 'stairs_down';
-    map[c.x + 5][c.y].char = CHARS.STAIRS_DOWN;
+    map[c.x][c.y + 2].type = 'stairs_down';
+    map[c.x][c.y + 2].char = CHARS.STAIRS_DOWN;
 
-    // Place shop
-    map[c.x - 5][c.y].type = 'shop';
-    map[c.x - 5][c.y].char = 'S';
-    map[c.x - 5][c.y].color = COLORS.GOLD;
-    map[c.x - 5][c.y].isTown = true;
+    // Helper function for houses
+    const buildHouse = (hx, hy, w, h, type, char, color) => {
+        for (let x = hx; x < hx + w; x++) {
+            for (let y = hy; y < hy + h; y++) {
+                if (map[x] && map[x][y]) {
+                    map[x][y].type = 'wall';
+                    // Solid block for house. TomeNET uses walls like '#'
+                    map[x][y].char = '#'; 
+                    map[x][y].color = timeOfDay === 'Day' ? '#8B4513' : '#4a250a'; 
+                    map[x][y].isTown = true;
+                    map[x][y].hp = 999; // Indestructible town walls
+                }
+            }
+        }
+        let dx = hx + Math.floor(w / 2);
+        let dy = hy + h - 1; // bottom edge
+        if (map[dx] && map[dx][dy]) {
+            map[dx][dy].type = type;
+            map[dx][dy].char = char;
+            map[dx][dy].color = color;
+            map[dx][dy].isTown = true;
+        }
+    };
 
-    // Place Healer (Innkeeper)
-    map[c.x][c.y - 5].type = 'healer';
-    map[c.x][c.y - 5].char = 'H';
-    map[c.x][c.y - 5].color = '#e74c3c';
-    map[c.x][c.y - 5].isTown = true;
+    // Place houses!
+    // Top Row
+    buildHouse(c.x - 17, c.y - 12, 6, 5, 'shop', '1', COLORS.GOLD);
+    buildHouse(c.x - 8,  c.y - 12, 6, 5, 'healer', '4', '#e74c3c');
+    buildHouse(c.x + 2,  c.y - 12, 6, 5, 'wizard', '6', '#9b59b6');
+    buildHouse(c.x + 11, c.y - 12, 6, 5, 'blacksmith', '3', '#7f8c8d');
 
-    // Place Blacksmith
-    map[c.x + 3][c.y + 4].type = 'blacksmith';
-    map[c.x + 3][c.y + 4].char = 'B';
-    map[c.x + 3][c.y + 4].color = '#7f8c8d';
-    map[c.x + 3][c.y + 4].isTown = true;
+    // Middle Row
+    buildHouse(c.x - 22, c.y - 3, 5, 5, 'alchemist', '5', '#2ecc71');
+    buildHouse(c.x + 17, c.y - 3, 5, 5, 'bank', '8', '#2ecc71');
 
-    // Place Wizard's Tower
-    map[c.x - 4][c.y - 4].type = 'wizard';
-    map[c.x - 4][c.y - 4].char = 'W';
-    map[c.x - 4][c.y - 4].color = '#9b59b6';
-    map[c.x - 4][c.y - 4].isTown = true;
+    // Bottom Row
+    buildHouse(c.x - 17, c.y + 6, 6, 5, 'trainer', 'T', '#f39c12');
+    buildHouse(c.x - 8,  c.y + 6, 6, 5, 'guildhall', '{', '#bdc3c7');
+    buildHouse(c.x + 2,  c.y + 6, 6, 5, 'mayor', 'M', '#f1c40f');
+    buildHouse(c.x + 11, c.y + 6, 6, 5, 'stash', '[', '#e67e22');
 
-    // Place Bank
-    map[c.x + 5][c.y - 3].type = 'bank';
-    map[c.x + 5][c.y - 3].char = 'Â£';
-    map[c.x + 5][c.y - 3].color = '#2ecc71';
-    map[c.x + 5][c.y - 3].isTown = true;
-
-    // Place Mayor
-    map[c.x][c.y + 4].type = 'mayor';
-    map[c.x][c.y + 4].char = '6';
-    map[c.x][c.y + 4].color = '#f1c40f';
-    map[c.x][c.y + 4].isTown = true;
-
-    // Place Gambler (Night only)
+    // Extremes
+    buildHouse(c.x - 26, c.y + 6, 5, 5, 'cartographer', 'C', '#3498db');
     if (timeOfDay === 'Night') {
-        map[c.x + 6][c.y - 6].type = 'gambler';
-        map[c.x + 6][c.y - 6].char = '7';
-        map[c.x + 6][c.y - 6].color = '#95a5a6';
-        map[c.x + 6][c.y - 6].isTown = true;
+        buildHouse(c.x + 21, c.y + 6, 5, 5, 'gambler', '7', '#95a5a6');
     }
 
-    // Phase II - New NPCs
-
-    // Place Alchemist (Top Right)
-    map[c.x + 6][c.y - 4].type = 'alchemist';
-    map[c.x + 6][c.y - 4].char = 'A';
-    map[c.x + 6][c.y - 4].color = '#2ecc71';
-    map[c.x + 6][c.y - 4].isTown = true;
-
-    // Place Class Trainer (Top Left)
-    map[c.x - 6][c.y - 3].type = 'trainer';
-    map[c.x - 6][c.y - 3].char = 'T';
-    map[c.x - 6][c.y - 3].color = '#f39c12';
-    map[c.x - 6][c.y - 3].isTown = true;
-
-    // Place Cartographer (Near Stairs)
-    map[c.x + 3][c.y + 1].type = 'cartographer';
-    map[c.x + 3][c.y + 1].char = 'C';
-    map[c.x + 3][c.y + 1].color = '#3498db';
-    map[c.x + 3][c.y + 1].isTown = true;
-
-    // Place Guildhall (Bottom Left)
-    map[c.x - 5][c.y + 3].type = 'guildhall';
-    map[c.x - 5][c.y + 3].char = '{';
-    map[c.x - 5][c.y + 3].color = '#bdc3c7';
-    map[c.x - 5][c.y + 3].isTown = true;
-
-    // Place Stash (Next to Bank)
-    map[c.x + 6][c.y - 3].type = 'stash';
-    map[c.x + 6][c.y - 3].char = '[';
-    map[c.x + 6][c.y - 3].color = '#e67e22';
-    map[c.x + 6][c.y - 3].isTown = true;
-
     // Place Town Well
-    map[c.x - 3][c.y + 5].type = 'well';
-    map[c.x - 3][c.y + 5].char = 'O';
-    map[c.x - 3][c.y + 5].color = '#3498db';
-    map[c.x - 3][c.y + 5].isTown = true;
+    map[c.x][c.y - 2].type = 'well';
+    map[c.x][c.y - 2].char = 'O';
+    map[c.x][c.y - 2].color = '#3498db';
+    map[c.x][c.y - 2].isTown = true;
 
     // Place Beggars/Villagers (Dynamic entities)
-    for (let i = 0; i < 4; i++) {
-        let vx, vy;
+    for (let i = 0; i < 6; i++) {
+        let vx, vy, tries = 0;
         do {
-            vx = c.x + Math.floor(Math.random() * 14) - 7;
-            vy = c.y + Math.floor(Math.random() * 14) - 7;
-        } while (map[vx][vy].type !== 'floor' || getEntityAt(vx, vy));
-        let type = Math.random() < 0.3 ? 'beggar' : 'villager';
-        let npc = new Entity(vx, vy, type === 'beggar' ? 'p' : 'v', type === 'beggar' ? '#888' : '#ecf0f1', type === 'beggar' ? 'Beggar' : 'Villager', 10, 0, 0, 5);
-        npc.isTownNPC = true;
-        npc.npcType = type;
-        entities.push(npc);
+            vx = c.x + Math.floor(Math.random() * 30) - 15;
+            vy = c.y + Math.floor(Math.random() * 20) - 10;
+            tries++;
+        } while (tries < 100 && (vx < 0 || vx >= MAP_WIDTH || vy < 0 || vy >= MAP_HEIGHT || map[vx][vy].type !== 'floor' || getEntityAt(vx, vy)));
+        if (tries < 100) {
+            let type = Math.random() < 0.3 ? 'beggar' : 'villager';
+            let charC = type === 'beggar' ? 'p' : 'v';
+            let colorC = type === 'beggar' ? '#888' : '#ecf0f1';
+            let nameC = type === 'beggar' ? 'Beggar' : 'Villager';
+            let npc = new Entity(vx, vy, charC, colorC, nameC, 10, 0, 0, 5);
+            npc.isTownNPC = true;
+            npc.npcType = type;
+            entities.push(npc);
+        }
     }
 
     // Local flavor log
-    logMessage("Town Services: Shop(S), Healer(H), Blacksmith(B), Wizard(W), Bank(Â£)", "hint");
+    logMessage("Town Services: 1:Shop, 3:Blacksmith, 4:Healer, 5:Alchemist, 6:Wizard", "hint");
 
     // Pre-explore town
     for (let x = 0; x < MAP_WIDTH; x++) {
@@ -223,7 +201,85 @@ function generateDungeon() {
             map[last.x][last.y].char = CHARS.STAIRS_DOWN;
         }
 
-        // Phase IV â€” Dungeon Hazards
+        // Vault Generation (Erikoiskaupat)
+        if (currentFloor >= 3 && Math.random() < 0.35 && rooms.length > 3) {
+            let vIndex = 1 + Math.floor(Math.random() * (rooms.length - 2));
+            let vRoom = rooms[vIndex];
+            
+            // Turn it into a vault
+            for (let x = vRoom.x; x < vRoom.x + vRoom.w; x++) {
+                for (let y = vRoom.y; y < vRoom.y + vRoom.h; y++) {
+                    map[x][y].type = 'wall';
+                    map[x][y].char = '%'; // Vault wall
+                    map[x][y].color = '#8e44ad'; // Purple wall indicating magic vault
+                    map[x][y].hp = 100; // Hard to tunnel
+                }
+            }
+            // Hollow out the center
+            for (let x = vRoom.x + 1; x < vRoom.x + vRoom.w - 1; x++) {
+                for (let y = vRoom.y + 1; y < vRoom.y + vRoom.h - 1; y++) {
+                    map[x][y].type = 'floor';
+                    map[x][y].char = CHARS.FLOOR;
+                }
+            }
+            
+            // Door at the center bottom edge
+            let dx = vRoom.center().x;
+            let dy = vRoom.y + vRoom.h - 1;
+            map[dx][dy].type = 'locked_door';
+            map[dx][dy].char = '+';
+            map[dx][dy].color = '#d4ac0d';
+
+            // Ensure cell below door is floor for connectivity
+            if (map[dx][dy+1] && map[dx][dy+1].type === 'wall') {
+                map[dx][dy+1].type = 'floor';
+                map[dx][dy+1].char = CHARS.FLOOR;
+            }
+
+            // Spawn Merchant inside
+            const vc = vRoom.center();
+            entities = entities.filter(e => e.x !== vc.x || e.y !== vc.y);
+            
+            if (Math.random() < 0.5) {
+                const merch = new Entity(vc.x, vc.y, 'g', '#f1c40f', 'Dungeon Merchant', 1, 0, 0, 0);
+                merch.isMerchant = true; merch.isPlayer = false;
+                merch.blocksMovement = false; merch.energy = 0;
+                entities.push(merch);
+            } else {
+                map[vc.x][vc.y].type = 'gambler';
+                map[vc.x][vc.y].char = '7';
+                map[vc.x][vc.y].color = '#95a5a6';
+            }
+
+            // Spawn Vault Guards (elite enemies guarding the vault)
+            if (typeof ENEMY_TYPES !== 'undefined') {
+                let guardCount = 2 + Math.floor(Math.random() * 2); // 2 or 3 guards
+                for (let i = 0; i < guardCount; i++) {
+                    let gx = vRoom.x + 1 + Math.floor(Math.random() * (vRoom.w - 2));
+                    let gy = vRoom.y + 1 + Math.floor(Math.random() * (vRoom.h - 2));
+                    if ((gx !== vc.x || gy !== vc.y) && map[gx][gy].type === 'floor') {
+                        let validEnemies = ENEMY_TYPES.filter(e => currentFloor + 5 >= e.minFloor);
+                        if (validEnemies.length > 0) {
+                            let eTemplate = validEnemies[Math.floor(Math.random() * validEnemies.length)];
+                            let guard = new Entity(gx, gy, eTemplate.char, eTemplate.color, "Elite " + eTemplate.name, Math.floor(eTemplate.hp * 3), eTemplate.atk + 5, eTemplate.def + 3, eTemplate.speed + 1);
+                            guard.isElite = true;
+                            guard.baseXP = (eTemplate.baseXP || 5) * 4;
+                            entities.push(guard);
+                        }
+                    }
+                }
+            }
+            
+            // Scatter a key in the dungeon to open the vault
+            let kx, ky, tries = 0;
+            do { kx = Math.floor(Math.random() * MAP_WIDTH); ky = Math.floor(Math.random() * MAP_HEIGHT); tries++; }
+            while (tries < 60 && map[kx][ky].type !== 'floor');
+            if (tries < 60) items.push({ x: kx, y: ky, ...ITEM_DB.find(i => i.name === 'Dungeon Key') });
+
+            logMessage("You feel a strange magical presence...", "magic");
+        }
+
+        // Phase IV - Dungeon Hazards
         generateHazards(rooms);
 
         // Connectivity Check

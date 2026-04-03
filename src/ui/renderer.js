@@ -56,6 +56,12 @@ function updateUI() {
         if (player.paralyzedTimer > 0) statuses.push(`<span style="color:#e0c080">🔒 PARALYZED(${player.paralyzedTimer})</span>`);
         if (player.combatSurgeTimer > 0) statuses.push(`<span style="color:#f1c40f">⚡ SURGE(${player.combatSurgeTimer})</span>`);
         if (player.regenBoost > 0) statuses.push(`<span style="color:#2ecc71">♥ REGEN(${player.regenBoost})</span>`);
+        
+        // Phase V: Q Skill Cooldown tracking
+        let skillName = (player.class === 'Warrior') ? 'Cleave' : (player.class === 'Rogue') ? 'Dash' : 'Fireball';
+        let skillReady = (player.skillCooldown && player.skillCooldown > 0) ? `<span style="color:#e74c3c">Cd: ${player.skillCooldown}</span>` : `<span style="color:#66fcf1">Rdy</span>`;
+        statuses.push(`<span style="color:#bd93f9; border: 1px solid #333; padding: 2px;">[Q] ${skillName} (${skillReady})</span>`);
+
         statusEl.innerHTML = statuses.join(' ') || '';
     }
 
@@ -80,7 +86,7 @@ function updateUI() {
     for (let i = 0; i < 9; i++) {
         const item = player.inventory[i];
         let h = `<li style="display:flex; justify-content:space-between; align-items:center; cursor:${item ? 'pointer' : 'default'}">`;
-        h += `<span onclick="if(gameState==='PLAYING' && ${item ? 'true' : 'false'}) useItem(${i})" style="flex-grow:1; display:flex; align-items:center;">`;
+        h += `<span onclick="if(gameState==='PLAYING' && ${item ? 'true' : 'false'}) openItemModal(${i})" style="flex-grow:1; display:flex; align-items:center;">`;
         h += `<span class="inv-key" style="margin-right:5px">[${i + 1}]</span> <span class="inv-item" style="color:${item ? item.color : 'inherit'}">`;
 
         if (item) {
@@ -207,11 +213,28 @@ function render() {
     });
 
     // Draw Targeting Reticle
-    if (gameState === 'TARGETING') {
+    if (gameState === 'TARGETING' || gameState === 'RANGED_TARGETING') {
         ctx.fillStyle = 'rgba(231, 76, 60, 0.4)';
-        ctx.fillRect(offsetX + targetX * TILE_SIZE, offsetY + targetY * TILE_SIZE - TILE_SIZE * 0.8, TILE_SIZE, TILE_SIZE);
+        let rx = targetX;
+        let ry = targetY;
+        let sw = TILE_SIZE;
+        let sh = TILE_SIZE;
+        
+        let area = 0;
+        if (typeof activeSpell !== 'undefined' && gameState === 'TARGETING') {
+            if (activeSpell === 'fireball_skill' || activeSpell === 'frost') area = 1;
+        }
+        
+        if (area > 0) {
+            rx -= area;
+            ry -= area;
+            sw += area * 2 * TILE_SIZE;
+            sh += area * 2 * TILE_SIZE;
+        }
+
+        ctx.fillRect(offsetX + rx * TILE_SIZE, offsetY + ry * TILE_SIZE - TILE_SIZE * 0.8, sw, sh);
         ctx.strokeStyle = '#e74c3c';
-        ctx.strokeRect(offsetX + targetX * TILE_SIZE, offsetY + targetY * TILE_SIZE - TILE_SIZE * 0.8, TILE_SIZE, TILE_SIZE);
+        ctx.strokeRect(offsetX + rx * TILE_SIZE, offsetY + ry * TILE_SIZE - TILE_SIZE * 0.8, sw, sh);
 
         ctx.beginPath();
         ctx.moveTo(offsetX + player.x * TILE_SIZE + TILE_SIZE / 2, offsetY + player.y * TILE_SIZE - TILE_SIZE / 2);

@@ -151,9 +151,13 @@ function spawnRandomItem(room) {
 function spawnRandomItemAt(x, y) {
     const r = Math.random();
     if (r < 0.3) {
-        items.push({ x, y, type: 'gold', char: CHARS.GOLD, color: COLORS.GOLD, name: 'Gold Pile', amount: Math.floor(Math.random() * 20) + 10 });
+        let goldItem = { x, y, type: 'gold', char: CHARS.GOLD, color: COLORS.GOLD, name: 'Gold Pile', amount: Math.floor(Math.random() * 20) + 10 };
+        if ((currentFloor || 0) >= 3 && Math.random() < 0.02) goldItem.isMimic = true;
+        items.push(goldItem);
     } else {
-        if (Math.random() < 0.01) {
+        // Artifact drop chance scales with depth -> 0.005 + (currentFloor * 0.002) (e.g. at Floor 10 = 2.5%, Floor 20 = 4.5%)
+        let artChance = 0.005 + ((currentFloor || 0) * 0.002);
+        if (Math.random() < artChance) {
             const artifacts = ITEM_DB.filter(i => i.artifact && currentFloor >= i.minFloor);
             if (artifacts.length > 0) {
                 const art = { ...artifacts[Math.floor(Math.random() * artifacts.length)] };
@@ -182,6 +186,7 @@ function spawnRandomItemAt(x, y) {
                     }
                 }
             }
+            if ((currentFloor || 0) >= 3 && Math.random() < 0.02) instance.isMimic = true;
             spawnItem(x, y, instance);
         }
     }
@@ -240,6 +245,7 @@ function gameLoop(timestamp) {
                 if (player.blindTimer > 0) { player.blindTimer--; if (player.blindTimer === 0) logMessage("Your vision returns.", "magic"); }
                 if (player.combatSurgeTimer > 0) { player.combatSurgeTimer--; if (player.combatSurgeTimer === 0) logMessage('Combat Surge fades.', 'hint'); }
                 if (player.regenBoost > 0) { player.regenBoost--; player.hp = Math.min(player.maxHp, player.hp + 1); }
+                if (player.skillCooldown > 0) player.skillCooldown--;
 
                 // Passive HP Regen
                 if (player.hp < player.maxHp && (!player.poisonTimer || player.poisonTimer <= 0)) {
@@ -282,6 +288,22 @@ function gameLoop(timestamp) {
                     attemptAction(player, act);
                     playerActed = true;
                     computeFOV();
+
+                    // Phase III: Item Gut Feelings
+                    for (let i = 0; i < player.inventory.length; i++) {
+                        let itm = player.inventory[i];
+                        if (!itm.identified) {
+                            itm.carryTurns = (itm.carryTurns || 0) + 1;
+                            if (itm.carryTurns === 50 && !itm.gutFeeling) {
+                                if (itm.cursed) itm.gutFeeling = "You feel a sinister, cold aura from this...";
+                                else if (itm.blessed) itm.gutFeeling = "This item exudes an aura of safety and warmth.";
+                                else if (itm.artifact) itm.gutFeeling = "This object throbs with ancient, tremendous power.";
+                                else if (itm.type === 'potion' || itm.type === 'scroll') itm.gutFeeling = "You sense latent magic within.";
+                                else itm.gutFeeling = "It feels completely mundane.";
+                                logMessage(`You get a feeling about the ${itm.name}...`, 'hint');
+                            }
+                        }
+                    }
                 }
             } else {
                 player.energy += (player.isPlayer ? getEffectiveSpeed() : player.speed);

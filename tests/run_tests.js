@@ -95,7 +95,9 @@ function loadGameContext() {
     const files = [
         'src/data/constants.js',
         'src/data/enemies.js',
-        'src/data/items.js'
+        'src/data/items.js',
+        'src/systems/combat.js',
+        'src/systems/ai.js'
     ];
 
     const root = path.resolve(__dirname, '..');
@@ -119,7 +121,26 @@ function loadGameContext() {
         if (file.includes('items.js')) {
             context.ITEM_DB = vm.runInContext('ITEM_DB', context);
         }
+        if (file.includes('combat.js')) {
+            context.Entity = vm.runInContext('Entity', context);
+            context.getEntityAt = vm.runInContext('getEntityAt', context);
+            context.attemptAction = vm.runInContext('attemptAction', context);
+        }
+        if (file.includes('ai.js')) {
+            context.processMonsterAI = vm.runInContext('processMonsterAI', context);
+        }
     }
+
+    // Initialize required global state for AI
+    context.entities = [];
+    context.map = Array(context.MAP_WIDTH).fill(0).map(() => Array(context.MAP_HEIGHT).fill(0).map(() => ({ type: 'floor', visible: true, explored: true })));
+    context.player = { x: 10, y: 10, hp: 100, maxHp: 100, killsByType: {}, isPlayer: true, name: 'Hero' };
+    context.logMessage = () => {};
+    context.spawnParticle = () => {};
+    context.visibleMonsters = new Set();
+    context.isAutoRunning = false;
+    context.activePath = null;
+    context.isAutoExploring = false;
 
     return context;
 }
@@ -134,7 +155,8 @@ const ctx = loadGameContext();
 const testFiles = [
     'tests/test_data.js',
     'tests/test_combat.js',
-    'tests/test_world.js'
+    'tests/test_world.js',
+    'tests/test_ai.js'
 ];
 
 const root = path.resolve(__dirname, '..');

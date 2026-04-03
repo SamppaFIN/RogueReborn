@@ -19,7 +19,7 @@ const ITEM_DB = [
 
     // ─── Scrolls ───
     { type: 'scroll', char: CHARS.SCROLL, color: '#e74c3c', name: 'Scroll of Confusion', effect: 'confuse_monster', minFloor: 3, cost: 60 },
-    { type: 'scroll', char: CHARS.SCROLL, color: COLORS.SCROLL, name: 'Word of Recall', effect: 'recall', minFloor: 1, cost: 50 },
+    { type: 'scroll', char: CHARS.SCROLL, color: COLORS.SCROLL, name: 'Word of Recall', effect: 'recall', minFloor: 1, cost: 250 },
     { type: 'scroll', char: CHARS.SCROLL, color: COLORS.SCROLL, name: 'Scroll of Identify', effect: 'identify', minFloor: 1, cost: 30 },
     { type: 'scroll', char: CHARS.SCROLL, color: COLORS.SCROLL, name: 'Scroll of Remove Curse', effect: 'uncurse', minFloor: 2, cost: 40 },
     { type: 'scroll', char: CHARS.SCROLL, color: COLORS.SCROLL, name: 'Scroll of Summon Monster', effect: 'summon', minFloor: 2, cost: 5 },
@@ -57,6 +57,7 @@ const ITEM_DB = [
     // ─── Amulets ───
     { type: 'amulet', char: '"', color: '#2ecc71', name: 'Amulet of Regeneration', effect: 'regeneration', equip: true, minFloor: 4, cost: 300 },
     { type: 'amulet', char: '"', color: '#e67e22', name: 'Amulet of Strength', effect: 'strength', equip: true, minFloor: 3, cost: 350 },
+    { type: 'amulet', char: '"', color: '#e74c3c', name: 'Amulet of Thorns', effect: 'thorns', equip: true, minFloor: 4, cost: 400 },
 
     // ─── Weapons ───
     { type: 'weapon', char: '|', color: '#bdc3c7', name: 'Dagger', effect: 'weapon', equip: true, atkBonus: 1, minFloor: 1, cost: 10 },
@@ -78,6 +79,9 @@ const ITEM_DB = [
     { type: 'weapon', char: '|', color: '#f1c40f', name: 'Sting', effect: 'weapon', equip: true, atkBonus: 8, artifact: true, identified: true, minFloor: 4, cost: 2000 },
     { type: 'weapon', char: '|', color: '#e74c3c', name: 'Glamdring', effect: 'weapon', equip: true, atkBonus: 12, artifact: true, identified: true, element: 'fire', minFloor: 7, cost: 5000 },
     { type: 'weapon', char: '|', color: '#66fcf1', name: 'Anduril', effect: 'weapon', equip: true, atkBonus: 15, artifact: true, identified: true, minFloor: 9, cost: 8000 },
+    { type: 'weapon', char: '|', color: '#3498db', name: 'Ringil', effect: 'weapon', equip: true, atkBonus: 18, speedBonus: 3, artifact: true, identified: true, element: 'ice', minFloor: 12, cost: 12000 },
+    { type: 'weapon', char: '/', color: '#bdc3c7', name: 'Aeglos', effect: 'weapon', equip: true, atkBonus: 14, reach: 2, artifact: true, identified: true, minFloor: 10, cost: 9500 },
+    { type: 'helm', char: CHARS.HELM, color: '#f1c40f', name: 'Crown of Kings', effect: 'helm', equip: true, defBonus: 6, artifact: true, identified: true, minFloor: 11, cost: 7500 },
 
     // ─── Ammo ───
     { type: 'ammo', char: '-', color: '#95a5a6', name: 'Bundle of Arrows', effect: 'ammo', amount: 20, minFloor: 1, cost: 20 },

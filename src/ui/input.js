@@ -216,6 +216,15 @@ window.addEventListener('keydown', e => {
         return;
     }
 
+    if (e.key === 'q' || e.key === 'Q') {
+        if (gameState === 'PLAYING') {
+            if (typeof useClassSkill === 'function') {
+                useClassSkill();
+            }
+        }
+        return;
+    }
+
     if (e.key === 'f' || e.key === 'F') {
         if (gameState === 'PLAYING') {
             const wepEffect = player.equipment.weapon?.effect;
@@ -227,16 +236,18 @@ window.addEventListener('keydown', e => {
                 logMessage(wepEffect === 'crossbow' ? "Out of bolts!" : "Out of arrows!", "damage");
                 return;
             }
-            gameState = 'RANGED_TARGETING';
-            targetX = player.x;
-            targetY = player.y;
             const nearest = getNearestMonster(player.x, player.y);
-            if (nearest) {
+            if (nearest && !e.shiftKey) {
                 targetX = nearest.x;
                 targetY = nearest.y;
+                executeRangedAttack(); // Instant Auto-fire
+            } else {
+                gameState = 'RANGED_TARGETING';
+                targetX = nearest ? nearest.x : player.x;
+                targetY = nearest ? nearest.y : player.y;
+                logMessage("Targeting... (f to fire)", "hint");
+                render();
             }
-            logMessage("Targeting... (f to fire)", "hint");
-            render();
         }
         return;
     }
@@ -501,6 +512,17 @@ function getPendingAction() {
 // --- Spell Targeting ---
 function executeTargetSpell() {
     gameState = 'PLAYING';
+    
+    // Phase V: Class Skills routing
+    if (activeSpell === 'dash_skill') {
+        if (typeof executeDash === 'function') executeDash(targetX, targetY);
+        return;
+    }
+    if (activeSpell === 'fireball_skill') {
+        if (typeof executeFireball === 'function') executeFireball(targetX, targetY);
+        return;
+    }
+
     const item = player.inventory[activeItemIndex];
     if (!item || item.charges <= 0) return;
 
@@ -535,10 +557,24 @@ function executeTargetSpell() {
         const sp = activeSpell;
         if (sp === 'magic_missile') { spellDmg = 10 + Math.floor(Math.random() * 5) + spellBoostBonus + lvlBonus; }
         else if (sp === 'frost') {
-            spellDmg = 8 + Math.floor(Math.random() * 4) + spellBoostBonus + lvlBonus;
-            hitEntity.speed = Math.max(2, hitEntity.speed - 3);
-            logMessage(`${hitEntity.name} is chilled! (-3 Speed)`, 'magic');
-            spellColor = '#3498db';
+            logMessage(`Frost Nova erupts!`, 'magic');
+            for (let x = hx - 1; x <= hx + 1; x++) {
+                for (let y = hy - 1; y <= hy + 1; y++) {
+                    if (x >= 0 && x < MAP_WIDTH && y >= 0 && y < MAP_HEIGHT) {
+                        spawnParticle(x, y, '*', '#3498db');
+                        let ent = getEntityAt(x, y);
+                        if (ent && !ent.isPlayer && ent.hp > 0) {
+                            ent.speed = Math.max(2, ent.speed - 5);
+                            ent.paralyzedTimer = (ent.paralyzedTimer || 0) + 5;
+                            logMessage(`${ent.name} is frozen!`, 'magic');
+                            ent.hp -= (5 + spellBoostBonus + lvlBonus);
+                            spawnParticle(ent.x, ent.y, `-Frozen`, '#3498db');
+                            if (ent.hp <= 0) handleMonsterDeath(ent);
+                        }
+                    }
+                }
+            }
+            hitEntity = null; // Prevent the single-target damage block below from running
         }
         else if (sp === 'lightning') {
             spellDmg = 15 + Math.floor(Math.random() * 6) + spellBoostBonus + lvlBonus;

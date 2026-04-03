@@ -5,12 +5,14 @@ A fully-featured, turn-based HTML5 roguelike game built from the ground up, feat
 ## 🏰 Features
 
 **Town & Progression**
-- **Dynamic Town System**: The safe haven includes an Inn (healing), Blacksmith (gear upgrades), Wizard Tower (ESP & enchantments), Bank (gold storage), and Gambler's Den.
+- **TomeNET Town System**: The safe haven features distinct, house-like structures for all services. Includes an Inn (healing), Blacksmith (gear upgrades), Wizard Tower (ESP & enchantments), Bank (gold storage), and Alchemist.
 - **Day/Night Cycle**: The town changes dynamically, spawning Beggars, Drunks, and special events depending on the time of day.
 - **Save/Load System**: Progress is automatically saved locally so you never lose your run (`F5` Save, `F9` Load).
 
 **Endless Dungeon & Exploration**
 - **Procedurally Generated Levels**: Rooms, corridors, and twisting caves.
+- **Magical Vaults**: Deep in the dungeon (Floor 3+), find purple-walled vaults guarded by **Elite Vault Guards**. These contain specialized merchants or gambler dens but require a **Dungeon Key** to enter.
+- **Mimics & Traps**: Beware of "Gold Piles" or items that come alive! Mimics hide in plain sight starting from Floor 3.
 - **Hazards & Secrets**: Steer clear of dart/poison traps and lava fields. Find secret walls to uncover hidden caches of items (`S` key to search).
 - **The Endless Abyss**: After floor 10, the dungeon transforms into an infinite, continuously scaling abyss where multiple mini-bosses and elite monsters roam together.
 
@@ -22,7 +24,8 @@ A fully-featured, turn-based HTML5 roguelike game built from the ground up, feat
 - **Extended Weaponry**: Utilize Halberds and Spears for two-tile reach attacks (`T`), or equip Shields in your dedicated OFFHAND slot.
 - **Ranged Combat**: Equip Longbows or Heavy Crossbows (with required reload phases).
 - **Advanced Magic**: Wield wands of Frost, Lightning, Teleportation, and Drain Life. Read ancient scrolls to unleash devastating Frost Novas and Fireballs.
-- **Legendary Artifacts**: Extremely rare drops like Sting, Glamdring, and Anduril yield massive bonuses.
+- **Word of Recall**: Use the specialized scroll to return to Town instantly, or return to your deepest reached floor from Town.
+- **Legendary Artifacts**: Extremely rare drops like Sting, Glamdring, Anduril, Ringil, and Aeglos yield massive bonuses. Artifact drop rates now scale with floor depth.
 
 ## 🕹️ Controls
 
@@ -37,6 +40,7 @@ A fully-featured, turn-based HTML5 roguelike game built from the ground up, feat
 | **Use Items** | `1`-`9` |
 | **Search Walls**| `S` (searches adjacent tiles for secrets) |
 | **Stairs** | `<` (Up) / `>` (Down) |
+| **Recall** | Use Scroll (Town <-> Deepest Floor) |
 | **Save/Load** | `F5` / `F9` |
 
 ## 🚀 Running the Game Locally
