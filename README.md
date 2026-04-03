@@ -27,6 +27,12 @@ A fully-featured, turn-based HTML5 roguelike game built from the ground up, feat
 - **Word of Recall**: Use the specialized scroll to return to Town instantly, or return to your deepest reached floor from Town.
 - **Legendary Artifacts**: Extremely rare drops like Sting, Glamdring, Anduril, Ringil, and Aeglos yield massive bonuses. Artifact drop rates now scale with floor depth.
 
+**Story & Progression**
+- **5-Stage Main Arc**: Uncover the mystery of the Balrog through a chain of quests: Whispers in the Dark → The King's Fragment → The Sealed Vault → The Dragon Guardian → The Sleeper Awakens.
+- **Side Quests**: Town NPCs offer dynamic side missions including bounty hunts, vault raids, and exploration goals.
+- **Lore Altars**: Discover ancient altars (`&`) in the dungeon that reveal fragments of the world's history.
+- **Skill Trees**: Each class has a unique skill tree with 3 active and 3 passive skills. Earn Skill Points from quests and leveling.
+
 ## 🕹️ Controls
 
 | Interaction | Key |
@@ -41,6 +47,8 @@ A fully-featured, turn-based HTML5 roguelike game built from the ground up, feat
 | **Search Walls**| `S` (searches adjacent tiles for secrets) |
 | **Stairs** | `<` (Up) / `>` (Down) |
 | **Recall** | Use Scroll (Town <-> Deepest Floor) |
+| **Quest Journal** | `J` |
+| **Skill Menu** | `K` |
 | **Save/Load** | `F5` / `F9` |
 
 ## 🚀 Running the Game Locally

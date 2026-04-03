@@ -130,6 +130,7 @@ function attemptAction(entity, action) {
                 mapTile.type = 'floor'; mapTile.char = CHARS.FLOOR;
                 logMessage('You use a Dungeon Key to unlock the door!', 'magic');
                 spawnParticle(tx, ty, 'UNLOCKED!', '#f1c40f');
+                if (typeof onVaultOpened === 'function') onVaultOpened();
                 entity.energy -= ENERGY_THRESHOLD;
             } else {
                 logMessage('This door is locked! You need a Dungeon Key.', 'damage');
@@ -145,11 +146,13 @@ function attemptAction(entity, action) {
                     openShop();
                 } else if (mapTile.type === 'healer') {
                     openInnkeeper();
+                    if (typeof handleQuestNPC === 'function') handleQuestNPC('healer');
                 } else if (mapTile.type === 'blacksmith') {
                     if (timeOfDay === 'Day') openBlacksmith();
                     else logMessage("The forge is quiet tonight.", "hint");
                 } else if (mapTile.type === 'wizard') {
                     openWizard();
+                    if (typeof handleQuestNPC === 'function') handleQuestNPC('wizard');
                 } else if (mapTile.type === 'bank') {
                     if (timeOfDay === 'Day') openBank();
                     else logMessage("The bank is closed until morning.", "hint");
@@ -166,6 +169,7 @@ function attemptAction(entity, action) {
                             logMessage(`Mayor says: "Have you slain the ${bountyTarget} yet?"`, 'hint');
                         }
                     }
+                    if (typeof handleQuestNPC === 'function') handleQuestNPC('mayor');
                 } else if (mapTile.type === 'gambler') {
                     logMessage("Gambler: '50g for a mystery box?'", 'hint');
                     if (player.gold >= 50) {
@@ -178,12 +182,16 @@ function attemptAction(entity, action) {
                     }
                 } else if (mapTile.type === 'alchemist') {
                     openAlchemist();
+                    if (typeof handleQuestNPC === 'function') handleQuestNPC('alchemist');
                 } else if (mapTile.type === 'trainer') {
                     openTrainer();
+                    if (typeof handleQuestNPC === 'function') handleQuestNPC('trainer');
                 } else if (mapTile.type === 'cartographer') {
                     openCartographer();
+                    if (typeof handleQuestNPC === 'function') handleQuestNPC('cartographer');
                 } else if (mapTile.type === 'guildhall') {
                     openGuildhall();
+                    if (typeof handleQuestNPC === 'function') handleQuestNPC('guildhall');
                 } else if (mapTile.type === 'stash') {
                     openStash();
                 } else if (mapTile.type === 'well') {
@@ -219,6 +227,15 @@ function attemptAction(entity, action) {
                             spawnParticle(player.x, player.y, 'CURSED!', '#e74c3c');
                         }
                     } else { logMessage('The shrine is spent.', 'hint'); }
+                } else if (mapTile.type === 'lore_altar') {
+                    if (mapTile.loreKey && typeof discoverLore === 'function') {
+                        discoverLore(mapTile.loreKey);
+                        mapTile.type = 'floor';
+                        mapTile.char = CHARS.FLOOR;
+                        mapTile.color = undefined;
+                        player.xp += 15;
+                        logMessage('+15 XP from ancient knowledge.', 'magic');
+                    }
                 } else if (mapTile.type === 'well') {
                     logMessage("The Town Well is cool and refreshing.", "magic");
                     if (player.hp < player.maxHp) {
@@ -318,6 +335,7 @@ function checkStairs(x, y, force = false) {
         console.log(`(DEBUG) Descending to Floor ${currentFloor}`);
         logMessage(`You dive to Dungeon Level ${currentFloor}.`, 'pickup');
         generateDungeon();
+        if (typeof onFloorReached === 'function') onFloorReached(currentFloor);
         computeFOV();
         updateUI();
     } else if (map[x][y].type === 'stairs_up') {
@@ -523,6 +541,8 @@ function combat(attacker, defender) {
 
 function handleMonsterDeath(defender) {
     if (defender.name.includes("Balrog")) {
+        // Quest hook for Balrog kill
+        if (typeof onMonsterKilled === 'function') onMonsterKilled(defender.name);
         gameState = 'VICTORY';
         document.getElementById('victoryModal').classList.add('active');
         return;
@@ -535,6 +555,9 @@ function handleMonsterDeath(defender) {
     if (!player.killsByType) player.killsByType = {};
     player.killsByType[baseName] = (player.killsByType[baseName] || 0) + 1;
     
+    // Phase V: Quest progress tracking
+    if (typeof onMonsterKilled === 'function') onMonsterKilled(baseName);
+
     defender.char = '%'; defender.color = '#888'; defender.blocksMovement = false;
 
     // Bounty Check

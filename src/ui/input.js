@@ -136,6 +136,28 @@ window.addEventListener('keydown', e => {
         return;
     }
 
+    // Phase V: Quest Journal (J)
+    if (e.key === 'j' || e.key === 'J') {
+        if (gameState === 'PLAYING') {
+            if (typeof openQuestJournal === 'function') openQuestJournal();
+        } else if (gameState === 'QUEST_JOURNAL') {
+            document.getElementById('questModal').classList.remove('active');
+            gameState = 'PLAYING';
+        }
+        return;
+    }
+
+    // Phase V: Skill Menu (K)
+    if (e.key === 'k' || e.key === 'K') {
+        if (gameState === 'PLAYING') {
+            if (typeof openSkillMenu === 'function') openSkillMenu();
+        } else if (gameState === 'SKILL_MENU') {
+            document.getElementById('skillModal').classList.remove('active');
+            gameState = 'PLAYING';
+        }
+        return;
+    }
+
     if (gameState === 'TARGETING') {
         let dx = 0, dy = 0;
         if (e.key === 'ArrowUp' || e.key === 'w' || e.key === '8') dy = -1;

@@ -79,9 +79,10 @@ window.startGame = function (className) {
 
     gameState = 'PLAYING';
     generateTown();
+    if (typeof initQuestSystem === 'function') initQuestSystem();
     computeFOV();
     updateUI();
-    logMessage("Welcome to Autonomous Rogue. Press '?' or explore.", "hint");
+    logMessage("Welcome to Autonomous Rogue. [J]ournal [K]ills [I]nventory [Q]Skill", "hint");
 };
 
 window.showGameOverModal = function (killerName) {

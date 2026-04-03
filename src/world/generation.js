@@ -279,6 +279,19 @@ function generateDungeon() {
             logMessage("You feel a strange magical presence...", "magic");
         }
 
+        // Phase V — Lore Altars (environmental storytelling)
+        if (Math.random() < 0.15 && rooms.length > 2 && typeof RANDOM_LORE_POOL !== 'undefined') {
+            let loreRoom = rooms[1 + Math.floor(Math.random() * (rooms.length - 2))];
+            let lc = loreRoom.center();
+            if (map[lc.x] && map[lc.x][lc.y] && map[lc.x][lc.y].type === 'floor') {
+                let loreKey = RANDOM_LORE_POOL[Math.floor(Math.random() * RANDOM_LORE_POOL.length)];
+                map[lc.x][lc.y].type = 'lore_altar';
+                map[lc.x][lc.y].char = '&';
+                map[lc.x][lc.y].color = '#9b59b6';
+                map[lc.x][lc.y].loreKey = loreKey;
+            }
+        }
+
         // Phase IV - Dungeon Hazards
         generateHazards(rooms);
 
