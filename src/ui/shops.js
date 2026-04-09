@@ -25,11 +25,23 @@ function getItemName(item) {
         if (identifiedTypes[item.name]) return item.name;
         name = item.flavor || item.name;
         isUnid = true;
-    } else if (['weapon', 'armor', 'helm', 'ring', 'amulet'].includes(item.type)) {
+    } else if (['weapon', 'armor', 'helm', 'ring', 'amulet', 'shield'].includes(item.type)) {
         if (item.identified) {
             name = item.name;
             if (item.blessed) name = `Blessed ${name}`;
             if (item.cursed) name = `Cursed ${name}`;
+            
+            // Add (+bonus) to the name - #Infinite: shows enchantment bonus
+            if (item.type === 'weapon') {
+                const b = item.plusAtk || 0;
+                name += ` (+${b}, +${b})`;
+            } else if (['armor', 'helm', 'shield', 'ring', 'amulet'].includes(item.type)) {
+                const b = item.plusDef || 0;
+                name += ` (+${b})`;
+            }
+
+            // #38 Sentient Weapon Level
+            if (item.sentient && item.itemLvl) name += ` (Lvl ${item.itemLvl})`;
         } else {
             name = `Unidentified ${item.name.split(' (')[0]}`;
             isUnid = true;
@@ -55,21 +67,65 @@ window.startGame = function (className) {
 
     if (className === 'Warrior') {
         player.maxHp = 40; player.hp = 40; player.atk = 7; player.def = 4; player.speed = 8;
+        
+        // Warrior equipment
+        const swordBase = ITEM_DB.find(i => i.name === 'Short Sword');
+        const armorBase = ITEM_DB.find(i => i.name === 'Leather Armor');
+        
+        if (!swordBase || !armorBase) {
+            console.error("Warrior starting items missing from ITEM_DB!", {swordBase, armorBase});
+        }
+
+        const sword = { ...swordBase, identified: true, plusAtk: 0, plusDef: 0 };
+        const armor = { ...armorBase, identified: true, plusAtk: 0, plusDef: 0 };
+        player.inventory.push(sword, armor);
+        player.equipment.weapon = sword;
+        player.equipment.armor = armor;
+
         logMessage("Warrior Perk: Combat Surge every 5 kills (+2 Atk, 20 ticks)", 'magic');
     } else if (className === 'Mage') {
         player.maxHp = 25; player.hp = 25; player.atk = 4; player.def = 2; player.speed = 10;
         player.spellMastery = true; // Spells scale with level
-        player.inventory.push({ ...ITEM_DB.find(i => i.name === 'Wand of Magic Missile'), identified: true });
-        identifiedTypes['Wand of Magic Missile'] = true;
-        // Mage Robes
-        const robes = { ...ITEM_DB.find(i => i.name === 'Mage Robes'), identified: true };
-        player.inventory.push(robes);
+        
+        // Mage equipment
+        const wandBase = ITEM_DB.find(i => i.name === 'Wand of Magic Missile');
+        const daggerBase = ITEM_DB.find(i => i.name === 'Dagger');
+        const robesBase = ITEM_DB.find(i => i.name === 'Mage Robes');
+
+        if (!wandBase || !daggerBase || !robesBase) {
+            console.error("Mage starting items missing from ITEM_DB!", {wandBase, daggerBase, robesBase});
+        }
+
+        const wand = { ...wandBase, identified: true };
+        const dagger = { ...daggerBase, identified: true, plusAtk: 0, plusDef: 0 };
+        const robes = { ...robesBase, identified: true, plusAtk: 0, plusDef: 0 };
+        
+        player.inventory.push(wand, dagger, robes);
+        player.equipment.weapon = dagger;
         player.equipment.armor = robes;
-        logMessage("Mage Perk: Spell Mastery â€” spell damage scales with level", 'magic');
+        
+        identifiedTypes['Wand of Magic Missile'] = true;
+        logMessage("Mage Perk: Spell Mastery — spell damage scales with level", 'magic');
     } else if (className === 'Rogue') {
         player.maxHp = 30; player.hp = 30; player.atk = 5; player.def = 3; player.speed = 14;
         player.backstab = true; // First hit from unseen = double damage
-        logMessage("Rogue Perk: Backstab â€” first hit from unseen = 2x damage", 'magic');
+        
+        // Rogue equipment
+        const daggerBase = ITEM_DB.find(i => i.name === 'Dagger');
+        const capBase = ITEM_DB.find(i => i.name === 'Leather Cap');
+
+        if (!daggerBase || !capBase) {
+            console.error("Rogue starting items missing from ITEM_DB!", {daggerBase, capBase});
+        }
+
+        const dagger = { ...daggerBase, identified: true, plusAtk: 0, plusDef: 0 };
+        const cap = { ...capBase, identified: true, plusAtk: 0, plusDef: 0 };
+        
+        player.inventory.push(dagger, cap);
+        player.equipment.weapon = dagger;
+        player.equipment.helm = cap;
+
+        logMessage("Rogue Perk: Backstab — first hit from unseen = 2x damage", 'magic');
     }
     const modal = document.getElementById('charCreateModal');
     if (modal) modal.classList.remove('active');
@@ -250,16 +306,17 @@ window.openBlacksmith = function () {
     const wName = document.getElementById('bs-weapon-name');
     const wBtn = document.getElementById('bs-btn-weapon');
     if (w) {
-        wName.innerText = getItemName(w);
+        let dText = w.durability !== undefined ? ` (${w.durability}/${w.maxDurability})` : "";
+        wName.innerText = getItemName(w) + dText;
         wName.style.color = w.color;
         const cost = getUpgradeCost(w);
-        document.getElementById('bs-cost-weapon').innerText = cost;
+        const scrapNeeded = 1 + Math.floor((w.atkBonus||0)/2);
+        const hasScrap = player.inventory.filter(i => i.name === 'Scrap Metal').length >= scrapNeeded;
+        document.getElementById('bs-cost-weapon').innerText = `${cost}g + ${scrapNeeded} Scrap`;
         wBtn.style.display = 'block';
-        wBtn.disabled = player.gold < cost;
+        wBtn.disabled = (player.gold < cost || !hasScrap);
     } else {
-        wName.innerText = "Empty";
-        wName.style.color = '#888';
-        wBtn.style.display = 'none';
+        wName.innerText = "Empty"; wName.style.color = '#888'; wBtn.style.display = 'none';
     }
 
     // Armor
@@ -267,16 +324,29 @@ window.openBlacksmith = function () {
     const aName = document.getElementById('bs-armor-name');
     const aBtn = document.getElementById('bs-btn-armor');
     if (a) {
-        aName.innerText = getItemName(a);
+        let dText = a.durability !== undefined ? ` (${a.durability}/${a.maxDurability})` : "";
+        aName.innerText = getItemName(a) + dText;
         aName.style.color = a.color;
         const cost = getUpgradeCost(a);
-        document.getElementById('bs-cost-armor').innerText = cost;
+        const scrapNeeded = 1 + Math.floor((a.defBonus||0)/2);
+        const hasScrap = player.inventory.filter(i => i.name === 'Scrap Metal').length >= scrapNeeded;
+        document.getElementById('bs-cost-armor').innerText = `${cost}g + ${scrapNeeded} Scrap`;
         aBtn.style.display = 'block';
-        aBtn.disabled = player.gold < cost;
+        aBtn.disabled = (player.gold < cost || !hasScrap);
     } else {
-        aName.innerText = "Empty";
-        aName.style.color = '#888';
-        aBtn.style.display = 'none';
+        aName.innerText = "Empty"; aName.style.color = '#888'; aBtn.style.display = 'none';
+    }
+
+    // Repair All Section
+    let repairCost = 0;
+    const toRepair = Object.values(player.equipment).filter(i => i && i.durability !== undefined && i.durability < i.maxDurability);
+    toRepair.forEach(i => { repairCost += (i.maxDurability - i.durability); });
+    
+    const repairBtn = document.querySelector('#blacksmithModal button[onclick="repairAllEquipped()"]');
+    if (repairBtn) {
+        repairBtn.innerText = `Repair All (${repairCost}g)`;
+        repairBtn.disabled = (repairCost === 0 || player.gold < repairCost);
+        repairBtn.className = (repairCost === 0 || player.gold < repairCost) ? 'btn shop-btn-disabled' : 'btn shop-btn';
     }
 
     modal.classList.add('active');
@@ -286,17 +356,57 @@ window.upgradeEquipped = function (slot) {
     const item = player.equipment[slot];
     if (!item) return;
     const cost = getUpgradeCost(item);
-    if (player.gold >= cost) {
+    const scrapNeeded = 1 + Math.floor(((item.atkBonus||0) + (item.defBonus||0))/2);
+    
+    const scrapIndices = [];
+    player.inventory.forEach((itm, idx) => {
+        if (itm.name === 'Scrap Metal') scrapIndices.push(idx);
+    });
+
+    if (player.gold >= cost && scrapIndices.length >= scrapNeeded) {
         player.gold -= cost;
+        // Remove scrap
+        for (let i = 0; i < scrapNeeded; i++) {
+            const sIdx = player.inventory.findIndex(itm => itm.name === 'Scrap Metal');
+            player.inventory.splice(sIdx, 1);
+        }
+
         if (slot === 'weapon') {
             item.atkBonus = (item.atkBonus || 0) + 1;
         } else if (slot === 'armor') {
             item.defBonus = (item.defBonus || 0) + 1;
         }
-        item.identified = true; // Upgrading forces ID
-        logMessage(`Blacksmith upgrades your ${getItemName(item)}!`, 'magic');
-        openBlacksmith(); // Refresh
+        item.identified = true;
+        logMessage(`Blacksmith reforges your ${getItemName(item)}! (+1 bonus)`, 'magic');
+        openBlacksmith();
         updateUI();
+    } else {
+        logMessage("You lack the materials or gold for reforging.", "damage");
+    }
+};
+
+window.repairAllEquipped = function() {
+    let repairCost = 0;
+    const toRepair = Object.values(player.equipment).filter(i => i && i.durability !== undefined && i.durability < i.maxDurability);
+    
+    toRepair.forEach(i => {
+        repairCost += (i.maxDurability - i.durability);
+    });
+
+    if (repairCost === 0) {
+        logMessage("Your gear is already in perfect condition.");
+        return;
+    }
+
+    if (player.gold >= repairCost) {
+        player.gold -= repairCost;
+        toRepair.forEach(i => i.durability = i.maxDurability);
+        logMessage(`Blacksmith repairs all your equipment for ${repairCost}g.`, 'magic');
+        spawnParticle(player.x, player.y, 'REPAIRED!', '#3498db');
+        openBlacksmith();
+        updateUI();
+    } else {
+        logMessage("Not enough gold to repair everything!", 'damage');
     }
 };
 
@@ -553,11 +663,75 @@ window.closeBank = function () {
     updateUI();
 };
 
-// --- Stash Modal ---
 window.openStash = function () {
     gameState = 'STASH';
     document.getElementById('stashModal').classList.add('active');
     renderStashModal();
+};
+
+// #40 Artifact Lore Modal
+window.showLore = function(idx) {
+    const item = player.inventory[idx] || (Object.values(player.equipment).includes(idx) ? idx : null);
+    if (!item || !item.lore) {
+        logMessage("This item has no hidden history.", "hint");
+        return;
+    }
+    
+    document.getElementById('loreTitle').innerText = getItemName(item);
+    document.getElementById('loreText').innerText = item.lore;
+    document.getElementById('loreModal').classList.add('active');
+};
+
+window.closeLore = function() {
+    document.getElementById('loreModal').classList.remove('active');
+};
+
+// #39 Relic Altar Modal
+window.openRelicAltar = function() {
+    gameState = 'ALTAR';
+    document.getElementById('relicAltarModal').classList.add('active');
+    renderAltar();
+};
+
+window.renderAltar = function() {
+    const list = document.getElementById('altarItems');
+    list.innerHTML = '';
+    
+    const cursedItems = player.inventory.filter(i => i.cursed);
+    if (cursedItems.length === 0) {
+        list.innerHTML = '<li><span style="color:#888">No cursed items in inventory.</span></li>';
+    } else {
+        cursedItems.forEach((item, idx) => {
+            const hasComponent = player.inventory.some(i => i.name === 'Magic Component');
+            list.innerHTML += `
+                <li>
+                    <span style="color:${item.color}">${getItemName(item)}</span>
+                    <button class="btn ${hasComponent ? 'shop-btn' : 'shop-btn-disabled'}" 
+                            onclick="purifyRelic(${player.inventory.indexOf(item)})" 
+                            ${!hasComponent ? 'disabled' : ''}>Purify (1 Magic Component)</button>
+                </li>
+            `;
+        });
+    }
+};
+
+window.purifyRelic = function(invIdx) {
+    const item = player.inventory[invIdx];
+    const compIdx = player.inventory.findIndex(i => i.name === 'Magic Component');
+    
+    if (item && item.cursed && compIdx !== -1) {
+        player.inventory.splice(compIdx, 1);
+        item.cursed = false;
+        logMessage(`The Relic Altar hums... Your ${item.name} is purified!`, 'magic');
+        spawnParticle(player.x, player.y, "PURIFIED!", "#f1c40f");
+        openRelicAltar();
+    }
+};
+
+window.closeRelicAltar = function() {
+    gameState = 'PLAYING';
+    document.getElementById('relicAltarModal').classList.remove('active');
+    updateUI();
 };
 
 window.renderStashModal = function() {
@@ -770,6 +944,7 @@ window.renderInventoryModal = function () {
             <span style="color:${item.color}; cursor:pointer;" title="Click for Info" onclick="openItemModal(${i}); closeInventory();">${getItemName(item)}</span>
             <span>`;
         h += `<button class="btn" style="padding:2px 5px; font-size:0.7em; margin-right:5px; color:#bd93f9;" onclick="openItemModal(${i}); closeInventory();">Info</button>`;
+        if (item.lore) h += `<button class="btn" style="padding:2px 5px; font-size:0.7em; margin-right:5px; color:#f1c40f;" onclick="showLore(${i})">Lore</button>`;
         if (item.equip) h += `<button class="btn" style="padding:2px 5px; font-size:0.7em; margin-right:5px;" onclick="useItem(${i}); renderInventoryModal();">Equip</button>`;
         else h += `<button class="btn" style="padding:2px 5px; font-size:0.7em; margin-right:5px;" onclick="useItem(${i}); renderInventoryModal();">Use</button>`;
 
@@ -866,6 +1041,15 @@ window.openItemModal = function (index) {
     let isEquir = Object.values(player.equipment).includes(item);
     document.getElementById('btnItemUse').innerText = isEquir ? 'Unequip' : (item.equip ? 'Equip' : 'Use');
 
+    const btnLore = document.getElementById('btnItemLore');
+    if (btnLore) {
+        if (item.lore) {
+            btnLore.style.display = 'inline-block';
+        } else {
+            btnLore.style.display = 'none';
+        }
+    }
+
     document.getElementById('itemModal').classList.add('active');
 };
 
@@ -904,3 +1088,37 @@ window.modalIdentifyItem = function () {
     }
 };
 
+// --- Level Up Modal ---
+window.openLevelUpModal = function() {
+    gameState = 'LEVEL_UP';
+    const modal = document.getElementById('levelUpModal');
+    if (modal) {
+        modal.classList.add('active');
+        document.getElementById('ui-skill-points').innerText = player.skillPoints;
+        document.getElementById('btn-finish-levelup').style.display = player.skillPoints === 0 ? 'block' : 'none';
+    }
+};
+
+window.spendSkillPoint = function(stat) {
+    if (player.skillPoints > 0) {
+        player.skillPoints--;
+        if (stat === 'str') player.stats.str++;
+        else if (stat === 'int') player.stats.int++;
+        else if (stat === 'dex') player.stats.dex++;
+        
+        logMessage(`Increased ${stat.toUpperCase()} to ${player.stats[stat]}!`, 'magic');
+        
+        document.getElementById('ui-skill-points').innerText = player.skillPoints;
+        if (player.skillPoints === 0) {
+            document.getElementById('btn-finish-levelup').style.display = 'block';
+        }
+        updateUI();
+    }
+};
+
+window.closeLevelUpModal = function() {
+    const modal = document.getElementById('levelUpModal');
+    if (modal) modal.classList.remove('active');
+    gameState = 'PLAYING';
+    updateUI();
+};

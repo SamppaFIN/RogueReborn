@@ -11,10 +11,20 @@ class Entity {
         this.name = name;
         this.maxHp = hp; this.hp = hp;
         this.atk = atk; this.def = def;
-        this.speed = speed; // determines how much energy gained per tick
-        this.energy = 0;    // needs 100 to act
+        this.speed = speed; 
+        this.energy = 0;    
         this.isPlayer = false;
         this.blocksMovement = true;
+
+        // Awareness & AI State
+        this.sleeping = true;
+        this.vigilance = 0;
+        this.lastSeenPlayerPos = null;
+        this.sensingRadius = BASE_SENSING_RADIUS;
+
+        // stats - str/int/dex
+        this.stats = { str: 10, int: 10, dex: 10 };
+        this.skillPoints = 0;
     }
 }
 
@@ -42,9 +52,9 @@ function getItemAt(x, y) {
 }
 
 // --- Action Logic ---
-function attemptAction(entity, action) {
+function attemptAction(entity, action, energyCost = ENERGY_THRESHOLD) {
     if (action.type === 'wait') {
-        entity.energy -= ENERGY_THRESHOLD; // consume energy
+        entity.energy -= energyCost; // consume energy
         return;
     }
 
@@ -91,7 +101,7 @@ function attemptAction(entity, action) {
                         logMessage("You don't have enough gold.");
                     }
                 }
-                entity.energy -= ENERGY_THRESHOLD;
+                entity.energy -= energyCost;
                 updateUI();
                 return;
             }
@@ -107,7 +117,7 @@ function attemptAction(entity, action) {
                 // Quick buy: press 1-4 (handled via global gmState)
                 player._merchantItems = merchantItems;
                 player._merchantMode = true;
-                entity.energy -= ENERGY_THRESHOLD;
+                entity.energy -= energyCost;
                 return;
             }
 
@@ -115,29 +125,28 @@ function attemptAction(entity, action) {
             isAutoRunning = false;
             activePath = null;
             combat(entity, targetEntity);
-            entity.energy -= ENERGY_THRESHOLD;
+                entity.energy -= energyCost;
             return;
         }
 
         // Action: move tile interaction
         const mapTile = map[tx][ty];
-        // #32 Locked Door â€” requires Dungeon Key
-        if (mapTile.type === 'locked_door') {
-            isAutoRunning = false; activePath = null;
-            const keyIdx = entity.isPlayer ? player.inventory.findIndex(i => i.name === 'Dungeon Key') : -1;
-            if (keyIdx >= 0) {
-                player.inventory.splice(keyIdx, 1);
-                mapTile.type = 'floor'; mapTile.char = CHARS.FLOOR;
-                logMessage('You use a Dungeon Key to unlock the door!', 'magic');
-                spawnParticle(tx, ty, 'UNLOCKED!', '#f1c40f');
-                if (typeof onVaultOpened === 'function') onVaultOpened();
-                entity.energy -= ENERGY_THRESHOLD;
-            } else {
-                logMessage('This door is locked! You need a Dungeon Key.', 'damage');
+
+        // #30 Secret Door detection
+        if (entity.isPlayer && mapTile.type === 'wall' && mapTile.secret) {
+            if (Math.random() < 0.25) {
+                mapTile.secret = false;
+                mapTile.type = 'floor';
+                mapTile.char = CHARS.FLOOR;
+                logMessage("You've discovered a secret passageway!", 'magic');
+                spawnParticle(tx, ty, 'SECRET!', '#f1c40f');
+                computeFOV();
+                entity.energy -= energyCost;
+                return;
             }
-            return;
         }
-        if (mapTile.type === 'wall' || mapTile.type === 'shop' || mapTile.type === 'healer' || mapTile.type === 'blacksmith' || mapTile.type === 'wizard' || mapTile.type === 'bank' || mapTile.type === 'well' || mapTile.type === 'mayor' || mapTile.type === 'gambler' || mapTile.type === 'shrine' || mapTile.type === 'lava') {
+
+        if (mapTile.type === 'wall' || mapTile.type === 'shop' || mapTile.type === 'healer' || mapTile.type === 'blacksmith' || mapTile.type === 'wizard' || mapTile.type === 'bank' || mapTile.type === 'well' || mapTile.type === 'mayor' || mapTile.type === 'gambler' || mapTile.type === 'shrine' || mapTile.type === 'altar' || mapTile.type === 'stash') {
             isAutoRunning = false;
             activePath = null;
 
@@ -192,6 +201,8 @@ function attemptAction(entity, action) {
                 } else if (mapTile.type === 'guildhall') {
                     openGuildhall();
                     if (typeof handleQuestNPC === 'function') handleQuestNPC('guildhall');
+                } else if (mapTile.type === 'altar') {
+                    openRelicAltar();
                 } else if (mapTile.type === 'stash') {
                     openStash();
                 } else if (mapTile.type === 'well') {
@@ -247,20 +258,10 @@ function attemptAction(entity, action) {
                          logMessage("You toss a coin into the well for luck.");
                          player.gold = Math.max(0, player.gold - 1);
                     }
-                    entity.energy -= ENERGY_THRESHOLD;
+                    entity.energy -= energyCost;
                     return;
                 } else if (mapTile.type === 'lava') {
-                    // #38 Lava does not block, but damages
-                    entity.x = tx; entity.y = ty; entity.energy -= ENERGY_THRESHOLD;
-                    if (entity.isPlayer) {
-                        const lavaDmg = 3 + currentFloor;
-                        player.hp -= lavaDmg;
-                        spawnParticle(player.x, player.y, `-${lavaDmg} FIRE`, '#e67e22');
-                        logMessage('You step on lava! OUCH!', 'damage');
-                        if (player.hp <= 0) { showGameOverModal('Lava'); }
-                        totalTurns++; checkStairs(tx, ty); checkAutoRunStop(tx, ty); collectItems(tx, ty);
-                    }
-                    return;
+                    // Handled in move execution below
                 } else if (mapTile.hp <= 0) {
                     mapTile.type = 'floor';
                     mapTile.char = CHARS.FLOOR;
@@ -269,14 +270,67 @@ function attemptAction(entity, action) {
                 } else {
                     logMessage("You dig into the wall...");
                 }
-                entity.energy -= ENERGY_THRESHOLD;
+                entity.energy -= energyCost;
             }
             return;
         }
 
-        // Move
+        // #32 Locked Door — requires Dungeon Key
+        if (mapTile.type === 'locked_door') {
+            isAutoRunning = false; activePath = null;
+            const keyIdx = entity.isPlayer ? player.inventory.findIndex(i => i.name === 'Dungeon Key') : -1;
+            if (keyIdx >= 0) {
+                player.inventory.splice(keyIdx, 1);
+                mapTile.type = 'floor'; mapTile.char = CHARS.FLOOR;
+                logMessage('You use a Dungeon Key to unlock the door!', 'magic');
+                spawnParticle(tx, ty, 'UNLOCKED!', '#f1c40f');
+                if (typeof onVaultOpened === 'function') onVaultOpened();
+                entity.energy -= energyCost;
+            } else { logMessage('This door is locked!', 'damage'); }
+            return;
+        }
+
+        // Move execution
         entity.x = tx; entity.y = ty;
-        entity.energy -= ENERGY_THRESHOLD;
+        entity.energy -= (action.isSliding ? 0 : energyCost);
+
+        // Noise
+        if (entity.isPlayer) {
+            let n = NOISE_LEVELS.MOVE;
+            if (player.equipment.armor && player.equipment.armor.weight > 10) n += 5;
+            addNoise(tx, ty, n);
+            
+            // #28 Lava Damage
+            if (mapTile.type === 'lava') {
+                const dmg = 4 + currentFloor;
+                player.hp -= dmg;
+                spawnParticle(tx, ty, `-${dmg} LAVA`, '#e67e22');
+                logMessage("The lava burns you!", 'damage');
+                if (player.hp <= 0) showGameOverModal('Lava');
+            }
+
+            // #29 Trapdoor
+            if (mapTile.type === 'trapdoor') {
+                logMessage("The floor gives way! You fall!", 'damage');
+                spawnParticle(tx, ty, 'FALL!', '#888');
+                player.hp -= 5;
+                checkStairs(tx, ty, true); // force descend
+                return;
+            }
+
+            // #27 Ice Sliding
+            if (mapTile.type === 'ice' && !action.isSliding) {
+                setTimeout(() => {
+                    attemptAction(entity, { type: 'move', dx: action.dx, dy: action.dy, isSliding: true }, 0);
+                }, 50);
+            }
+
+            totalTurns++; 
+            checkStairs(tx, ty); 
+            checkAutoRunStop(tx, ty); 
+            collectItems(tx, ty);
+        }
+        return;
 
         // #31 Trap trigger
         if (entity.isPlayer && map[tx][ty].type === 'trap' && map[tx][ty].hidden) {
@@ -406,21 +460,63 @@ function collectItems(x, y) {
 
 function getEffectiveAtk() {
     let base = player.atk;
-    if (player.equipment.weapon) base += (player.equipment.weapon.atkBonus || 0);
+    const wep = player.equipment.weapon;
+    if (wep && (wep.durability === undefined || wep.durability > 0)) {
+        base += (wep.atkBonus || 0);
+        base += (wep.plusAtk || 0); // #Infinite: Enhancement bonus
+        // #38 Sentient Weapon Level Bonus
+        if (wep.sentient && wep.itemLvl) base += (wep.itemLvl * 2);
+    }
+    if (player.equipment.ring && player.equipment.ring.name === 'Eye of Chaos') base += 25;
     if (player.equipment.amulet?.effect === 'strength') base += 2;
-    // #VIII Combat Surge â€” Warrior active buff
+    // #16 Attribute Scaling (STR)
+    base += Math.floor((player.stats.str - 10) / 2);
+    // #19 Berserk Bonus
+    if (player.berserkTimer > 0) base += 10;
+    // #VIII Combat Surge
     if (player.combatSurgeTimer > 0) base += 2;
     return base;
 }
 
 function getEffectiveDef() {
     let base = player.def;
-    if (player.equipment.armor) base += (player.equipment.armor.defBonus || 0);
-    if (player.equipment.helm) base += (player.equipment.helm.defBonus || 0);
-    if (player.equipment.ring) base += (player.equipment.ring.defBonus || 0);
-    // #13 Shield off-hand
-    if (player.equipment.offhand) base += (player.equipment.offhand.defBonus || 0);
-    return base;
+    const eq = player.equipment;
+    if (eq.armor && (eq.armor.durability === undefined || eq.armor.durability > 0)) {
+        base += (eq.armor.defBonus || 0);
+        base += (eq.armor.plusDef || 0); // #Infinite: Enhancement bonus
+    }
+    if (eq.helm && (eq.helm.durability === undefined || eq.helm.durability > 0)) {
+        base += (eq.helm.defBonus || 0);
+        base += (eq.helm.plusDef || 0); // #Infinite: Enhancement bonus
+    }
+    if (eq.shield && (eq.shield.durability === undefined || eq.shield.durability > 0)) {
+        base += (eq.shield.defBonus || 0);
+        base += (eq.shield.plusDef || 0); // #Infinite: Enhancement bonus
+    }
+    if (eq.ring) {
+        base += (eq.ring.defBonus || 0);
+        base += (eq.ring.plusDef || 0);
+    }
+    if (eq.amulet) {
+        base += (eq.amulet.defBonus || 0);
+        base += (eq.amulet.plusDef || 0);
+    }
+
+    // #37 Set Bonuses (Sun Set: 3 pieces = +5 DEF)
+    let sunCount = 0;
+    Object.values(player.equipment).forEach(i => { if (i && i.set === 'Sun') sunCount++; });
+    if (sunCount >= 3) base += 5;
+
+    // #13 Shield / Offhand (legacy check)
+    if (eq.offhand && (eq.offhand.durability === undefined || eq.offhand.durability > 0)) {
+        base += (eq.offhand.defBonus || 0);
+        base += (eq.offhand.plusDef || 0);
+    }
+    // #16 Attribute Scaling (DEX)
+    base += Math.floor((player.stats.dex - 10) / 2);
+    // #19 Berserk Penalty
+    if (player.berserkTimer > 0) base -= 5;
+    return Math.max(0, base);
 }
 
 // #13 Speed accounting for shield and burden penalties
@@ -430,6 +526,8 @@ function getEffectiveSpeed() {
     if (player.equipment.ring?.effect === 'burden') spd -= (player.equipment.ring.speedPenalty || 0);
     // #14 Dual Wield speed bonus
     if (player.equipment.weapon?.dualWield) spd += (player.equipment.weapon.speedBonus || 0);
+    // #19 Berserk Speed
+    if (player.berserkTimer > 0) spd += 5;
     return Math.max(1, spd);
 }
 
@@ -458,13 +556,52 @@ function combat(attacker, defender) {
         atkPower += 5;
         logMessage(`Sting glows blue against the ${defender.name}!`, 'magic');
     }
+    
     // #15 Glamdring has fire element
     if (attacker.isPlayer && attacker.equipment?.weapon?.name === 'Glamdring') {
         atkPower += Math.floor(Math.random() * 4);
     }
 
+    // Final Damage Calculation
     let dmg = Math.max(1, atkPower - defPower + (Math.floor(Math.random() * 3) - 1));
     defender.hp -= dmg;
+
+    // #36 Cursed Life Steal (Bloodied Shard)
+    if (attacker.isPlayer && player.equipment.armor?.name === 'Bloodied Shard') {
+        const heal = Math.floor(dmg * 1.0);
+        player.hp = Math.min(player.maxHp, player.hp + heal);
+        spawnParticle(player.x, player.y, `+${heal} LIFE`, '#e74c3c');
+    }
+
+    // #31 Durability Loss ⚒️
+    if (attacker.isPlayer && player.equipment.weapon) {
+        if (player.equipment.weapon.durability !== undefined) {
+            player.equipment.weapon.durability--;
+            if (player.equipment.weapon.durability === 0) {
+                logMessage(`Your ${player.equipment.weapon.name} has broken!`, 'damage');
+                spawnParticle(player.x, player.y, 'BROKEN!', '#888');
+            }
+        }
+    }
+    if (defender.isPlayer) {
+        ['armor', 'shield', 'helm'].forEach(slot => {
+            const itm = player.equipment[slot];
+            if (itm && itm.durability !== undefined && itm.durability > 0) {
+                if (Math.random() < 0.3) {
+                    itm.durability--;
+                    if (itm.durability === 0) {
+                        logMessage(`Your ${itm.name} has broken!`, 'damage');
+                        spawnParticle(player.x, player.y, 'BROKEN!', '#888');
+                    }
+                }
+            }
+        });
+    }
+
+    // Noise Generation
+    if (attacker.isPlayer || defender.isPlayer) {
+        addNoise(attacker.x, attacker.y, NOISE_LEVELS.ATTACK);
+    }
 
     // Phase III Special Monster Effects
     if (!attacker.isPlayer && defender.isPlayer) {
@@ -487,6 +624,27 @@ function combat(attacker, defender) {
             player.xp = Math.max(0, player.xp - drained);
             logMessage(`${attacker.name} feasts on your mind! Lost ${drained} XP!`, 'damage');
             spawnParticle(defender.x, defender.y, `-${drained} XP`, '#9b59b6');
+        }
+        // #21 Gelatinous Cube Dissolves Item
+        if (attacker.dissolver && Math.random() < 0.2) {
+            const unequipped = player.inventory.filter(i => !Object.values(player.equipment).includes(i));
+            if (unequipped.length > 0) {
+                const targetIdx = Math.floor(Math.random() * unequipped.length);
+                const item = unequipped[targetIdx];
+                const realIdx = player.inventory.indexOf(item);
+                player.inventory.splice(realIdx, 1);
+                logMessage(`${attacker.name} dissolves your ${getItemName(item)}!`, 'damage');
+                spawnParticle(player.x, player.y, 'DISSOLVED!', '#2ecc71');
+            }
+        }
+    }
+
+    if (attacker.lifeSteal && !attacker.isPlayer) {
+        const heal = Math.floor(dmg * 0.5);
+        if (heal > 0) {
+            attacker.hp = Math.min(attacker.maxHp, attacker.hp + heal);
+            logMessage(`${attacker.name} siphons your life! Healed ${heal} HP.`, 'damage');
+            spawnParticle(attacker.x, attacker.y, `+${heal} HP`, '#e74c3c');
         }
     }
 
@@ -522,6 +680,18 @@ function combat(attacker, defender) {
     let msgClass = attacker.isPlayer ? 'magic' : 'damage';
     logMessage(`${attacker.name} hits ${defender.name} for ${dmg}.`, msgClass);
 
+    // #14 Dual Wielding: If player has weapon in offhand, 50% chance for second strike
+    if (attacker.isPlayer && attacker.equipment.offhand && attacker.equipment.offhand.type === 'weapon' && defender.hp > 0) {
+        if (Math.random() < 0.5) {
+            let dmg2 = Math.floor(dmg * 0.6);
+            if (dmg2 < 1) dmg2 = 1;
+            defender.hp -= dmg2;
+            spawnParticle(defender.x, defender.y, `Strike! -${dmg2}`, '#e67e22');
+            logMessage(`Second strike hits ${defender.name} for ${dmg2}!`, 'magic');
+            if (defender.hp <= 0) handleMonsterDeath(defender);
+        }
+    }
+
     // Poison Effect
     if (attacker.element === 'poison' && Math.random() < 0.25) {
         defender.poisonTimer = (defender.poisonTimer || 0) + 20;
@@ -537,6 +707,50 @@ function combat(attacker, defender) {
             handleMonsterDeath(defender);
         }
     }
+}
+
+function executeBreathAttack(attacker) {
+    if (!player) return;
+    const dx = player.x - attacker.x;
+    const dy = player.y - attacker.y;
+    const dist = Math.abs(dx) + Math.abs(dy);
+
+    if (dist > 6) return;
+
+    logMessage(`${attacker.name} uses ${attacker.element.toUpperCase()} BREATH!`, 'damage');
+    
+    // Breath hits player and all adjacent tiles to the player (AoE)
+    const targets = [{x: player.x, y: player.y}];
+    const dirs = [{dx:1,dy:0},{dx:-1,dy:0},{dx:0,dy:1},{dx:0,dy:-1}];
+    dirs.forEach(d => targets.push({x: player.x + d.dx, y: player.y + d.dy}));
+
+    targets.forEach(t => {
+        // Visuals
+        const pColor = attacker.element === 'fire' ? '#e67e22' : attacker.element === 'ice' ? '#3498db' : '#2ecc71';
+        spawnParticle(t.x, t.y, '*', pColor);
+
+        // Check if player or entity at target
+        if (t.x === player.x && t.y === player.y) {
+            let dmg = Math.floor(attacker.atk * 1.5) - getEffectiveDef();
+            if (dmg < 5) dmg = 5; // Minimum breath damage
+            
+            // Resist checks
+            if (attacker.element === 'fire' && player.equipment.ring?.effect === 'resist_fire') dmg = Math.floor(dmg / 3);
+            
+            player.hp -= dmg;
+            logMessage(`You are scorched by ${attacker.element}! -${dmg} HP`, 'damage');
+            spawnParticle(player.x, player.y, `-${dmg}`, '#e74c3c');
+            if (player.hp <= 0) showGameOverModal(`${attacker.name}'s Breath`);
+        } else {
+            const ent = getEntityAt(t.x, t.y);
+            if (ent && !ent.isPlayer) {
+                let dmg = Math.floor(attacker.atk * 1.2);
+                ent.hp -= dmg;
+                if (ent.hp <= 0) handleMonsterDeath(ent);
+            }
+        }
+    });
+    updateUI();
 }
 
 function handleMonsterDeath(defender) {
@@ -572,35 +786,11 @@ function handleMonsterDeath(defender) {
     if (Math.random() > 0.6) player.gold += 5 * (currentFloor || 1);
 
     // XP logic
-    let gainedXp = defender.baseXP || 5;
-    if (currentFloor) gainedXp = Math.floor(gainedXp * (1 + currentFloor * 0.2));
-    player.xp += gainedXp;
-    logMessage(`Gained ${gainedXp} XP.`);
+    const gainedXp = defender.baseXP || 5;
+    addXp(gainedXp);
     spawnParticle(defender.x, defender.y, `+${gainedXp} XP`, '#2ecc71');
 
-    if (player.xp >= player.nextXp) {
-        player.level++;
-        player.maxHp += 5;
-        player.hp = player.maxHp;
-        player.atk += 1;
-        player.nextXp = Math.floor(player.nextXp * 1.8);
-        logMessage(`LEVEL UP! You are now level ${player.level}.`, 'magic');
-        // #VIII Class perk on level 3 & 5
-        if (player.level === 3) {
-            if (player.class === 'Warrior') { player.def += 1; logMessage('Warrior Level 3 Perk: +1 Defense!', 'kill'); }
-            if (player.class === 'Mage')    { player.maxHp += 5; player.hp += 5; logMessage('Mage Level 3 Perk: +5 Max HP!', 'kill'); }
-            if (player.class === 'Rogue')   { player.speed += 2; logMessage('Rogue Level 3 Perk: +2 Speed!', 'kill'); }
-        }
-        if (player.level === 5) {
-            if (player.class === 'Warrior') { player.atk += 2; logMessage('Warrior Level 5 Perk: +2 Attack!', 'kill'); }
-            if (player.class === 'Mage')    { player.equipment.armor && (player.equipment.armor.spellBoost = (player.equipment.armor.spellBoost||0)+3); logMessage('Mage Level 5 Perk: +3 SpellBoost!', 'kill'); }
-            if (player.class === 'Rogue')   { player.atk += 1; player.def += 1; logMessage('Rogue Level 5 Perk: +1 Atk, +1 Def!', 'kill'); }
-        }
-    } else {
-        player.hp = Math.min(player.maxHp, player.hp + 2);
-    }
-
-    // #VIII Combat Surge â€” Warrior every 5 kills
+    // #VIII Combat Surge — Warrior every 5 kills
     if (player.class === 'Warrior') {
         player.killCount = (player.killCount || 0) + 1;
         if (player.killCount % 5 === 0) {
@@ -610,28 +800,33 @@ function handleMonsterDeath(defender) {
         }
     }
 
-    // Item Drop Logic (elite drops key)
-    if (Math.random() < 0.25) {
-        // Elite monsters drop a Dungeon Key 50% of the time
-        if (defender.isElite && Math.random() < 0.5) {
-            const keyItem = ITEM_DB.find(i => i.name === 'Dungeon Key');
-            if (keyItem) items.push({ x: defender.x, y: defender.y, ...keyItem });
-            logMessage(`The Elite ${defender.name.replace('Elite ','').split(' ')[0]} drops a key!`, 'pickup');
-        } else if (Math.random() < 0.05 && typeof ITEM_DB !== 'undefined') { // 5% chance of the 25% for a great item
-            const greatItems = ITEM_DB.filter(i => (i.equip && (i.atkBonus > 3 || i.defBonus > 2)) || i.effect === 'esp' || i.effect === 'summon');
-            if (greatItems.length > 0) {
-                const drop = Object.assign({}, greatItems[Math.floor(Math.random() * greatItems.length)]);
-                items.push({ x: defender.x, y: defender.y, ...drop });
-                logMessage("A rare item drops!", "pickup");
-                return;
-            }
+    // #38 Sentient Weapon XP
+    const wep = player.equipment.weapon;
+    if (wep && wep.sentient && (wep.itemLvl || 1) < 10) {
+        wep.itemXp = (wep.itemXp || 0) + Math.ceil(defender.baseXP / 2);
+        const nextXp = (wep.itemLvl || 1) * 100;
+        if (wep.itemXp >= nextXp) {
+            wep.itemLvl = (wep.itemLvl || 1) + 1;
+            wep.itemXp = 0;
+            logMessage(`Your ${wep.name} pulses with power! (Level ${wep.itemLvl})`, 'magic');
+            spawnParticle(player.x, player.y, 'ITEM LEVEL UP!', '#66fcf1');
         }
-        if (typeof spawnRandomItemAt === 'function') {
+    }
+
+    // Item Drop Logic
+    if (Math.random() < 0.25) {
+        // #35 Scrap & Component Loot
+        const r = Math.random();
+        if (r < 0.4) {
+            spawnItem(defender.x, defender.y, { ...ITEM_DB.find(i => i.name === 'Scrap Metal') });
+        } else if (r < 0.5 && currentFloor >= 4) {
+            spawnItem(defender.x, defender.y, { ...ITEM_DB.find(i => i.name === 'Magic Component') });
+        } else {
             spawnRandomItemAt(defender.x, defender.y);
-            logMessage(`Something dropped...`, 'hint');
         }
     }
 }
+
 
 
 // === useItem + dropItem (appended) ===
@@ -662,7 +857,7 @@ window.attemptIdentify = function(index) {
         logMessage("You failed to identify it. It looks too complex for now.", "damage");
     }
     
-    player.energy -= ENERGY_THRESHOLD; // Takes a turn!
+    player.energy -= energyCost; // Takes a turn!
     updateUI();
 };
 
@@ -773,10 +968,44 @@ function useItem(index) {
         spawnParticle(player.x, player.y, 'PARALYZED!', '#e0c080');
         logMessage(`You drink ${getItemName(item)}... You can't move!`, 'damage');
     } else if (item.effect === 'regen_boost') {
-        // #56 Potion of Regeneration â€” speeds up regen for 30 ticks
+        // #56 Potion of Regeneration — speeds up regen for 30 ticks
         player.regenBoost = (player.regenBoost || 0) + 30;
         spawnParticle(player.x, player.y, "REGEN!", '#2ecc71');
         logMessage(`You drink ${getItemName(item)}. You feel your wounds closing!`, 'magic');
+    } else if (item.effect === 'strength_boost') {
+        player.stats.str++;
+        spawnParticle(player.x, player.y, "STR +1!", '#e74c3c');
+        logMessage(`You drink ${getItemName(item)}. You feel incredibly strong!`, 'magic');
+    } else if (item.effect === 'intellect_boost') {
+        player.stats.int++;
+        spawnParticle(player.x, player.y, "INT +1!", '#3498db');
+        logMessage(`You drink ${getItemName(item)}. Your mind expands!`, 'magic');
+    } else if (item.effect === 'dexterity_boost') {
+        player.stats.dex++;
+        spawnParticle(player.x, player.y, "DEX +1!", '#f1c40f');
+        logMessage(`You drink ${getItemName(item)}. Your reflexes quicken!`, 'magic');
+    } else if (item.effect === 'repair') {
+        // #32 Repair Kit logic
+        let itemsToRepair = Object.values(player.equipment).filter(i => i && i.durability !== undefined && i.durability < i.maxDurability);
+        if (itemsToRepair.length > 0) {
+            itemsToRepair.forEach(i => {
+                i.durability = Math.min(i.maxDurability, i.durability + item.value);
+            });
+            logMessage(`You use the ${getItemName(item)}. Your equipment is restored!`, 'magic');
+            spawnParticle(player.x, player.y, 'REPAIRED!', '#3498db');
+        } else {
+            logMessage(`You use the ${getItemName(item)} but your gear is already in top shape.`, 'hint');
+        }
+    } else if (item.effect === 'enchant') {
+        // #34 Enchantment Orb logic
+        if (player.equipment.weapon) {
+            player.equipment.weapon.element = item.element;
+            logMessage(`The ${getItemName(item)} glows and infuses your weapon with ${item.element}!`, 'magic');
+            spawnParticle(player.x, player.y, `ENCHANTED!`, '#f1c40f');
+        } else {
+            logMessage("You need a weapon equipped to use this orb.", "damage");
+            return; // Don't consume
+        }
     } else if (item.effect === 'confuse_monster') {
         // Scroll of Confusion â€” confuses nearest visible monster
         const nearestVis = [...entities].filter(e => !e.isPlayer && e.hp > 0 && map[e.x][e.y].visible)
