@@ -321,6 +321,10 @@
                             style="color:#2ecc71">0</span></span>
                 </div>
                 <div class="stat-row">
+                    <span class="stat-label">STR / INT / DEX</span>
+                    <span class="stat-value" id="ui-stats" style="font-size:0.85em">10 / 10 / 10</span>
+                </div>
+                <div class="stat-row">
                     <span class="stat-label">Lev / XP</span>
                     <span class="stat-value" id="ui-xp" style="font-size:0.85em">0 / 50 (Lvl 1)</span>
                 </div>
@@ -413,6 +417,19 @@
         </div>
     </div>
 
+    <div id="levelUpModal" class="modal">
+        <div class="modal-content">
+            <h2 style="color: #f1c40f; text-shadow: 0 0 20px rgba(241, 196, 15, 0.5);">LEVEL UP!</h2>
+            <p>You have <span id="ui-skill-points" style="color: #f1c40f; font-weight: bold;">3</span> skill points to spend.</p>
+            <div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px;">
+                <button class="btn" onclick="spendSkillPoint('str')">STR<br><span style="font-size:0.6em">+ATK Bonus</span></button>
+                <button class="btn" onclick="spendSkillPoint('int')">INT<br><span style="font-size:0.6em">+Spell Power</span></button>
+                <button class="btn" onclick="spendSkillPoint('dex')">DEX<br><span style="font-size:0.6em">+DEF Bonus</span></button>
+            </div>
+            <button class="btn" id="btn-finish-levelup" style="margin-top: 20px; display: none;" onclick="closeLevelUpModal()">Done</button>
+        </div>
+    </div>
+
     <div id="charCreateModal" class="modal">
         <div class="modal-content">
             <h2 style="color: #66fcf1; text-shadow: 0 0 20px rgba(102, 252, 241, 0.5);">A NEW HERO</h2>
@@ -467,14 +484,17 @@
                     <h3 style="color: #e74c3c; margin-top: 0;">Weapon</h3>
                     <p id="bs-weapon-name" style="min-height: 2em;">Empty</p>
                     <button class="btn shop-btn" id="bs-btn-weapon" onclick="upgradeEquipped('weapon')"
-                        style="width: 100%; display: none;">Upgrade (<span id="bs-cost-weapon">0</span>g)</button>
+                        style="width: 100%; display: none;">Reforge (<span id="bs-cost-weapon">0</span>)</button>
                 </div>
                 <div style="flex: 1; border: 1px solid #1f2833; padding: 10px; background: #0b0c10;">
                     <h3 style="color: #bd93f9; margin-top: 0;">Armor</h3>
                     <p id="bs-armor-name" style="min-height: 2em;">Empty</p>
                     <button class="btn shop-btn" id="bs-btn-armor" onclick="upgradeEquipped('armor')"
-                        style="width: 100%; display: none;">Upgrade (<span id="bs-cost-armor">0</span>g)</button>
+                        style="width: 100%; display: none;">Reforge (<span id="bs-cost-armor">0</span>)</button>
                 </div>
+            </div>
+            <div style="margin-top: 20px; border-top: 1px solid #1f2833; padding-top: 20px;">
+                <button class="btn shop-btn" onclick="repairAllEquipped()" style="width: 200px;">Repair All Gear</button>
             </div>
             <button class="btn" style="margin-top: 20px;" onclick="closeBlacksmith()">Leave [Esc]</button>
         </div>
@@ -612,11 +632,39 @@
 
             <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;" id="itemModalActions">
                 <button class="btn" id="btnItemUse" onclick="modalUseItem()">Use / Equip</button>
+                <button class="btn" id="btnItemLore" onclick="showLore(currentItemModalIndex)" style="display: none; color: #f1c40f;">Lore</button>
                 <button class="btn" id="btnItemDrop" onclick="modalDropItem()">Drop</button>
                 <button class="btn" id="btnItemIdentify" onclick="modalIdentifyItem()">Try Identify</button>
             </div>
 
             <button class="btn" style="margin-top: 20px; width: 100%; border-color: #1f2833; color: #888;" onclick="closeItemModal()">Close [Esc]</button>
+        </div>
+    </div>
+
+    <!-- Lore Modal -->
+    <div id="loreModal" class="modal">
+        <div class="modal-content" style="width: 500px; position: relative; border-color: #f1c40f;">
+            <button onclick="closeLore()"
+                style="position: absolute; top: 10px; right: 10px; background: transparent; border: none; color: #f1c40f; font-size: 1.5rem; cursor: pointer;">&times;</button>
+            <h2 id="loreTitle" style="color: #f1c40f; text-shadow: 0 0 20px rgba(241, 196, 15, 0.5);">Item Lore</h2>
+            <div style="border: 1px solid #f1c40f; padding: 20px; margin: 20px 0; background: #0b0c10; text-align: left; line-height: 1.6;">
+                <p id="loreText" style="color: #c5c6c7; font-style: italic;"></p>
+            </div>
+            <button class="btn" onclick="closeLore()">Back [Esc]</button>
+        </div>
+    </div>
+
+    <!-- Relic Altar Modal -->
+    <div id="relicAltarModal" class="modal">
+        <div class="modal-content" style="width: 500px; position: relative; border-color: #9b59b6;">
+            <button onclick="closeRelicAltar()"
+                style="position: absolute; top: 10px; right: 10px; background: transparent; border: none; color: #9b59b6; font-size: 1.5rem; cursor: pointer;">&times;</button>
+            <h2 style="color: #9b59b6; text-shadow: 0 0 20px rgba(155, 89, 182, 0.5);">RELIC ALTAR</h2>
+            <p>Purify cursed artifacts using Magic Components.</p>
+            <ul class="shop-list" id="altarItems" style="max-height: 250px; margin: 20px 0;">
+                <!-- JS fills this -->
+            </ul>
+            <button class="btn" onclick="closeRelicAltar()">Leave [Esc]</button>
         </div>
     </div>
 
@@ -709,22 +757,23 @@
         </div>
     </div>
 
-    <!-- Module Loading Order (Surgical Refactoring v2) -->
-    <script src="src/data/constants.js?v=2"></script>
-    <script src="src/data/enemies.js?v=2"></script>
-    <script src="src/data/items.js?v=2"></script>
-    <script src="src/data/quest_db.js?v=1"></script>
-    <script src="src/data/lore.js?v=1"></script>
-    <script src="src/data/skill_trees.js?v=1"></script>
-    <script src="src/ui/shops.js?v=2"></script>
-    <script src="src/ui/renderer.js?v=1"></script>
-    <script src="src/systems/combat.js?v=3"></script>
-    <script src="src/systems/skills.js?v=1"></script>
-    <script src="src/systems/quests.js?v=1"></script>
-    <script src="src/systems/ai.js?v=2"></script>
-    <script src="src/world/generation.js?v=3"></script>
-    <script src="engine.js?v=11"></script>
-    <script src="src/ui/input.js?v=1"></script>
+    <!-- Module Loading Order (Surgical Refactoring v3) -->
+    <script src="src/data/constants.js?v=3"></script>
+    <script src="src/data/enemies.js?v=3"></script>
+    <script src="src/data/items.js?v=3"></script>
+    <script src="src/data/quest_db.js?v=2"></script>
+    <script src="src/data/lore.js?v=2"></script>
+    <script src="src/data/skill_trees.js?v=2"></script>
+    <script src="src/ui/shops.js?v=3"></script>
+    <script src="src/ui/renderer.js?v=2"></script>
+    <script src="src/systems/combat.js?v=4"></script>
+    <script src="src/systems/skills.js?v=2"></script>
+    <script src="src/systems/quests.js?v=2"></script>
+    <script src="src/systems/ai.js?v=3"></script>
+    <script src="src/world/vaults.js?v=2"></script>
+    <script src="src/world/generation.js?v=4"></script>
+    <script src="engine.js?v=12"></script>
+    <script src="src/ui/input.js?v=2"></script>
 </body>
 
 </html>
