@@ -51,19 +51,36 @@ function getItemName(item) {
 }
 
 window.startGame = function (className) {
-    const nameInput = document.getElementById('charName').value || 'Nameless';
-    player.name = nameInput;
-    player.level = 1;
-    player.xp = 0;
-    player.nextXp = 50;
+    const nameInput = (document.getElementById('charName') && document.getElementById('charName').value) || 'Nameless';
+    
+    // Safety: If player doesn't exist yet, try to create it here
+    if (!player) {
+        console.warn("window.startGame called before player was initialized. Running emergency generateTown.");
+        if (typeof generateTown === 'function') {
+            generateTown();
+        } else {
+            console.error("Critical: generateTown not found. Cannot start game.");
+            return;
+        }
+    }
 
-    player.class = className; // #VIII store class
-    player.killCount = 0;     // track total kills for perks
-    player.killsByType = {};  // Phase IV: track kills per species for AI reputation
-    player.combatSurgeTimer = 0; // Warrior perk
-    player.inventory = [];    // FIX: Clear inventory on start to avoid duplication
-    player.equipment = { weapon: null, armor: null, helm: null, ring: null, amulet: null, offhand: null };
-    currentFloor = 0;         // FIX: Ensure we start in town
+    if (player) {
+        player.name = nameInput;
+        player.level = 1;
+        player.xp = 0;
+        player.nextXp = 50;
+
+        player.class = className; // #VIII store class
+        player.killCount = 0;     // track total kills for perks
+        player.killsByType = {};  // Phase IV: track kills per species for AI reputation
+        player.combatSurgeTimer = 0; // Warrior perk
+        player.inventory = [];    // FIX: Clear inventory on start to avoid duplication
+        player.equipment = { weapon: null, armor: null, helm: null, ring: null, amulet: null, offhand: null };
+        currentFloor = 0;         // FIX: Ensure we start in town
+    } else {
+        console.error("Critical: Player object still null after emergency initialization.");
+        return;
+    }
 
     if (className === 'Warrior') {
         player.maxHp = 40; player.hp = 40; player.atk = 7; player.def = 4; player.speed = 8;

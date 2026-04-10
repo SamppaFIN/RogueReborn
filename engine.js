@@ -23,13 +23,13 @@ const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const msgLog = document.getElementById('log-container');
 
-let map = [];
-let entities = [];
-let items = [];
-let player = null;
+var map = [];
+var entities = [];
+var items = [];
+var player = null;
 
-let currentFloor = 0; // 0 = Town, 1+ = Dungeon
-let gameState = 'START';
+var currentFloor = 0; // 0 = Town, 1+ = Dungeon
+var gameState = 'START';
 
 let lastTime = 0;
 
@@ -52,6 +52,40 @@ let hoverY = -1;
 
 // Input State
 const keys = {};
+let bufferedAction = null;
+let lastLogicalTick = 0;
+
+// Awareness / Sound State
+let noiseMap = [];
+function initNoiseMap() {
+    noiseMap = Array.from({ length: MAP_WIDTH }, () => new Float32Array(MAP_HEIGHT).fill(0));
+}
+function addNoise(x, y, level) {
+    if (x >= 0 && x < MAP_WIDTH && y >= 0 && y < MAP_HEIGHT) {
+        noiseMap[x][y] += level;
+    }
+}
+function updateNoise() {
+    let nextNoise = Array.from({ length: MAP_WIDTH }, () => new Float32Array(MAP_HEIGHT).fill(0));
+    for (let x = 0; x < MAP_WIDTH; x++) {
+        for (let y = 0; y < MAP_HEIGHT; y++) {
+            if (noiseMap[x][y] > 0.1) {
+                let n = noiseMap[x][y] * NOISE_DECAY_RATE;
+                nextNoise[x][y] += n * 0.9;
+                
+                // Propagate a bit to neighbors
+                const neighbors = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+                for (let d of neighbors) {
+                    let nx = x + d[0], ny = y + d[1];
+                    if (nx >= 0 && nx < MAP_WIDTH && ny >= 0 && ny < MAP_HEIGHT) {
+                        nextNoise[nx][ny] += n * 0.025; // 2.5% per neighbor
+                    }
+                }
+            }
+        }
+    }
+    noiseMap = nextNoise;
+}
 
 // --- Map Generation Helpers ---
 class Rect {
@@ -89,6 +123,7 @@ function spawnMonsterAt(x, y) {
                 const dkE = new Entity(x, y, dkt.char, dkt.color, dkt.name, dkt.hp, dkt.atk, dkt.def, dkt.speed);
                 dkE.element = dkt.element; dkE.baseXP = dkt.baseXP;
                 dkE.drainMaxHp = true; dkE.rangedDebuff = true; dkE.miniBoss = true;
+                dkE.bossPhases = true;
                 dkE.maxHp = dkt.hp;
                 entities.push(dkE);
                 logMessage('** The Dragon King awakens! FLEE or FIGHT! **', 'damage');
@@ -96,18 +131,19 @@ function spawnMonsterAt(x, y) {
             }
         }
 
-        // Difficulty scaling
+        // Difficulty scaling — indices match ENEMY_TYPES array
+        // New: 41=Lurker, 42=Goblin Shaman, 43=Orc Warpriest, 44=Dark Channeler
         let allowedTypes = [];
-        if (currentFloor <= 2)      allowedTypes = [0, 1, 2, 14];
-        else if (currentFloor <= 4) allowedTypes = [1, 2, 3, 10, 11, 12, 13, 14, 15, 19];
-        else if (currentFloor <= 6) allowedTypes = [2, 3, 4, 5, 12, 15, 16];
-        else if (currentFloor <= 8) allowedTypes = [4, 5, 6, 7, 13, 17, 18];
-        else allowedTypes = [6, 7, 8, 12, 17, 18];
+        if (currentFloor <= 2)      allowedTypes = [0, 1, 2, 14, 42];          // +Goblin Shaman
+        else if (currentFloor <= 4) allowedTypes = [1, 2, 3, 10, 11, 12, 13, 14, 15, 19, 42, 43]; // +Shaman, Warpriest
+        else if (currentFloor <= 6) allowedTypes = [2, 3, 4, 5, 12, 15, 16, 41, 43, 44]; // +Lurker, Warpriest, Channeler
+        else if (currentFloor <= 8) allowedTypes = [4, 5, 6, 7, 13, 17, 18, 41, 44]; // +Lurker, Channeler
+        else allowedTypes = [6, 7, 8, 12, 17, 18, 41, 44];
 
         if (currentFloor === 10 && !entities.some(e => e.name === 'Balrog')) {
-            allowedTypes = [9];
+            allowedTypes = [30]; // Balrog index
         }
-        if (currentFloor > 10) allowedTypes = [7, 8, 9, 17, 18, 20, 21, 22, 23];
+        if (currentFloor > 10) allowedTypes = [7, 8, 9, 17, 18, 20, 21, 22, 23, 41, 44];
 
         let typeIdx = allowedTypes[Math.floor(Math.random() * allowedTypes.length)];
         const t = ENEMY_TYPES[typeIdx];
@@ -124,9 +160,18 @@ function spawnMonsterAt(x, y) {
         if (t.blinker)      e.blinker       = true;
         if (t.rangedDebuff) e.rangedDebuff  = true;
         if (t.xpDrain)      e.xpDrain       = true;
+        if (t.dissolver)    e.dissolver     = true;
+        if (t.lifeSteal)    e.lifeSteal     = true;
+        if (t.breather)     e.breather      = true;
+        if (t.personality)  e.personality   = t.personality;
+        // Batch 9 flags
+        if (t.ambusher)     e.ambusher      = true;
+        if (t.support)      e.support       = t.support;
+        if (t.bossPhases)   e.bossPhases    = true;
+        if (t.miniBoss)     e.miniBoss      = true;
 
-        // #81-82 Elite variant – 10% chance
-        if (Math.random() < 0.10 && !t.miniBoss) {
+        // #81-82 Elite variant – 10% chance (not for support units or ambushers)
+        if (Math.random() < 0.10 && !t.miniBoss && !t.support && !t.ambusher) {
             e.name = 'Elite ' + e.name;
             e.hp *= 1.5; e.maxHp = e.hp; e.atk = Math.ceil(e.atk * 1.3);
             e.color = '#f1c40f';
@@ -192,6 +237,165 @@ function spawnRandomItemAt(x, y) {
     }
 }
 
+function runLogicalTick() {
+    if (gameState !== 'PLAYING') return;
+
+    // 1. Accumulate Energy (10 ticks/sec, base 100/tick)
+    player.energy += getEffectiveSpeed();
+    for (let e of entities) {
+        if (!e.isPlayer && e.hp > 0 && e.blocksMovement) {
+            e.energy += (e.speed || 10);
+        }
+    }
+
+    // Aistimus / Sound Update
+    updateNoise();
+
+    // 2. Process Player Actions (Multiple actions possible if high energy)
+    let maxPlayerActions = 5; // Safety break
+    while (player.energy >= ENERGY_THRESHOLD && maxPlayerActions > 0 && gameState === 'PLAYING') {
+        maxPlayerActions--;
+        
+        // Status & Regen (occurs at start of first action per tick)
+        if (maxPlayerActions === 4) processPlayerTimedEffects();
+        
+        let act = bufferedAction || getPendingAction();
+        bufferedAction = null; 
+
+        if (act) {
+            let cost = ACTION_COSTS.MOVE;
+            if (act.type === 'move') {
+                const target = getEntityAt(player.x + act.dx, player.y + act.dy);
+                cost = target ? ACTION_COSTS.ATTACK : ACTION_COSTS.MOVE;
+            } else if (act.type === 'cast') { cost = ACTION_COSTS.CAST; }
+              else if (act.type === 'use') { cost = ACTION_COSTS.USE; }
+              else if (act.type === 'wait') { 
+                cost = ACTION_COSTS.WAIT; 
+                // Resting energy boost (Wait action recovers a bit extra energy for next tick)
+                player.energy += 15; 
+              }
+
+            attemptAction(player, act, cost);
+            computeFOV();
+            processItemFeelings();
+        } else {
+            // No input, wait for next heartbeat
+            break;
+        }
+    }
+
+    // 3. Process Monsters
+    for (let e of entities) {
+        if (!e.isPlayer && e.hp > 0 && e.blocksMovement) {
+            // Boss HP recovery
+            if (e.name === 'Balrog' && e.hp < 150) e.hp = Math.min(150, e.hp + 2);
+            
+            // Random Town Barks
+            if (e.isTownNPC && Math.random() < 0.005) {
+                const barks = ["Lovely day!", "Prices are rising.", "Stay safe.", "Nice weather!"];
+                const dist = Math.abs(e.x - player.x) + Math.abs(e.y - player.y);
+                if (dist < 8) logMessage(`${e.name} says: "${barks[Math.floor(Math.random()*barks.length)]}"`, 'hint');
+            }
+            
+            let maxMonsterActions = 3;
+            while (e.energy >= ENERGY_THRESHOLD && maxMonsterActions > 0) {
+                maxMonsterActions--;
+                processMonsterAI(e);
+                e.energy -= 100;
+            }
+        }
+    }
+}
+
+function processPlayerTimedEffects() {
+    if (!player) return;
+
+    // #19 Berserk & Vanish
+    if (player.berserkTimer > 0) {
+        player.berserkTimer--;
+        if (player.berserkTimer === 0) logMessage("Your berserk rage subsides.", "hint");
+    }
+    if (player.vanishTimer > 0) {
+        player.vanishTimer--;
+        if (player.vanishTimer === 0) {
+            player.invisible = false;
+            logMessage("You emerge from the shadows.", "hint");
+        }
+    }
+
+    // Skill Cooldowns
+    if (player.skillCooldown > 0) player.skillCooldown--;
+    if (player.combatSurgeTimer > 0) player.combatSurgeTimer--;
+
+    // Standard Statuses
+    if (player.poisonTimer > 0) {
+        player.poisonTimer--;
+        if (player.poisonTimer % 5 === 0) {
+            player.hp = Math.max(1, player.hp - 1);
+            spawnParticle(player.x, player.y, "-1 POISON", "#27ae60");
+        }
+        if (player.poisonTimer === 0) logMessage("You recovered from poison.", "magic");
+    }
+    if (player.confusedTimer > 0) {
+        player.confusedTimer--;
+        if (player.confusedTimer === 0) logMessage("Your head clears.", "magic");
+    }
+    if (player.blindTimer > 0) {
+        player.blindTimer--;
+        if (player.blindTimer === 0) logMessage("Your vision returns.", "magic");
+    }
+    if (player.paralyzedTimer > 0) {
+        player.paralyzedTimer--;
+        if (player.paralyzedTimer === 0) logMessage("You can move again!", "magic");
+    }
+
+    // #36 Cursed Relic Drawbacks (Eye of Chaos)
+    if (player.equipment.ring && player.equipment.ring.name === 'Eye of Chaos') {
+        if (Math.random() < 0.02) {
+            player.confusedTimer = (player.confusedTimer || 0) + 5;
+            logMessage("The Eye of Chaos pulses! Your mind is clouded!", "damage");
+            spawnParticle(player.x, player.y, "CONFUSED!", "#9b59b6");
+        }
+    }
+    
+    // Regeneration
+    if (player.regenBoost > 0) {
+        player.regenBoost--;
+        if (player.regenBoost % 3 === 0) player.hp = Math.min(player.maxHp, player.hp + 1);
+    }
+    if (player.hp < player.maxHp && (!player.poisonTimer || player.poisonTimer <= 0)) {
+        player.regenTimer = (player.regenTimer || 0) + 1;
+        if (player.regenTimer >= 15) {
+            player.hp++;
+            player.regenTimer = 0;
+        }
+    }
+
+    // #26 Poison Gas Damage
+    if (map[player.x][player.y].type === 'gas') {
+        const gasDmg = 2 + Math.floor(currentFloor / 4);
+        player.hp -= gasDmg;
+        spawnParticle(player.x, player.y, `-${gasDmg} GAS`, '#2ecc71');
+        if (player.hp <= 0) showGameOverModal('Poison Gas');
+    }
+}
+
+function processItemFeelings() {
+    for (let i = 0; i < player.inventory.length; i++) {
+        let itm = player.inventory[i];
+        if (!itm.identified) {
+            itm.carryTurns = (itm.carryTurns || 0) + 1;
+            if (itm.carryTurns === 50 && !itm.gutFeeling) {
+                if (itm.cursed) itm.gutFeeling = "You feel a sinister, cold aura from this...";
+                else if (itm.blessed) itm.gutFeeling = "This item exudes an aura of safety and warmth.";
+                else if (itm.artifact) itm.gutFeeling = "This object throbs with ancient power.";
+                else if (itm.type === 'potion' || itm.type === 'scroll') itm.gutFeeling = "You sense latent magic within.";
+                else itm.gutFeeling = "It feels completely mundane.";
+                logMessage(`You get a feeling about the ${itm.name}...`, 'hint');
+            }
+        }
+    }
+}
 
 // --- Real-time Loop ---
 function gameLoop(timestamp) {
@@ -201,138 +405,26 @@ function gameLoop(timestamp) {
     }
 
     const dt = timestamp - lastTime;
+    const logicalDt = timestamp - lastLogicalTick;
 
+    // A. Rendering & Particles (60fps goal)
     if (dt >= TICK_RATE) {
         lastTime = timestamp;
-
-        let stepsThisFrame = (isAutoRunning || activePath || isAutoExploring) ? 100 : 1;
-        
-        // Safety check for auto-explore: Stop earlier if monster is very close
-        if (isAutoExploring) {
-            const nearest = getNearestMonster(player.x, player.y);
-            if (nearest) {
-                const dist = Math.abs(nearest.x - player.x) + Math.abs(nearest.y - player.y);
-                if (dist <= 2) { 
-                    isAutoExploring = false; 
-                    activePath = null;
-                    logMessage("Danger ahead! Auto-explore halted.", "damage");
-                    stepsThisFrame = 0;
-                }
-            }
-        }
-
-        while (stepsThisFrame > 0 && gameState === 'PLAYING') {
-            stepsThisFrame--;
-
-            // 1. Process Player Input if energy is ready
-            let playerActed = false;
-            if (player.energy >= ENERGY_THRESHOLD) {
-                // #53 Paralysis timer
-                if (player.paralyzedTimer > 0) {
-                    player.paralyzedTimer--;
-                    if (player.paralyzedTimer === 0) logMessage('You can move again!', 'magic');
-                    player.energy -= ENERGY_THRESHOLD;
-                    stepsThisFrame = 0; continue;
-                }
-                // Status Effects per tick
-                if (player.poisonTimer > 0) {
-                    player.hp -= 1; player.poisonTimer--;
-                    spawnParticle(player.x, player.y, "-1", "#27ae60");
-                    if (player.hp <= 0) { showGameOverModal("Poison"); break; }
-                    if (player.poisonTimer === 0) logMessage("You recovered from poison.", "magic");
-                }
-                if (player.confusedTimer > 0) { player.confusedTimer--; if (player.confusedTimer === 0) logMessage("Your head clears.", "magic"); }
-                if (player.blindTimer > 0) { player.blindTimer--; if (player.blindTimer === 0) logMessage("Your vision returns.", "magic"); }
-                if (player.combatSurgeTimer > 0) { player.combatSurgeTimer--; if (player.combatSurgeTimer === 0) logMessage('Combat Surge fades.', 'hint'); }
-                if (player.regenBoost > 0) { player.regenBoost--; player.hp = Math.min(player.maxHp, player.hp + 1); }
-                if (player.skillCooldown > 0) player.skillCooldown--;
-
-                // Passive HP Regen
-                if (player.hp < player.maxHp && (!player.poisonTimer || player.poisonTimer <= 0)) {
-                    player.regenTimer = (player.regenTimer || 0) + 1;
-                    if (player.regenTimer >= 15) {
-                        player.hp++;
-                        player.regenTimer = 0;
-                    }
-                }
-
-                let act = null;
-                if (isAutoRunning) {
-                    checkAutoRunStop(player.x, player.y);
-                    if (isAutoRunning) act = { type: 'move', dx: runDirX, dy: runDirY };
-                    else stepsThisFrame = 0;
-                } else if (activePath && activePath.length > 0) {
-                    const nextNode = activePath.shift();
-                    act = { type: 'move', dx: nextNode.x - player.x, dy: nextNode.y - player.y };
-                    if (activePath.length === 0 && isAutoExploring) {
-                        activePath = null;
-                    } else if (!activePath || activePath.length === 0) {
-                        stepsThisFrame = 0;
-                    }
-                } else if (isAutoExploring) {
-                    act = getPendingAction();
-                    if (!isAutoExploring && !activePath) stepsThisFrame = 0;
-                } else {
-                    act = getPendingAction();
-                    stepsThisFrame = 0;
-                }
-
-                // #51 Confusion: randomize movement
-                if (player.confusedTimer > 0 && act && act.type === 'move') {
-                    const randomDirs = [[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,-1],[1,-1],[-1,1]];
-                    const rd = randomDirs[Math.floor(Math.random() * randomDirs.length)];
-                    act = { type: 'move', dx: rd[0], dy: rd[1] };
-                }
-
-                if (act) {
-                    attemptAction(player, act);
-                    playerActed = true;
-                    computeFOV();
-
-                    // Phase III: Item Gut Feelings
-                    for (let i = 0; i < player.inventory.length; i++) {
-                        let itm = player.inventory[i];
-                        if (!itm.identified) {
-                            itm.carryTurns = (itm.carryTurns || 0) + 1;
-                            if (itm.carryTurns === 50 && !itm.gutFeeling) {
-                                if (itm.cursed) itm.gutFeeling = "You feel a sinister, cold aura from this...";
-                                else if (itm.blessed) itm.gutFeeling = "This item exudes an aura of safety and warmth.";
-                                else if (itm.artifact) itm.gutFeeling = "This object throbs with ancient, tremendous power.";
-                                else if (itm.type === 'potion' || itm.type === 'scroll') itm.gutFeeling = "You sense latent magic within.";
-                                else itm.gutFeeling = "It feels completely mundane.";
-                                logMessage(`You get a feeling about the ${itm.name}...`, 'hint');
-                            }
-                        }
-                    }
-                }
-            } else {
-                player.energy += (player.isPlayer ? getEffectiveSpeed() : player.speed);
-            }
-
-            // 2. Process Monsters
-            for (let e of entities) {
-                if (!e.isPlayer && e.hp > 0 && e.blocksMovement) {
-                    // NPC Barks
-                    if (e.isTownNPC && Math.random() < 0.005) {
-                        const barks = ["Lovely day for a walk!", "Heard there's a Balrog downstairs...", "Prices at the shop are rising.", "Stay safe, traveler.", "Nice weather today!"];
-                        const dist = Math.abs(e.x - player.x) + Math.abs(e.y - player.y);
-                        if (dist < 8) logMessage(`${e.name} says: "${barks[Math.floor(Math.random()*barks.length)]}"`, 'hint');
-                    }
-                    if (e.name === 'Balrog' && e.hp < 150) e.hp = Math.min(150, e.hp + 2); // Regen
-                    if (e.energy >= ENERGY_THRESHOLD) {
-                        processMonsterAI(e);
-                    } else {
-                        e.energy += e.speed;
-                    }
-                }
-            }
-
-            if (!(isAutoRunning || activePath || isAutoExploring)) stepsThisFrame = 0;
-        }
-
         updateParticles(dt);
         updateUI();
         render();
+    }
+
+    // B. Logical Heartbeat (TomeNET style - 10 ticks / sec)
+    if (logicalDt >= HEARTBEAT_INTERVAL) {
+        lastLogicalTick = timestamp;
+        runLogicalTick();
+    }
+
+    // C. Check for immediate input buffering
+    if (!bufferedAction && player.energy < ENERGY_THRESHOLD) {
+        const pending = getPendingAction();
+        if (pending) bufferedAction = pending;
     }
 
     requestAnimationFrame(gameLoop);
@@ -340,6 +432,7 @@ function gameLoop(timestamp) {
 
 // --- Initialization ---
 function init() {
+    initNoiseMap();
     generateTown();
     computeFOV();
     resizeCanvas();

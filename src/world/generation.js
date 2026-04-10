@@ -38,6 +38,10 @@ function generateTown() {
 
     const c = townRect.center();
     if (!player) {
+        if (typeof Entity === 'undefined') {
+            console.error("Critical: Entity class not found in generateTown.");
+            return;
+        }
         player = new Entity(c.x, c.y, CHARS.PLAYER, COLORS.PLAYER, 'Player', 30, 5, 2, 10);
         player.isPlayer = true;
         player.gold = 0;
@@ -88,6 +92,8 @@ function generateTown() {
     buildHouse(c.x - 8,  c.y - 12, 6, 5, 'healer', '4', '#e74c3c');
     buildHouse(c.x + 2,  c.y - 12, 6, 5, 'wizard', '6', '#9b59b6');
     buildHouse(c.x + 11, c.y - 12, 6, 5, 'blacksmith', '3', '#7f8c8d');
+    // #39 Relic Altar - Move closer to center (was +20)
+    buildHouse(c.x - 26, c.y - 12, 6, 5, 'altar', 'A', '#9b59b6');
 
     // Middle Row
     buildHouse(c.x - 22, c.y - 3, 5, 5, 'alchemist', '5', '#2ecc71');
@@ -132,7 +138,7 @@ function generateTown() {
     }
 
     // Local flavor log
-    logMessage("Town Services: 1:Shop, 3:Blacksmith, 4:Healer, 5:Alchemist, 6:Wizard", "hint");
+    logMessage("Town Services: 1:Shop, 3:Blacksmith, 4:Healer, 5:Alchemist, 6:Wizard, A:Altar", "hint");
 
     // Pre-explore town
     for (let x = 0; x < MAP_WIDTH; x++) {
@@ -172,7 +178,16 @@ function generateDungeon() {
             }
 
             if (!failed) {
-                createRoom(newRoom);
+                // 15% chance to be a vault instead of a normal room
+                let isVault = false;
+                if (currentFloor >= 2 && Math.random() < 0.15) {
+                    isVault = placeVault(newRoom, map, entities, items);
+                }
+
+                if (!isVault) {
+                    createRoom(newRoom);
+                }
+                
                 const c = newRoom.center();
 
                 if (rooms.length === 0) {
@@ -188,8 +203,10 @@ function generateDungeon() {
                     }
 
                     // Spawn monsters & items
-                    if (Math.random() < 0.6) spawnMonsters(newRoom);
-                    if (Math.random() < 0.4) spawnRandomItem(newRoom);
+                    if (!newRoom.isVault) {
+                        if (Math.random() < 0.6) spawnMonsters(newRoom);
+                        if (Math.random() < 0.4) spawnRandomItem(newRoom);
+                    }
                 }
                 rooms.push(newRoom);
             }
@@ -424,6 +441,23 @@ function generateCave() {
             spawnMonsterAt(mx, my);
         }
 
+        // #24 Floor Guardians (One per unique floor)
+        const guardianTemp = ENEMY_TYPES.find(t => t.floorGuardian === currentFloor);
+        if (guardianTemp) {
+            let gx, gy; 
+            do { gx = Math.floor(Math.random() * MAP_WIDTH); gy = Math.floor(Math.random() * MAP_HEIGHT); } 
+            while (map[gx][gy].type !== 'floor' || getEntityAt(gx, gy) || (Math.abs(player.x - gx) + Math.abs(player.y - gy) < 10));
+            
+            const g = new Entity(gx, gy, guardianTemp.char, guardianTemp.color, guardianTemp.name, guardianTemp.hp, guardianTemp.atk, guardianTemp.def, guardianTemp.speed);
+            g.element = guardianTemp.element; g.baseXP = guardianTemp.baseXP; g.miniBoss = true;
+            if (guardianTemp.invisible) g.invisible = true;
+            entities.push(g);
+            logMessage(`You feel a dark presence on this floor... ${guardianTemp.name} is near.`, 'damage');
+        }
+
+        // #26-30 Environmental Hazards
+        placeEnvironmentalHazards();
+
         // Connectivity Check
         const path = findPath(sx, sy, ex, ey);
         if (path && path.length > 0) {
@@ -446,4 +480,106 @@ function createHTunnel(x1, x2, y) {
 }
 function createVTunnel(y1, y2, x) {
     for (let y = Math.min(y1, y2); y <= Math.max(y1, y2); y++) { map[x][y].type = 'floor'; map[x][y].char = CHARS.FLOOR; }
+}
+function spawnRandomItem(room) {
+    let x = Math.floor(Math.random() * (room.w - 2)) + room.x + 1;
+    let y = Math.floor(Math.random() * (room.h - 2)) + room.y + 1;
+    if (map[x] && map[x][y].type === 'floor' && !getEntityAt(x, y)) {
+        spawnRandomItemAt(x, y);
+    }
+}
+
+function spawnRandomItemAt(x, y) {
+    let validItems = ITEM_DB.filter(i => currentFloor >= (i.minFloor || 1));
+    if (validItems.length > 0) {
+        let it = { ...validItems[Math.floor(Math.random() * validItems.length)] };
+        
+        // #12 Apply Ego if applicable
+        if (typeof applyEgo !== 'undefined' && (it.type === 'weapon' || it.type === 'armor' || it.type === 'shield' || it.type === 'helm')) {
+            it = applyEgo(it);
+        }
+        
+        items.push({ x, y, ...it });
+    }
+}
+
+function spawnMonsterAt(x, y, isElite = false) {
+    if (typeof ENEMY_TYPES === 'undefined') return;
+    let validEnemies = ENEMY_TYPES.filter(e => currentFloor >= (e.minFloor || 1));
+    if (validEnemies.length === 0) validEnemies = [ENEMY_TYPES[0]];
+    
+    let template = validEnemies[Math.floor(Math.random() * validEnemies.length)];
+    let e = new Entity(x, y, template.char, template.color, template.name, template.hp, template.atk, template.def, template.speed);
+    
+    // Copy special properties
+    if (template.blinker) e.blinker = true;
+    if (template.invisible) e.invisible = true;
+    if (template.personality) e.personality = template.personality;
+    e.baseXP = template.baseXP || 10;
+    
+    if (isElite) {
+        e.name = "Elite " + e.name;
+        e.maxHp *= 2; e.hp = e.maxHp;
+        e.atk += 3; e.def += 2;
+        e.baseXP *= 3;
+        e.isElite = true;
+    }
+    
+    entities.push(e);
+    return e;
+}
+
+function spawnMonsters(room) {
+    let count = Math.floor(Math.random() * 3) + 1; // 1-3 monsters per room
+    for (let i = 0; i < count; i++) {
+        let x = Math.floor(Math.random() * (room.w - 2)) + room.x + 1;
+        let y = Math.floor(Math.random() * (room.h - 2)) + room.y + 1;
+        if (map[x] && map[x][y].type === 'floor' && !getEntityAt(x, y)) {
+            spawnMonsterAt(x, y, Math.random() < 0.1); // 10% elite chance
+        }
+    }
+}
+function placeEnvironmentalHazards() {
+    for (let x = 0; x < MAP_WIDTH; x++) {
+        for (let y = 0; y < MAP_HEIGHT; y++) {
+            if (map[x][y].type === 'floor') {
+                const r = Math.random();
+                // 1. Secret Doors (1.5% chance to turn adjacent floor/wall into secret)
+                if (r < 0.015 && currentFloor >= 1) {
+                    const dirs = [[1,0],[-1,0],[0,1],[0,-1]];
+                    const d = dirs[Math.floor(Math.random()*4)];
+                    const wx = x+d[0], wy = y+d[1];
+                    if (wx >= 0 && wx < MAP_WIDTH && wy >= 0 && wy < MAP_HEIGHT && map[wx][wy].type === 'wall') {
+                        map[wx][wy].secret = true;
+                    }
+                }
+                // 2. Hazards (Lava, Ice, Gas) - Clusters
+                if (r < 0.005) {
+                    let hType = null;
+                    if (currentFloor >= 5 && Math.random() < 0.3) hType = 'lava';
+                    else if (currentFloor >= 3 && Math.random() < 0.4) hType = 'ice';
+                    else if (currentFloor >= 2) hType = 'gas';
+
+                    if (hType) {
+                        const radius = 1 + Math.floor(Math.random() * 2);
+                        for (let ix = x-radius; ix <= x+radius; ix++) {
+                            for (let iy = y-radius; iy <= y+radius; iy++) {
+                                if (ix >= 0 && ix < MAP_WIDTH && iy >= 0 && iy < MAP_HEIGHT && map[ix][iy].type === 'floor') {
+                                    map[ix][iy].type = hType;
+                                    map[ix][iy].char = hType === 'lava' ? CHARS.LAVA : (hType === 'ice' ? CHARS.ICE : CHARS.GAS);
+                                    map[ix][iy].color = hType === 'lava' ? COLORS.LAVA : (hType === 'ice' ? COLORS.ICE : COLORS.GAS);
+                                }
+                            }
+                        }
+                    }
+                }
+                // 3. Trapdoors
+                if (r < 0.002 && currentFloor >= 2) {
+                    map[x][y].type = 'trapdoor';
+                    map[x][y].char = CHARS.TRAPDOOR;
+                    map[x][y].color = COLORS.TRAPDOOR;
+                }
+            }
+        }
+    }
 }
