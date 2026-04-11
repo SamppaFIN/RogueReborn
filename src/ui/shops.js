@@ -1127,7 +1127,7 @@ window.spendSkillPoint = function(stat) {
         
         document.getElementById('ui-skill-points').innerText = player.skillPoints;
         if (player.skillPoints === 0) {
-            document.getElementById('btn-finish-levelup').style.display = 'block';
+            closeLevelUpModal();
         }
         updateUI();
     }
