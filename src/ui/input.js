@@ -24,7 +24,8 @@ function getLine(x0, y0, x1, y1) {
 }
 
 // --- Mouse Input ---
-canvas.addEventListener('mousemove', e => {
+if (!window.inputHandlersInitialized) {
+    canvas.addEventListener('mousemove', e => {
     if (gameState === 'TARGETING') {
         const rect = canvas.getBoundingClientRect();
         const x = e.clientX - rect.left;
@@ -70,7 +71,7 @@ canvas.addEventListener('mousemove', e => {
     }
 });
 
-canvas.addEventListener('mousedown', e => {
+    canvas.addEventListener('mousedown', e => {
     if (gameState === 'TARGETING') {
         executeTargetSpell();
         return;
@@ -113,11 +114,11 @@ canvas.addEventListener('mousedown', e => {
     }
 });
 
-canvas.addEventListener('contextmenu', e => e.preventDefault());
-canvas.addEventListener('mouseleave', () => { hoverX = -1; hoverY = -1; });
-
-// --- Keyboard Input ---
-window.addEventListener('keydown', e => {
+    canvas.addEventListener('contextmenu', e => e.preventDefault());
+    canvas.addEventListener('mouseleave', () => { hoverX = -1; hoverY = -1; });
+    
+    // --- Keyboard Input ---
+    window.addEventListener('keydown', e => {
     keys[e.key] = true;
 
     // Close Modals
@@ -409,13 +410,16 @@ window.addEventListener('keydown', e => {
     }
 });
 
-window.addEventListener('keyup', e => {
-    keys[e.key] = false;
-});
-window.addEventListener('blur', () => {
-    for (let k in keys) keys[k] = false;
-});
-window.addEventListener('resize', resizeCanvas);
+    window.addEventListener('keyup', e => {
+        keys[e.key] = false;
+    });
+    window.addEventListener('blur', () => {
+        for (let k in keys) keys[k] = false;
+    });
+    window.addEventListener('resize', resizeCanvas);
+
+    window.inputHandlersInitialized = true;
+}
 
 // --- Player Action Detection ---
 function getPendingAction() {

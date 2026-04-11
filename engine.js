@@ -240,11 +240,11 @@ function spawnRandomItemAt(x, y) {
 function runLogicalTick() {
     if (gameState !== 'PLAYING') return;
 
-    // 1. Accumulate Energy (10 ticks/sec, base 100/tick)
-    player.energy += getEffectiveSpeed();
+    // 1. Accumulate Energy (capped to prevent burst freezes)
+    player.energy = Math.min(200, player.energy + getEffectiveSpeed());
     for (let e of entities) {
         if (!e.isPlayer && e.hp > 0 && e.blocksMovement) {
-            e.energy += (e.speed || 10);
+            e.energy = Math.min(200, e.energy + (e.speed || 10));
         }
     }
 

@@ -26,7 +26,7 @@ var COLORS = {
 
 var ENERGY_THRESHOLD = 100;
 var TICK_RATE = 1000 / 60; // Rendering FPS (60fps)
-var HEARTBEAT_INTERVAL = 100; // Logical Tick (10 ticks per second, TomeNET style)
+var HEARTBEAT_INTERVAL = 50; // Logical Tick (20 ticks per second, TomeNET style)
 
 var ACTION_COSTS = {
     MOVE: 100,

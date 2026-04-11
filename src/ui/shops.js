@@ -83,7 +83,7 @@ window.startGame = function (className) {
     }
 
     if (className === 'Warrior') {
-        player.maxHp = 40; player.hp = 40; player.atk = 7; player.def = 4; player.speed = 8;
+        player.maxHp = 40; player.hp = 40; player.atk = 7; player.def = 4; player.speed = 18;
         
         // Warrior equipment
         const swordBase = ITEM_DB.find(i => i.name === 'Short Sword');
@@ -101,7 +101,7 @@ window.startGame = function (className) {
 
         logMessage("Warrior Perk: Combat Surge every 5 kills (+2 Atk, 20 ticks)", 'magic');
     } else if (className === 'Mage') {
-        player.maxHp = 25; player.hp = 25; player.atk = 4; player.def = 2; player.speed = 10;
+        player.maxHp = 25; player.hp = 25; player.atk = 4; player.def = 2; player.speed = 22;
         player.spellMastery = true; // Spells scale with level
         
         // Mage equipment
@@ -124,7 +124,7 @@ window.startGame = function (className) {
         identifiedTypes['Wand of Magic Missile'] = true;
         logMessage("Mage Perk: Spell Mastery — spell damage scales with level", 'magic');
     } else if (className === 'Rogue') {
-        player.maxHp = 30; player.hp = 30; player.atk = 5; player.def = 3; player.speed = 14;
+        player.maxHp = 30; player.hp = 30; player.atk = 5; player.def = 3; player.speed = 28;
         player.backstab = true; // First hit from unseen = double damage
         
         // Rogue equipment
