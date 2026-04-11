@@ -1127,7 +1127,8 @@ window.spendSkillPoint = function(stat) {
         
         document.getElementById('ui-skill-points').innerText = player.skillPoints;
         if (player.skillPoints === 0) {
-            closeLevelUpModal();
+            if (typeof window.closeLevelUpModal === 'function') window.closeLevelUpModal();
+            else if (typeof closeLevelUpModal === 'function') closeLevelUpModal();
         }
         updateUI();
     }

@@ -23,6 +23,24 @@ function getLine(x0, y0, x1, y1) {
     return line;
 }
 
+function findNearestVisibleItem() {
+    let bestDist = 999;
+    let bestItem = null;
+    if (typeof items === 'undefined') return null;
+    for (let item of items) {
+        if (map[item.x] && map[item.x][item.y] && map[item.x][item.y].visible) {
+            let d = Math.abs(item.x - player.x) + Math.abs(item.y - player.y);
+            // Ignore if we are already standing on it
+            if (d === 0) continue;
+            if (d < bestDist) {
+                bestDist = d;
+                bestItem = item;
+            }
+        }
+    }
+    return bestItem;
+}
+
 // --- Mouse Input ---
 if (!window.inputHandlersInitialized) {
     canvas.addEventListener('mousemove', e => {
@@ -471,6 +489,22 @@ function getPendingAction() {
     }
 
     if (keys[' '] || keys['5']) {
+        // Space during Autoexplore: Become aggressive/hunt monsters
+        if (keys[' '] && isAutoExploring) {
+            if (typeof getNearestMonster === 'function') {
+                const nearest = getNearestMonster(player.x, player.y);
+                if (nearest && map[nearest.x] && map[nearest.x][nearest.y].visible) {
+                    const path = findPath(player.x, player.y, nearest.x, nearest.y);
+                    if (path && path.length > 0) {
+                        activePath = path;
+                        logMessage(`Hunting ${nearest.name}!`, 'damage');
+                        keys[' '] = false; // Consume key
+                        return { type: 'move', dx: path[0].x - player.x, dy: path[0].y - player.y };
+                    }
+                }
+            }
+        }
+
         // Auto-attack adjacent
         for (let e of entities) {
             if (!e.isPlayer && e.hp > 0 && Math.abs(e.x - player.x) <= 1 && Math.abs(e.y - player.y) <= 1) {
@@ -481,6 +515,7 @@ function getPendingAction() {
         if (keys[' '] && !isAutoExploring) {
             isAutoExploring = true;
             activePath = null;
+            keys[' '] = false;
         }
     }
     if ((keys['o'] || keys['O']) && !isAutoExploring) {
@@ -497,29 +532,53 @@ function getPendingAction() {
             logMessage("Auto-explore halted — low HP!", "damage");
             return null;
         }
-        // Safety: halt if a monster is nearby
+
+        // Safety: halt if a monster is nearby (unless we have an aggressive path)
         if (typeof getNearestMonster === 'function') {
             const nearest = getNearestMonster(player.x, player.y);
             if (nearest) {
                 const dist = Math.abs(nearest.x - player.x) + Math.abs(nearest.y - player.y);
-                if (dist <= 5 && map[nearest.x] && map[nearest.x][nearest.y] && map[nearest.x][nearest.y].visible) {
-                    isAutoExploring = false;
-                    activePath = null;
-                    logMessage("A monster comes into view!", "damage");
-                    return null;
+                const isVisible = map[nearest.x] && map[nearest.x][nearest.y] && map[nearest.x][nearest.y].visible;
+                if (dist <= 5 && isVisible) {
+                    // Check if our current path already leads to this monster
+                    const targetOnPath = activePath && activePath.length > 0 && activePath[activePath.length-1].x === nearest.x && activePath[activePath.length-1].y === nearest.y;
+                    if (!targetOnPath) {
+                        isAutoExploring = false;
+                        activePath = null;
+                        logMessage("A monster comes into view!", "damage");
+                        return null;
+                    }
                 }
             }
         }
+
         // Follow existing path
         if (activePath && activePath.length > 0) {
             const nextNode = activePath.shift();
-            return { type: 'move', dx: nextNode.x - player.x, dy: nextNode.y - player.y };
+            // If we arrived, clear path
+            if (nextNode.x === player.x && nextNode.y === player.y) {
+                // Should not happen with shift but for safety
+            } else {
+                return { type: 'move', dx: nextNode.x - player.x, dy: nextNode.y - player.y };
+            }
         }
-        // Need a new path
+
+        // Priority 1: Pick up visible items
+        const nearestItem = findNearestVisibleItem();
+        if (nearestItem) {
+            const path = findPath(player.x, player.y, nearestItem.x, nearestItem.y);
+            if (path && path.length > 0) {
+                activePath = path;
+                const nextNode = activePath.shift();
+                return { type: 'move', dx: nextNode.x - player.x, dy: nextNode.y - player.y };
+            }
+        }
+
+        // Priority 2: Fog-of-war exploration
         let path = findNearestUnexplored(player.x, player.y);
 
-        // Floor 0 (Town) specific: target stairs if no unexplored tiles
-        if (!path && currentFloor === 0) {
+        // Priority 3: Level completion (Stairs Down)
+        if (!path) {
             for(let x=0; x<MAP_WIDTH; x++) {
                 for(let y=0; y<MAP_HEIGHT; y++) {
                     if (map[x][y].type === 'stairs_down') {
