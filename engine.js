@@ -240,69 +240,76 @@ function spawnRandomItemAt(x, y) {
 function runLogicalTick() {
     if (gameState !== 'PLAYING') return;
 
-    // 1. Accumulate Energy (capped to prevent burst freezes)
-    player.energy = Math.min(200, player.energy + getEffectiveSpeed());
-    for (let e of entities) {
-        if (!e.isPlayer && e.hp > 0 && e.blocksMovement) {
-            e.energy = Math.min(200, e.energy + (e.speed || 10));
-        }
+    // Determine how many sub-ticks to process (auto modes get fast processing)
+    let subTicks = 1;
+    if (isAutoRunning || isAutoExploring || (activePath && activePath.length > 0)) {
+        subTicks = 10; // Process up to 10 steps per heartbeat for auto modes
     }
 
-    // Aistimus / Sound Update
-    updateNoise();
+    for (let st = 0; st < subTicks && gameState === 'PLAYING'; st++) {
+        // 1. Accumulate Energy (capped to prevent burst freezes)
+        player.energy = Math.min(200, player.energy + getEffectiveSpeed());
+        for (let e of entities) {
+            if (!e.isPlayer && e.hp > 0 && e.blocksMovement) {
+                e.energy = Math.min(200, e.energy + (e.speed || 10));
+            }
+        }
 
-    // 2. Process Player Actions (Multiple actions possible if high energy)
-    let maxPlayerActions = 5; // Safety break
-    while (player.energy >= ENERGY_THRESHOLD && maxPlayerActions > 0 && gameState === 'PLAYING') {
-        maxPlayerActions--;
-        
-        // Status & Regen (occurs at start of first action per tick)
-        if (maxPlayerActions === 4) processPlayerTimedEffects();
-        
-        let act = bufferedAction || getPendingAction();
-        bufferedAction = null; 
+        // Aistimus / Sound Update
+        if (st === 0) updateNoise();
 
-        if (act) {
-            let cost = ACTION_COSTS.MOVE;
-            if (act.type === 'move') {
-                const target = getEntityAt(player.x + act.dx, player.y + act.dy);
-                cost = target ? ACTION_COSTS.ATTACK : ACTION_COSTS.MOVE;
-            } else if (act.type === 'cast') { cost = ACTION_COSTS.CAST; }
-              else if (act.type === 'use') { cost = ACTION_COSTS.USE; }
-              else if (act.type === 'wait') { 
-                cost = ACTION_COSTS.WAIT; 
-                // Resting energy boost (Wait action recovers a bit extra energy for next tick)
-                player.energy += 15; 
-              }
+        // 2. Process Player Actions
+        if (player.energy >= ENERGY_THRESHOLD && gameState === 'PLAYING') {
+            // Status & Regen (once per heartbeat)
+            if (st === 0) processPlayerTimedEffects();
+            
+            let act = bufferedAction || getPendingAction();
+            bufferedAction = null; 
 
-            attemptAction(player, act, cost);
-            computeFOV();
-            processItemFeelings();
-        } else {
-            // No input, wait for next heartbeat
+            if (act) {
+                let cost = ACTION_COSTS.MOVE;
+                if (act.type === 'move') {
+                    const target = getEntityAt(player.x + act.dx, player.y + act.dy);
+                    cost = target ? ACTION_COSTS.ATTACK : ACTION_COSTS.MOVE;
+                } else if (act.type === 'cast') { cost = ACTION_COSTS.CAST; }
+                  else if (act.type === 'use') { cost = ACTION_COSTS.USE; }
+                  else if (act.type === 'wait') { 
+                    cost = ACTION_COSTS.WAIT; 
+                    player.energy += 15; 
+                  }
+
+                attemptAction(player, act, cost);
+                computeFOV();
+                processItemFeelings();
+            } else {
+                // No input available — stop fast-ticking
+                break;
+            }
+        }
+
+        // 3. Process Monsters
+        for (let e of entities) {
+            if (!e.isPlayer && e.hp > 0 && e.blocksMovement) {
+                if (e.name === 'Balrog' && e.hp < 150) e.hp = Math.min(150, e.hp + 2);
+                
+                if (st === 0 && e.isTownNPC && Math.random() < 0.005) {
+                    const barks = ["Lovely day!", "Prices are rising.", "Stay safe.", "Nice weather!"];
+                    const dist = Math.abs(e.x - player.x) + Math.abs(e.y - player.y);
+                    if (dist < 8) logMessage(`${e.name} says: "${barks[Math.floor(Math.random()*barks.length)]}"`, 'hint');
+                }
+                
+                let maxMonsterActions = 3;
+                while (e.energy >= ENERGY_THRESHOLD && maxMonsterActions > 0) {
+                    maxMonsterActions--;
+                    processMonsterAI(e);
+                    e.energy -= 100;
+                }
+            }
+        }
+
+        // Stop fast-ticking if we're no longer in an auto mode
+        if (!isAutoRunning && !isAutoExploring && (!activePath || activePath.length === 0)) {
             break;
-        }
-    }
-
-    // 3. Process Monsters
-    for (let e of entities) {
-        if (!e.isPlayer && e.hp > 0 && e.blocksMovement) {
-            // Boss HP recovery
-            if (e.name === 'Balrog' && e.hp < 150) e.hp = Math.min(150, e.hp + 2);
-            
-            // Random Town Barks
-            if (e.isTownNPC && Math.random() < 0.005) {
-                const barks = ["Lovely day!", "Prices are rising.", "Stay safe.", "Nice weather!"];
-                const dist = Math.abs(e.x - player.x) + Math.abs(e.y - player.y);
-                if (dist < 8) logMessage(`${e.name} says: "${barks[Math.floor(Math.random()*barks.length)]}"`, 'hint');
-            }
-            
-            let maxMonsterActions = 3;
-            while (e.energy >= ENERGY_THRESHOLD && maxMonsterActions > 0) {
-                maxMonsterActions--;
-                processMonsterAI(e);
-                e.energy -= 100;
-            }
         }
     }
 }

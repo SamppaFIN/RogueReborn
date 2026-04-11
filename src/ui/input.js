@@ -465,6 +465,8 @@ function getPendingAction() {
             runDirX = dx;
             runDirY = dy;
         }
+        // Consume directional keys after processing to prevent sticky movement
+        ['w','W','a','A','s','S','d','D','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','1','2','3','4','6','7','8','9'].forEach(k => keys[k] = false);
         return { type: 'move', dx, dy };
     }
 
@@ -488,43 +490,56 @@ function getPendingAction() {
 
     // Persistent auto-explore
     if (isAutoExploring) {
+        // Safety: halt on low HP
         if (player.hp <= Math.floor(player.maxHp * 0.3)) {
             isAutoExploring = false;
+            activePath = null;
             logMessage("Auto-explore halted — low HP!", "damage");
             return null;
         }
-        if (!activePath || activePath.length === 0) {
-            const now = performance.now();
-            if (typeof lastAutoExploreCheck === 'undefined' || now - lastAutoExploreCheck > 25) {
-                lastAutoExploreCheck = now;
-
-                let path = findNearestUnexplored(player.x, player.y);
-
-                // Floor 0 (Town) specific: explicitly target stairs if no unexplored tiles found
-                if (!path && currentFloor === 0) {
-                    for(let x=0; x<MAP_WIDTH; x++) {
-                        for(let y=0; y<MAP_HEIGHT; y++) {
-                            if (map[x][y].type === 'stairs_down') {
-                                path = findPath(player.x, player.y, x, y);
-                                break;
-                            }
-                        }
-                        if (path) break;
-                    }
-                }
-
-                if (path && path.length > 0) {
-                    activePath = path;
-                } else {
+        // Safety: halt if a monster is nearby
+        if (typeof getNearestMonster === 'function') {
+            const nearest = getNearestMonster(player.x, player.y);
+            if (nearest) {
+                const dist = Math.abs(nearest.x - player.x) + Math.abs(nearest.y - player.y);
+                if (dist <= 5 && map[nearest.x] && map[nearest.x][nearest.y] && map[nearest.x][nearest.y].visible) {
                     isAutoExploring = false;
-                    logMessage("Nothing left to explore!", "hint");
+                    activePath = null;
+                    logMessage("A monster comes into view!", "damage");
                     return null;
                 }
-            } else {
-                return null;
             }
         }
-        return null;
+        // Follow existing path
+        if (activePath && activePath.length > 0) {
+            const nextNode = activePath.shift();
+            return { type: 'move', dx: nextNode.x - player.x, dy: nextNode.y - player.y };
+        }
+        // Need a new path
+        let path = findNearestUnexplored(player.x, player.y);
+
+        // Floor 0 (Town) specific: target stairs if no unexplored tiles
+        if (!path && currentFloor === 0) {
+            for(let x=0; x<MAP_WIDTH; x++) {
+                for(let y=0; y<MAP_HEIGHT; y++) {
+                    if (map[x][y].type === 'stairs_down') {
+                        path = findPath(player.x, player.y, x, y);
+                        break;
+                    }
+                }
+                if (path) break;
+            }
+        }
+
+        if (path && path.length > 0) {
+            activePath = path;
+            const nextNode = activePath.shift();
+            return { type: 'move', dx: nextNode.x - player.x, dy: nextNode.y - player.y };
+        } else {
+            isAutoExploring = false;
+            logMessage("Nothing left to explore!", "hint");
+            return null;
+        }
     }
 
     // Auto-retaliate
