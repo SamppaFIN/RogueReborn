@@ -453,8 +453,7 @@ function collectItems(x, y) {
         }
         items.splice(itemIdx, 1);
         isAutoRunning = false;
-        // Stop auto-explore when picking up items (gold is silent, real items warrant a pause)
-        if (item.type !== 'gold') isAutoExploring = false;
+        // Auto-explore continues after picking up items
     }
 }
 
@@ -816,17 +815,6 @@ function handleMonsterDeath(defender) {
     } else {
         player.hp = Math.min(player.maxHp, player.hp + 2);
     }
-
-    // #VIII Combat Surge — Warrior every 5 kills
-    if (player.class === 'Warrior') {
-        player.killCount = (player.killCount || 0) + 1;
-        if (player.killCount % 5 === 0) {
-            player.combatSurgeTimer = 20;
-            logMessage('COMBAT SURGE! (+2 Atk for 20 ticks)', 'kill');
-            spawnParticle(player.x, player.y, 'SURGE!', '#f1c40f');
-        }
-    }
-
     // #38 Sentient Weapon XP
     const wep = player.equipment.weapon;
     if (wep && wep.sentient && (wep.itemLvl || 1) < 10) {
@@ -853,6 +841,23 @@ function handleMonsterDeath(defender) {
         }
     }
 }
+
+// Global wrapper for tests and console
+window.addXp = function(gainedXp) {
+    player.xp += gainedXp;
+    logMessage(`Gained ${gainedXp} XP.`);
+    if (player.xp >= player.nextXp) {
+        player.level++;
+        player.maxHp += 5;
+        player.hp = player.maxHp;
+        player.atk += 1;
+        player.skillPoints = (player.skillPoints || 0) + 1;
+        player.nextXp = Math.floor(player.nextXp * 1.8);
+        logMessage(`LEVEL UP! You are now level ${player.level}.`, 'magic');
+        if (typeof openLevelUpModal === 'function') openLevelUpModal();
+    }
+    updateUI();
+};
 
 
 

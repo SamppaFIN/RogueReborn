@@ -494,13 +494,9 @@ function getPendingAction() {
             if (typeof getNearestMonster === 'function') {
                 const nearest = getNearestMonster(player.x, player.y);
                 if (nearest && map[nearest.x] && map[nearest.x][nearest.y].visible) {
-                    const path = findPath(player.x, player.y, nearest.x, nearest.y);
-                    if (path && path.length > 0) {
-                        activePath = path;
-                        logMessage(`Hunting ${nearest.name}!`, 'damage');
-                        keys[' '] = false; // Consume key
-                        return { type: 'move', dx: path[0].x - player.x, dy: path[0].y - player.y };
-                    }
+                    isAutoExploring_Aggressive = true;
+                    logMessage(`Hunting mode: Active!`, 'damage');
+                    keys[' '] = false; // Consume key
                 }
             }
         }
@@ -508,12 +504,14 @@ function getPendingAction() {
         // Auto-attack adjacent
         for (let e of entities) {
             if (!e.isPlayer && e.hp > 0 && Math.abs(e.x - player.x) <= 1 && Math.abs(e.y - player.y) <= 1) {
+                isAutoExploring_Aggressive = false; // Stop hunting if we are already in melee
                 return { type: 'move', dx: e.x - player.x, dy: e.y - player.y };
             }
         }
         if (keys['5']) return { type: 'wait' };
         if (keys[' '] && !isAutoExploring) {
             isAutoExploring = true;
+            isAutoExploring_Aggressive = false;
             activePath = null;
             keys[' '] = false;
         }
@@ -552,35 +550,46 @@ function getPendingAction() {
             }
         }
 
+        // Priority 1: Aggressive hunting
+        if (isAutoExploring_Aggressive) {
+            const nearest = getNearestMonster(player.x, player.y);
+            if (nearest && map[nearest.x] && map[nearest.x][nearest.y].visible) {
+                const path = findPath(player.x, player.y, nearest.x, nearest.y);
+                if (path && path.length > 0) {
+                    activePath = path;
+                }
+            } else {
+                isAutoExploring_Aggressive = false;
+                logMessage("Hunting target lost.", "hint");
+            }
+        }
+
+        // Priority 2: Pick up visible items
+        const nearestItem = findNearestVisibleItem();
+        if (nearestItem) {
+            const tx = activePath && activePath.length > 0 ? activePath[activePath.length - 1].x : -1;
+            const ty = activePath && activePath.length > 0 ? activePath[activePath.length - 1].y : -1;
+            if (nearestItem.x !== tx || nearestItem.y !== ty) {
+                const path = findPath(player.x, player.y, nearestItem.x, nearestItem.y);
+                if (path && path.length > 0) {
+                    activePath = path;
+                }
+            }
+        }
+
         // Follow existing path
         if (activePath && activePath.length > 0) {
             const nextNode = activePath.shift();
-            // If we arrived, clear path
-            if (nextNode.x === player.x && nextNode.y === player.y) {
-                // Should not happen with shift but for safety
-            } else {
-                return { type: 'move', dx: nextNode.x - player.x, dy: nextNode.y - player.y };
-            }
+            return { type: 'move', dx: nextNode.x - player.x, dy: nextNode.y - player.y };
         }
 
-        // Priority 1: Pick up visible items
-        const nearestItem = findNearestVisibleItem();
-        if (nearestItem) {
-            const path = findPath(player.x, player.y, nearestItem.x, nearestItem.y);
-            if (path && path.length > 0) {
-                activePath = path;
-                const nextNode = activePath.shift();
-                return { type: 'move', dx: nextNode.x - player.x, dy: nextNode.y - player.y };
-            }
-        }
-
-        // Priority 2: Fog-of-war exploration
+        // Priority 3: Fog-of-war exploration
         let path = findNearestUnexplored(player.x, player.y);
 
-        // Priority 3: Level completion (Stairs Down)
+        // Priority 4: Level completion (Stairs Down)
         if (!path) {
-            for(let x=0; x<MAP_WIDTH; x++) {
-                for(let y=0; y<MAP_HEIGHT; y++) {
+            for (let x = 0; x < MAP_WIDTH; x++) {
+                for (let y = 0; y < MAP_HEIGHT; y++) {
                     if (map[x][y].type === 'stairs_down') {
                         path = findPath(player.x, player.y, x, y);
                         break;

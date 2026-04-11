@@ -36,6 +36,7 @@ let lastTime = 0;
 // Auto-run state
 let isAutoRunning = false;
 let isAutoExploring = false;
+let isAutoExploring_Aggressive = false;
 let runDirX = 0;
 let runDirY = 0;
 let activePath = null;
