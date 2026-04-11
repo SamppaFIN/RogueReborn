@@ -785,10 +785,37 @@ function handleMonsterDeath(defender) {
 
     if (Math.random() > 0.6) player.gold += 5 * (currentFloor || 1);
 
-    // XP logic
-    const gainedXp = defender.baseXP || 5;
-    addXp(gainedXp);
+    // XP logic (inline — addXp was lost during refactoring)
+    let gainedXp = defender.baseXP || 5;
+    if (currentFloor) gainedXp = Math.floor(gainedXp * (1 + currentFloor * 0.2));
+    player.xp += gainedXp;
+    logMessage(`Gained ${gainedXp} XP.`);
     spawnParticle(defender.x, defender.y, `+${gainedXp} XP`, '#2ecc71');
+
+    if (player.xp >= player.nextXp) {
+        player.level++;
+        player.maxHp += 5;
+        player.hp = player.maxHp;
+        player.atk += 1;
+        player.skillPoints = (player.skillPoints || 0) + 1;
+        player.nextXp = Math.floor(player.nextXp * 1.8);
+        logMessage(`LEVEL UP! You are now level ${player.level}.`, 'magic');
+        spawnParticle(player.x, player.y, 'LEVEL UP!', '#f1c40f');
+        // Class perks at level 3 & 5
+        if (player.level === 3) {
+            if (player.class === 'Warrior') { player.def += 1; logMessage('Warrior Level 3 Perk: +1 Defense!', 'kill'); }
+            if (player.class === 'Mage')    { player.maxHp += 5; player.hp += 5; logMessage('Mage Level 3 Perk: +5 Max HP!', 'kill'); }
+            if (player.class === 'Rogue')   { player.speed += 2; logMessage('Rogue Level 3 Perk: +2 Speed!', 'kill'); }
+        }
+        if (player.level === 5) {
+            if (player.class === 'Warrior') { player.atk += 2; logMessage('Warrior Level 5 Perk: +2 Attack!', 'kill'); }
+            if (player.class === 'Mage')    { if (player.equipment.armor) player.equipment.armor.spellBoost = (player.equipment.armor.spellBoost||0)+3; logMessage('Mage Level 5 Perk: +3 SpellBoost!', 'kill'); }
+            if (player.class === 'Rogue')   { player.atk += 1; player.def += 1; logMessage('Rogue Level 5 Perk: +1 Atk, +1 Def!', 'kill'); }
+        }
+        if (typeof openLevelUpModal === 'function') openLevelUpModal();
+    } else {
+        player.hp = Math.min(player.maxHp, player.hp + 2);
+    }
 
     // #VIII Combat Surge — Warrior every 5 kills
     if (player.class === 'Warrior') {

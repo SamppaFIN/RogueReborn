@@ -151,13 +151,16 @@ function generateTown() {
 function generateDungeon() {
     let connected = false;
     let tries = 0;
-    while (!connected && tries < 100) {
+    while (!connected && tries < 50) {
         tries++;
         initMap();
-        if (currentFloor >= 3 && Math.random() < 0.35) {
+        if (currentFloor >= 3 && Math.random() < 0.35 && tries < 10) {
             generateCave(); // Cave has its own connectivity check
             return;
         }
+
+        // After many failed attempts, skip vault generation to ensure connectivity
+        const allowVaults = (tries < 20);
 
         const rooms = [];
         const MAX_ROOMS = 20;
@@ -180,7 +183,7 @@ function generateDungeon() {
             if (!failed) {
                 // 15% chance to be a vault instead of a normal room
                 let isVault = false;
-                if (currentFloor >= 2 && Math.random() < 0.15) {
+                if (allowVaults && currentFloor >= 2 && Math.random() < 0.15) {
                     isVault = placeVault(newRoom, map, entities, items);
                 }
 
@@ -219,7 +222,7 @@ function generateDungeon() {
         }
 
         // Vault Generation (Erikoiskaupat)
-        if (currentFloor >= 3 && Math.random() < 0.35 && rooms.length > 3) {
+        if (allowVaults && currentFloor >= 3 && Math.random() < 0.35 && rooms.length > 3) {
             let vIndex = 1 + Math.floor(Math.random() * (rooms.length - 2));
             let vRoom = rooms[vIndex];
             
