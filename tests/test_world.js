@@ -42,8 +42,10 @@ describe('World — Monster Spawn Indices', () => {
         }
     });
 
-    it('Balrog is at index 9', () => {
-        assertEqual(ENEMY_TYPES[9].name, 'Balrog', 'Index 9 should be Balrog');
+    it('Balrog exists in ENEMY_TYPES', () => {
+        const balrog = ENEMY_TYPES.find(e => e.name === 'Balrog');
+        assert(balrog, 'Balrog should exist in ENEMY_TYPES');
+        assertEqual(balrog.hp, 150, 'Balrog HP should be 150');
     });
 
     it('all spawn indices for Abyss (11+) are valid', () => {

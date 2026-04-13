@@ -34,16 +34,18 @@ window.useClassSkill = function() {
     }
     
     if (player.class === 'Warrior') {
-        castCleave();
+        if (player.level >= 5) castBerserk();
+        else castCleave();
     } else if (player.class === 'Rogue') {
-        castDash();
+        if (player.level >= 5) castVanish();
+        else castDash();
     } else if (player.class === 'Mage') {
         targetX = player.x; targetY = player.y;
         activeSpell = 'fireball_skill';
         activeItemIndex = -1;
         gameState = 'TARGETING';
         logMessage("Select target for Fireball (AoE) - F or Enter to fire", "hint");
-        render(); // update UI to show reticle immediately
+        render(); 
     }
 };
 
@@ -172,5 +174,25 @@ window.executeFireball = function(tx, ty) {
     player.skillCooldown = SKILL_COOLDOWNS['Mage'];
     player.energy -= ENERGY_THRESHOLD;
     gameState = 'PLAYING';
+    updateUI();
+};
+window.castBerserk = function() {
+    logMessage("RAAAAAGH! You enter a primal BERSERK rage!", 'kill');
+    spawnParticle(player.x, player.y, "BERSERK!", '#e74c3c');
+    
+    player.berserkTimer = 20;
+    player.skillCooldown = SKILL_COOLDOWNS['Warrior'] * 1.5;
+    player.energy -= ENERGY_THRESHOLD;
+    updateUI();
+};
+
+window.castVanish = function() {
+    logMessage("You vanish into the shadows...", 'magic');
+    spawnParticle(player.x, player.y, "VANISH", '#333');
+    
+    player.invisible = true;
+    player.vanishTimer = 15;
+    player.skillCooldown = SKILL_COOLDOWNS['Rogue'] * 1.2;
+    player.energy -= ENERGY_THRESHOLD;
     updateUI();
 };

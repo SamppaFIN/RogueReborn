@@ -1,0 +1,115 @@
+﻿­ƒî© Rogue Reborn ÔÇö Test Suite
+ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+
+­ƒôª ENEMY_TYPES ÔÇö Structure
+  Ô£à should have at least 20 enemy types
+  Ô£à every enemy has required fields
+  Ô£à no duplicate enemy names
+  Ô£à all enemies have positive HP
+  Ô£à all enemies have positive speed
+  Ô£à all enemies have a single-char glyph
+  Ô£à Balrog exists and is the strongest base enemy
+  ÔØî mini-bosses are flagged correctly
+     ÔåÆ Arch-Lich not found
+  Ô£à special ability flags exist on correct monsters
+
+­ƒôª ITEM_DB ÔÇö Structure
+  Ô£à should have at least 60 items
+  Ô£à every item has required fields
+  Ô£à no duplicate item names
+  ÔØî all items have valid type
+     ÔåÆ Standard Repair Kit has invalid type: consumable
+  Ô£à equippable items have equip flag
+  Ô£à potions have effect field
+  Ô£à wands have charges field
+  ÔØî artifacts are flagged and have minFloor >= 4
+     ÔåÆ Artifact "Bloodied Shard" should be pre-identified
+  Ô£à Dungeon Key exists and has cost 0
+  ÔØî all floor requirements are <= 10
+     ÔåÆ Ringil has minFloor 12 > 10
+
+­ƒôª Constants ÔÇö Integrity
+  Ô£à TILE_SIZE is positive
+  Ô£à MAP dimensions are reasonable
+  Ô£à ENERGY_THRESHOLD is 100
+  Ô£à CHARS constants exist
+  Ô£à COLORS constants exist
+
+­ƒôª Combat ÔÇö Effective Stats
+  Ô£à base ATK without equipment equals player.atk
+  Ô£à weapon ATK bonus adds correctly
+  Ô£à Amulet of Strength adds +2 ATK
+  Ô£à Combat Surge adds +2 ATK
+  Ô£à full equipment stack adds correctly
+
+­ƒôª Combat ÔÇö Effective DEF
+  Ô£à base DEF without equipment
+  Ô£à armor + helm + ring + shield stack
+
+­ƒôª Combat ÔÇö Effective Speed
+  Ô£à base speed without penalties
+  Ô£à shield speed penalty
+  Ô£à burden ring speed penalty
+  Ô£à dual wield speed bonus
+  Ô£à speed floors at 1
+
+­ƒôª Combat ÔÇö Damage Formula
+  Ô£à damage is always at least 1
+  Ô£à damage scales with ATK advantage
+
+­ƒôª Combat ÔÇö Elite Variants
+  Ô£à elite HP is 1.5x base
+  Ô£à elite ATK is ceil(1.3x base)
+  Ô£à elite XP is 2x base
+
+­ƒôª Combat ÔÇö Level Up
+  Ô£à level up grants +5 maxHP
+  Ô£à level up grants +1 ATK
+  Ô£à level up heals to full
+  Ô£à XP threshold scales by 1.8x
+  Ô£à Warrior level 3 perk is +1 DEF
+  Ô£à Rogue level 3 perk is +2 Speed
+
+­ƒôª World ÔÇö Monster Spawn Indices
+  Ô£à all spawn indices for floors 1-2 are valid
+  Ô£à all spawn indices for floors 3-4 are valid
+  Ô£à all spawn indices for floors 5-6 are valid
+  Ô£à all spawn indices for floors 7-8 are valid
+  Ô£à all spawn indices for floors 9-10 are valid
+  ÔØî Balrog is at index 9
+     ÔåÆ Index 9 should be Balrog
+  Ô£à all spawn indices for Abyss (11+) are valid
+
+­ƒôª World ÔÇö Map Dimensions
+  Ô£à MAP_WIDTH is 70
+  Ô£à MAP_HEIGHT is 50
+
+­ƒôª World ÔÇö Item Spawn Logic
+  Ô£à items with minFloor exist for every floor 1-10
+  Ô£à artifacts only spawn at floor 4+
+  Ô£à gold pile spawning always has floor 1 items available
+
+­ƒôª World ÔÇö Town Building Types
+  Ô£à expected building tile types exist in constants
+
+­ƒôª World ÔÇö XP Scaling
+  Ô£à XP scales with floor multiplier
+  Ô£à XP scales higher at deep floors
+
+­ƒôª AI ÔÇö Personalities
+  ÔØî Cowardly: runs away when player has many kills
+     ÔåÆ mapTile is not defined
+  ÔØî Vengeful: gains ATK and rushes when player has many kills
+     ÔåÆ Vengeful Orc should gain +2 ATK
+  Ô£à Stealthy: waits in darkness when far away
+  ÔØî Pack: alerts nearby pack members when wounded
+     ÔåÆ mapTile is not defined
+  ÔØî Cowardly: does NOT run away when kills are low
+     ÔåÆ mapTile is not defined
+  Ô£à Vengeful: does NOT gain buff when kills are low
+  ÔØî Fear: wounded monsters (any personality) sometimes flee
+     ÔåÆ mapTile is not defined
+
+ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+­ƒôè Results: 59/69 passed, 10 failed
+­ƒÆö Some tests failed!

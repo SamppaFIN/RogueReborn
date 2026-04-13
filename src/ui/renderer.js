@@ -69,7 +69,15 @@ function updateUI() {
     if (document.getElementById('ui-atk')) document.getElementById('ui-atk').innerText = getEffectiveAtk();
     if (document.getElementById('ui-def')) document.getElementById('ui-def').innerText = getEffectiveDef();
 
-    if (document.getElementById('ui-xp')) document.getElementById('ui-xp').innerText = `${player.xp} / ${player.nextXp} (Lvl ${player.level})`;
+    if (document.getElementById('ui-stats')) {
+        document.getElementById('ui-stats').innerText = `${player.stats.str} / ${player.stats.int} / ${player.stats.dex}`;
+    }
+
+    if (document.getElementById('ui-xp')) {
+        let xpText = `${player.xp} / ${player.nextXp} (Lvl ${player.level})`;
+        if (player.skillPoints > 0) xpText += ` [+${player.skillPoints} PTS]`;
+        document.getElementById('ui-xp').innerText = xpText;
+    }
 
     document.getElementById('ui-gold').innerText = player.gold;
     document.getElementById('ui-hp').innerText = player.hp;

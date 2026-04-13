@@ -114,6 +114,11 @@ function loadGameContext() {
             context.CHARS = vm.runInContext('CHARS', context);
             context.COLORS = vm.runInContext('COLORS', context);
             context.ENERGY_THRESHOLD = vm.runInContext('ENERGY_THRESHOLD', context);
+            // Batch 9: Noise/Awareness constants
+            context.NOISE_DECAY_RATE = vm.runInContext('NOISE_DECAY_RATE', context);
+            context.BASE_SENSING_RADIUS = vm.runInContext('BASE_SENSING_RADIUS', context);
+            context.WAKE_THRESHOLD = vm.runInContext('WAKE_THRESHOLD', context);
+            context.NOISE_LEVELS = vm.runInContext('NOISE_LEVELS', context);
         }
         if (file.includes('enemies.js')) {
             context.ENEMY_TYPES = vm.runInContext('ENEMY_TYPES', context);
@@ -128,15 +133,64 @@ function loadGameContext() {
         }
         if (file.includes('ai.js')) {
             context.processMonsterAI = vm.runInContext('processMonsterAI', context);
+            context.handlePackAlert = vm.runInContext('handlePackAlert', context);
+            context.handleRetreat = vm.runInContext('handleRetreat', context);
+            context.handleAmbush = vm.runInContext('handleAmbush', context);
+            context.handleSupportAI = vm.runInContext('handleSupportAI', context);
+            context.handleBossPhase = vm.runInContext('handleBossPhase', context);
         }
     }
 
-    // Initialize required global state for AI
+    // Initialize required global state
     context.entities = [];
-    context.map = Array(context.MAP_WIDTH).fill(0).map(() => Array(context.MAP_HEIGHT).fill(0).map(() => ({ type: 'floor', visible: true, explored: true })));
-    context.player = { x: 10, y: 10, hp: 100, maxHp: 100, killsByType: {}, isPlayer: true, name: 'Hero' };
+    context.items = [];
+    const W = context.MAP_WIDTH, H = context.MAP_HEIGHT;
+    context.map = Array(W).fill(0).map(() => Array(H).fill(0).map(() => ({ type: 'floor', visible: true, explored: true })));
+    context.noiseMap = Array(W).fill(0).map(() => Array(H).fill(0));
+    context.player = {
+        x: 10, y: 10, hp: 100, maxHp: 100, killsByType: {},
+        isPlayer: true, name: 'Hero', inventory: [], gold: 0,
+        equipment: { weapon: null, armor: null, helm: null, ring: null, amulet: null, offhand: null },
+        atk: 5, def: 2, speed: 10, energy: 0, level: 1, xp: 0, nextXp: 50,
+        class: 'Warrior', combatSurgeTimer: 0, killCount: 0,
+        poisonTimer: 0, confusedTimer: 0, blindTimer: 0, paralyzedTimer: 0,
+        regenBoost: 0, regenTimer: 0, hasESP: false, ammo: 0, reloading: 0
+    };
+    context.currentFloor = 1;
+    context.totalTurns = 0;
+    context.timeOfDay = 'Day';
+    context.gameState = 'PLAYING';
+    context.bountyTarget = null;
+    context.bountyClaimed = false;
+    context.identifiedTypes = {};
     context.logMessage = () => {};
     context.spawnParticle = () => {};
+    context.addNoise = (x, y, level) => {
+        if (x >= 0 && x < W && y >= 0 && y < H) {
+            context.noiseMap[x][y] = Math.max(context.noiseMap[x][y], level);
+        }
+    };
+    // Mock UI/render functions that attemptAction calls
+    context.updateUI = () => {};
+    context.render = () => {};
+    context.computeFOV = () => {};
+    context.openShop = () => {};
+    context.openInnkeeper = () => {};
+    context.openBlacksmith = () => {};
+    context.openWizard = () => {};
+    context.openBank = () => {};
+    context.openAlchemist = () => {};
+    context.openTrainer = () => {};
+    context.openCartographer = () => {};
+    context.openGuildhall = () => {};
+    context.openStash = () => {};
+    context.closeInventory = () => {};
+    context.closeAllModals = () => {};
+    context.showGameOverModal = () => {};
+    context.getItemName = (item) => item.name || 'item';
+    context.discoverLore = () => {};
+    context.handleDeath = () => {};
+    context.findPath = vm.runInContext('findPath', context);
     context.visibleMonsters = new Set();
     context.isAutoRunning = false;
     context.activePath = null;

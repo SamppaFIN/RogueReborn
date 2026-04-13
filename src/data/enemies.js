@@ -19,24 +19,25 @@ const ENEMY_TYPES = [
     { char: 'Z', name: 'Skeleton', color: '#ecf0f1', hp: 14, atk: 4, def: 2, speed: 8, element: 'none', baseXP: 35 },
     { char: 'n', name: 'Blink Dog', color: '#3498db', hp: 12, atk: 5, def: 2, speed: 15, element: 'none', blinker: true, baseXP: 45, personality: 'pack' },
     { char: 'X', name: 'Rust Monster', color: '#d35400', hp: 16, atk: 3, def: 0, speed: 10, element: 'rust', baseXP: 50 },
-    { char: 'C', name: 'Gelatinous Cube', color: 'rgba(100,255,100,0.5)', hp: 30, atk: 6, def: 3, speed: 5, element: 'none', baseXP: 40, invisible: true },
+    { char: 'C', name: 'Gelatinous Cube', color: 'rgba(100,255,100,0.5)', hp: 45, atk: 7, def: 4, speed: 6, element: 'none', baseXP: 55, invisible: true, dissolver: true },
 
     // Phase VI — Round 1: Frost & Shadow creatures
     { char: 'w', name: 'Frost Wolf', color: '#85c1e9', hp: 22, atk: 6, def: 3, speed: 14, element: 'ice', baseXP: 35, personality: 'pack' },
     { char: 'G', name: 'Gargoyle', color: '#7f8c8d', hp: 40, atk: 8, def: 8, speed: 5, element: 'none', baseXP: 55 },
-    { char: 'a', name: 'Shadow Assassin', color: '#2c3e50', hp: 16, atk: 10, def: 1, speed: 15, element: 'none', baseXP: 65, personality: 'stealthy' },
+    { char: 'a', name: 'Shadow Assassin', color: '#2c3e50', hp: 16, atk: 10, def: 1, speed: 15, element: 'none', baseXP: 65, personality: 'stealthy', ambusher: true },
 
     // Phase VI — Round 2: Phase & Stone creatures
-    { char: 'p', name: 'Phase Spider', color: '#af7ac5', hp: 20, atk: 6, def: 2, speed: 13, element: 'magic', blinker: true, baseXP: 50, personality: 'stealthy' },
+    { char: 'p', name: 'Phase Spider', color: '#af7ac5', hp: 20, atk: 6, def: 2, speed: 13, element: 'magic', blinker: true, baseXP: 50, personality: 'stealthy', ambusher: true },
     { char: 'J', name: 'Iron Golem', color: '#aab7b8', hp: 60, atk: 11, def: 10, speed: 4, element: 'none', baseXP: 90 },
 
     // Deep Monsters (Floors 6-10)
     { char: 'W', name: 'Wraith', color: '#95a5a6', hp: 25, atk: 8, def: 2, speed: 10, element: 'drain', baseXP: 80, personality: 'stealthy' },
-    { char: 'V', name: 'Vampire', color: '#8e44ad', hp: 28, atk: 8, def: 3, speed: 11, element: 'drain', drainMaxHp: true, baseXP: 90 },
+    { char: 'V', name: 'Vampire', color: '#8e44ad', hp: 32, atk: 9, def: 4, speed: 11, element: 'drain', drainMaxHp: true, lifeSteal: true, baseXP: 110 },
     { char: 'N', name: 'Necromancer', color: '#9b59b6', hp: 20, atk: 7, def: 1, speed: 9, element: 'magic', summoner: true, baseXP: 70 },
     { char: 'I', name: 'Beholder', color: '#e74c3c', hp: 22, atk: 9, def: 2, speed: 8, element: 'magic', rangedDebuff: true, baseXP: 85 },
-    { char: 'M', name: 'Mind Flayer', color: '#8e44ad', hp: 24, atk: 7, def: 3, speed: 9, element: 'magic', xpDrain: true, baseXP: 100 },
-    { char: 'D', name: 'Dragon', color: '#e67e22', hp: 50, atk: 12, def: 7, speed: 8, element: 'fire', baseXP: 150 },
+    { char: 'M', name: 'Mind Flayer', color: '#8e44ad', hp: 24, atk: 7, def: 3, speed: 10, element: 'magic', xpDrain: true, baseXP: 100 },
+    { char: 'D', name: 'Dragon', color: '#e67e22', hp: 60, atk: 14, def: 8, speed: 9, element: 'fire', breather: true, baseXP: 180 },
+    { char: 'd', name: 'Frost Dragon', color: '#3498db', hp: 65, atk: 13, def: 9, speed: 8, element: 'ice', breather: true, baseXP: 185 },
 
     // Phase VI — Round 3: Wyvern & Elementals
     { char: 'Y', name: 'Wyvern', color: '#16a085', hp: 45, atk: 11, def: 5, speed: 12, element: 'poison', baseXP: 120 },
@@ -48,16 +49,29 @@ const ENEMY_TYPES = [
     { char: 'S', name: 'Skeletal Knight', color: '#f0f3f4', hp: 38, atk: 9, def: 6, speed: 7, element: 'none', baseXP: 70 },
 
     // Boss tier
-    { char: 'B', name: 'Balrog', color: '#c0392b', hp: 150, atk: 18, def: 12, speed: 10, element: 'fire', baseXP: 500 },
+    { char: 'B', name: 'Balrog', color: '#c0392b', hp: 150, atk: 18, def: 12, speed: 10, element: 'fire', baseXP: 500, bossPhases: true },
 
     // Phase VI — Round 5: Hydra & Demon Lord
-    { char: 'H', name: 'Hydra', color: '#1abc9c', hp: 100, atk: 14, def: 6, speed: 7, element: 'poison', baseXP: 250, miniBoss: true },
-    { char: 'U', name: 'Demon Lord', color: '#e74c3c', hp: 130, atk: 17, def: 11, speed: 9, element: 'fire', summoner: true, baseXP: 400, miniBoss: true },
-    { char: 'A', name: 'Ancient Wyrm', color: '#f39c12', hp: 200, atk: 20, def: 14, speed: 8, element: 'fire', drainMaxHp: true, baseXP: 600, miniBoss: true },
+    { char: 'H', name: 'Hydra', color: '#1abc9c', hp: 100, atk: 14, def: 6, speed: 7, element: 'poison', baseXP: 250, miniBoss: true, bossPhases: true },
+    { char: 'U', name: 'Demon Lord', color: '#e74c3c', hp: 130, atk: 17, def: 11, speed: 9, element: 'fire', summoner: true, baseXP: 400, miniBoss: true, bossPhases: true },
+    { char: 'A', name: 'Ancient Wyrm', color: '#f39c12', hp: 250, atk: 22, def: 15, speed: 9, element: 'fire', drainMaxHp: true, breather: true, miniBoss: true, baseXP: 800, bossPhases: true },
+    { char: 'K', name: 'Dragon King', color: '#e74c3c', hp: 300, atk: 25, def: 18, speed: 10, element: 'fire', drainMaxHp: true, breather: true, miniBoss: true, baseXP: 1000, bossPhases: true },
 
-    // Abyss Elite Encounters
-    { char: 'L', name: 'Arch-Lich', color: '#9b59b6', hp: 80, atk: 14, def: 8, speed: 9, element: 'magic', xpDrain: true, summoner: true, baseXP: 350, miniBoss: true },
-    { char: 'K', name: 'Dragon King', color: '#e74c3c', hp: 120, atk: 16, def: 10, speed: 10, element: 'fire', drainMaxHp: true, rangedDebuff: true, baseXP: 450, miniBoss: true },
+    // #24 Floor Guardians (Static Mini-Bosses)
+    { char: 'B', name: 'The Butcher', color: '#c0392b', hp: 80, atk: 12, def: 5, speed: 9, element: 'none', baseXP: 150, miniBoss: true, floorGuardian: 3, bossPhases: true },
+    { char: 'S', name: 'Shadow Queen', color: '#8e44ad', hp: 120, atk: 15, def: 8, speed: 14, element: 'magic', baseXP: 250, miniBoss: true, floorGuardian: 7, invisible: true, bossPhases: true },
+
+    // #25 Vault Sentries
+    { char: 'V', name: 'Vault Guardian', color: '#f1c40f', hp: 100, atk: 15, def: 15, speed: 7, element: 'none', baseXP: 200, vaultSentry: true },
+    { char: 'O', name: 'Vault Overseer', color: '#3498db', hp: 150, atk: 18, def: 12, speed: 8, element: 'magic', baseXP: 300, vaultSentry: true, summoner: true },
     { char: 'O', name: 'Champion Orc', color: '#27ae60', hp: 45, atk: 10, def: 6, speed: 9, element: 'none', baseXP: 80, elite: true, personality: 'vengeful' },
-    { char: 'Q', name: 'Cave Champion', color: COLORS.TROLL, hp: 70, atk: 13, def: 8, speed: 7, element: 'none', baseXP: 110, elite: true, personality: 'vengeful' }
+    { char: 'Q', name: 'Cave Champion', color: COLORS.TROLL, hp: 70, atk: 13, def: 8, speed: 7, element: 'none', baseXP: 110, elite: true, personality: 'vengeful' },
+
+    // #43 Ambusher — lurks in shadows
+    { char: 'l', name: 'Lurker', color: '#2c3e50', hp: 18, atk: 9, def: 2, speed: 12, element: 'none', baseXP: 55, ambusher: true, invisible: true },
+
+    // #44 Support Units — healers and buffers
+    { char: 'g', name: 'Goblin Shaman', color: '#9b59b6', hp: 12, atk: 2, def: 1, speed: 8, element: 'magic', baseXP: 25, support: 'healer' },
+    { char: 'o', name: 'Orc Warpriest', color: '#f39c12', hp: 25, atk: 4, def: 3, speed: 7, element: 'magic', baseXP: 50, support: 'healer' },
+    { char: 'c', name: 'Dark Channeler', color: '#8e44ad', hp: 20, atk: 3, def: 2, speed: 9, element: 'magic', baseXP: 55, support: 'buffer' }
 ];
