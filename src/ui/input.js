@@ -26,19 +26,28 @@ function getLine(x0, y0, x1, y1) {
 function findNearestVisibleItem() {
     let bestDist = 999;
     let bestItem = null;
+    let keyItem = null;
+    
     if (typeof items === 'undefined') return null;
     for (let item of items) {
         if (map[item.x] && map[item.x][item.y] && map[item.x][item.y].visible) {
             let d = Math.abs(item.x - player.x) + Math.abs(item.y - player.y);
             // Ignore if we are already standing on it
             if (d === 0) continue;
+            
+            if (item.name === 'Dungeon Key') {
+                keyItem = item;
+            }
+
             if (d < bestDist) {
                 bestDist = d;
                 bestItem = item;
             }
         }
     }
-    return bestItem;
+    
+    // Always prioritize returning the key if it's visible, so the AI will fetch it immediately
+    return keyItem || bestItem;
 }
 
 // --- Mouse Input ---
@@ -152,6 +161,11 @@ if (!window.inputHandlersInitialized) {
     if (e.key === 'i' || e.key === 'I') {
         if (gameState === 'PLAYING') openInventory();
         else if (gameState === 'INVENTORY') closeInventory();
+        return;
+    }
+
+    if (e.key === 'p' || e.key === 'P') {
+        if (typeof toggleAutoPlay === 'function') toggleAutoPlay();
         return;
     }
 
@@ -570,7 +584,10 @@ function getPendingAction() {
             const tx = activePath && activePath.length > 0 ? activePath[activePath.length - 1].x : -1;
             const ty = activePath && activePath.length > 0 ? activePath[activePath.length - 1].y : -1;
             if (nearestItem.x !== tx || nearestItem.y !== ty) {
-                const path = findPath(player.x, player.y, nearestItem.x, nearestItem.y);
+                let path = findPath(player.x, player.y, nearestItem.x, nearestItem.y);
+                if ((!path || path.length === 0) && nearestItem.name === 'Dungeon Key') {
+                    path = findPath(player.x, player.y, nearestItem.x, nearestItem.y, false, true);
+                }
                 if (path && path.length > 0) {
                     activePath = path;
                 }
@@ -588,14 +605,19 @@ function getPendingAction() {
 
         // Priority 4: Level completion (Stairs Down)
         if (!path) {
+            let stairsFound = false;
             for (let x = 0; x < MAP_WIDTH; x++) {
                 for (let y = 0; y < MAP_HEIGHT; y++) {
                     if (map[x][y].type === 'stairs_down') {
+                        stairsFound = true;
                         path = findPath(player.x, player.y, x, y);
+                        if (!path || path.length === 0) {
+                            path = findPath(player.x, player.y, x, y, false, true);
+                        }
                         break;
                     }
                 }
-                if (path) break;
+                if (stairsFound) break;
             }
         }
 

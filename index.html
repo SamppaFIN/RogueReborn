@@ -372,8 +372,11 @@
             <div class="hint">
                 [Arrow/WASD/Numpad] Move/Attack<br>
                 [Shift + Dir] Auto-run<br>
-                [1-9] Use/Equip item from Inv
+                [1-9] Use/Equip item from Inv<br>
+                [P] Toggle Autoplay
             </div>
+            
+            <button class="btn" id="btn-autoplay" onclick="toggleAutoPlay()" style="margin-top: 10px; font-size: 0.9em; padding: 10px; border-color: #f1c40f; color: #f1c40f;">AUTOPLAY: OFF</button>
         </div>
     </div>
 
@@ -772,6 +775,7 @@
     <script src="src/systems/ai.js?v=4"></script>
     <script src="src/world/vaults.js?v=2"></script>
     <script src="src/world/generation.js?v=5"></script>
+    <script src="src/systems/autoplay.js?v=1"></script>
     <script src="engine.js?v=13"></script>
     <script src="src/ui/input.js?v=3"></script>
 </body>

@@ -326,7 +326,7 @@ function generateDungeon() {
         }
         
         if (tx !== -1) {
-            const path = findPath(sx, sy, tx, ty);
+            const path = findPath(sx, sy, tx, ty, true);
             if (path && path.length > 0) {
                 connected = true;
             } else {
@@ -462,7 +462,7 @@ function generateCave() {
         placeEnvironmentalHazards();
 
         // Connectivity Check
-        const path = findPath(sx, sy, ex, ey);
+        const path = findPath(sx, sy, ex, ey, true);
         if (path && path.length > 0) {
             connected = true;
         } else {

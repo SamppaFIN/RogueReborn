@@ -264,6 +264,10 @@ function runLogicalTick() {
             // Status & Regen (once per heartbeat)
             if (st === 0) processPlayerTimedEffects();
             
+            if (typeof window.isAutoPlayActive !== 'undefined' && window.isAutoPlayActive) {
+                if (typeof processAutoPlay === 'function') processAutoPlay();
+            }
+            
             let act = bufferedAction || getPendingAction();
             bufferedAction = null; 
 

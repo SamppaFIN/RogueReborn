@@ -5,7 +5,7 @@
  *
  * Batch 9: Pack Mentality, Retreat Logic, Ambusher AI, Support Units, Boss Phases
  */
-function findPath(sx, sy, tx, ty) {
+function findPath(sx, sy, tx, ty, ignoreVisibility = false, allowHazards = false) {
     const queue = [{ x: sx, y: sy, path: [] }];
     const visited = new Set([`${sx},${sy}`]);
     const dirs = [
@@ -16,7 +16,7 @@ function findPath(sx, sy, tx, ty) {
     // Max depth to prevent massive search lag
     let iteration = 0;
 
-    while (queue.length > 0 && iteration < 1500) {
+    while (queue.length > 0 && iteration < 6000) {
         iteration++;
         const curr = queue.shift();
 
@@ -37,8 +37,9 @@ function findPath(sx, sy, tx, ty) {
                     const ent = getEntityAt(nx, ny);
                     const hasKey = player.inventory.some(i => i.name === 'Dungeon Key');
                     const blockingTypes = ['wall', 'locked_door', 'shop', 'healer', 'blacksmith', 'wizard', 'bank', 'well', 'mayor', 'gambler', 'shrine'];
+                    if (!allowHazards) blockingTypes.push('lava', 'gas');
                     const isPassable = !blockingTypes.includes(tile.type) || (tile.type === 'locked_door' && hasKey);
-                    if (tile.explored && (isPassable || (nx === tx && ny === ty)) && (!ent || !ent.isTownNPC || !ent.blocksMovement || (nx === tx && ny === ty))) {
+                    if ((ignoreVisibility || tile.explored) && (isPassable || (nx === tx && ny === ty)) && (!ent || !ent.isTownNPC || !ent.blocksMovement || (nx === tx && ny === ty))) {
                         visited.add(key);
                         queue.push({ x: nx, y: ny, path: [...curr.path, { x: nx, y: ny }] });
                     }
@@ -85,7 +86,7 @@ function findNearestUnexplored(sx, sy) {
                     const tile = map[nx][ny];
                     const ent = getEntityAt(nx, ny);
                     const hasKey = player.inventory.some(i => i.name === 'Dungeon Key');
-                    const blockingTypes = ['wall', 'locked_door', 'shop', 'healer', 'blacksmith', 'wizard', 'bank', 'well', 'mayor', 'gambler', 'shrine'];
+                    const blockingTypes = ['wall', 'locked_door', 'shop', 'healer', 'blacksmith', 'wizard', 'bank', 'well', 'mayor', 'gambler', 'shrine', 'lava', 'gas'];
                     const isPassable = !blockingTypes.includes(tile.type) || (tile.type === 'locked_door' && hasKey);
                     // Path through explored floors, avoid blocking Town NPCs specifically
                     if (((tile.explored && isPassable) || (!tile.explored && !blockingTypes.includes(tile.type))) && (!ent || !ent.isTownNPC || !ent.blocksMovement)) {

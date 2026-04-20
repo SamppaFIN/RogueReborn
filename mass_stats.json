@@ -1,0 +1,802 @@
+[
+  {
+    "status": "TIMEOUT",
+    "floor": 4,
+    "level": 9,
+    "score": 655,
+    "turns": 150057,
+    "killer": "Time"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 5,
+    "level": 10,
+    "score": 752,
+    "turns": 150134,
+    "killer": "Time"
+  },
+  {
+    "status": "PLAYER_DEAD",
+    "floor": 3,
+    "level": 7,
+    "score": 222,
+    "turns": 3537,
+    "killer": "Nameless remains"
+  },
+  {
+    "status": "PLAYER_DEAD",
+    "floor": 9,
+    "level": 10,
+    "score": 1173,
+    "turns": 10283,
+    "killer": "Dragon King"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 3,
+    "level": 8,
+    "score": 198,
+    "turns": 150098,
+    "killer": "Time"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 4,
+    "level": 8,
+    "score": 292,
+    "turns": 150059,
+    "killer": "Time"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 4,
+    "level": 7,
+    "score": 80,
+    "turns": 150136,
+    "killer": "Time"
+  },
+  {
+    "status": "PLAYER_DEAD",
+    "floor": 6,
+    "level": 10,
+    "score": 654,
+    "turns": 6062,
+    "killer": "Nameless remains"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 6,
+    "level": 10,
+    "score": 1042,
+    "turns": 150208,
+    "killer": "Time"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 3,
+    "level": 8,
+    "score": 329,
+    "turns": 150257,
+    "killer": "Time"
+  },
+  {
+    "status": "PLAYER_DEAD",
+    "floor": 4,
+    "level": 8,
+    "score": 394,
+    "turns": 3304,
+    "killer": "Nameless remains"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 6,
+    "level": 9,
+    "score": 721,
+    "turns": 150114,
+    "killer": "Time"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 5,
+    "level": 9,
+    "score": 683,
+    "turns": 150223,
+    "killer": "Time"
+  },
+  {
+    "status": "PLAYER_DEAD",
+    "floor": 8,
+    "level": 11,
+    "score": 1160,
+    "turns": 8196,
+    "killer": "Nameless remains"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 3,
+    "level": 7,
+    "score": 142,
+    "turns": 150121,
+    "killer": "Time"
+  },
+  {
+    "status": "PLAYER_DEAD",
+    "floor": 2,
+    "level": 4,
+    "score": 149,
+    "turns": 1059,
+    "killer": "Vault Guardian"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 4,
+    "level": 9,
+    "score": 499,
+    "turns": 150095,
+    "killer": "Time"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 6,
+    "level": 10,
+    "score": 1014,
+    "turns": 150098,
+    "killer": "Time"
+  },
+  {
+    "status": "PLAYER_DEAD",
+    "floor": 4,
+    "level": 7,
+    "score": 212,
+    "turns": 2338,
+    "killer": "Nameless remains"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 5,
+    "level": 9,
+    "score": 545,
+    "turns": 150250,
+    "killer": "Time"
+  },
+  {
+    "status": "PLAYER_DEAD",
+    "floor": 4,
+    "level": 8,
+    "score": 359,
+    "turns": 3676,
+    "killer": "Nameless remains"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 5,
+    "level": 9,
+    "score": 629,
+    "turns": 150258,
+    "killer": "Time"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 2,
+    "level": 7,
+    "score": 151,
+    "turns": 150160,
+    "killer": "Time"
+  },
+  {
+    "status": "PLAYER_DEAD",
+    "floor": 6,
+    "level": 9,
+    "score": 513,
+    "turns": 3876,
+    "killer": "Nameless remains"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 4,
+    "level": 8,
+    "score": 253,
+    "turns": 150104,
+    "killer": "Time"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 5,
+    "level": 9,
+    "score": 510,
+    "turns": 150238,
+    "killer": "Time"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 5,
+    "level": 9,
+    "score": 447,
+    "turns": 150254,
+    "killer": "Time"
+  },
+  {
+    "status": "PLAYER_DEAD",
+    "floor": 7,
+    "level": 9,
+    "score": 380,
+    "turns": 3683,
+    "killer": "Nameless remains"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 3,
+    "level": 8,
+    "score": 238,
+    "turns": 150244,
+    "killer": "Time"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 3,
+    "level": 8,
+    "score": 314,
+    "turns": 150057,
+    "killer": "Time"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 3,
+    "level": 7,
+    "score": 281,
+    "turns": 150210,
+    "killer": "Time"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 4,
+    "level": 8,
+    "score": 191,
+    "turns": 150093,
+    "killer": "Time"
+  },
+  {
+    "status": "PLAYER_DEAD",
+    "floor": 5,
+    "level": 9,
+    "score": 480,
+    "turns": 4730,
+    "killer": "Nameless remains"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 5,
+    "level": 10,
+    "score": 736,
+    "turns": 150101,
+    "killer": "Time"
+  },
+  {
+    "status": "PLAYER_DEAD",
+    "floor": 3,
+    "level": 7,
+    "score": 153,
+    "turns": 2468,
+    "killer": "Nameless remains"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 2,
+    "level": 6,
+    "score": 149,
+    "turns": 150219,
+    "killer": "Time"
+  },
+  {
+    "status": "PLAYER_DEAD",
+    "floor": 4,
+    "level": 8,
+    "score": 364,
+    "turns": 2553,
+    "killer": "Nameless remains"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 5,
+    "level": 9,
+    "score": 496,
+    "turns": 150046,
+    "killer": "Time"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 7,
+    "level": 9,
+    "score": 602,
+    "turns": 150126,
+    "killer": "Time"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 5,
+    "level": 9,
+    "score": 653,
+    "turns": 150118,
+    "killer": "Time"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 4,
+    "level": 8,
+    "score": 332,
+    "turns": 150069,
+    "killer": "Time"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 3,
+    "level": 8,
+    "score": 244,
+    "turns": 150023,
+    "killer": "Time"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 3,
+    "level": 8,
+    "score": 284,
+    "turns": 150103,
+    "killer": "Time"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 4,
+    "level": 8,
+    "score": 378,
+    "turns": 150108,
+    "killer": "Time"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 4,
+    "level": 9,
+    "score": 506,
+    "turns": 150114,
+    "killer": "Time"
+  },
+  {
+    "status": "PLAYER_DEAD",
+    "floor": 3,
+    "level": 7,
+    "score": 149,
+    "turns": 1820,
+    "killer": "Poison Gas"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 7,
+    "level": 10,
+    "score": 932,
+    "turns": 150069,
+    "killer": "Time"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 3,
+    "level": 7,
+    "score": 120,
+    "turns": 150153,
+    "killer": "Time"
+  },
+  {
+    "status": "PLAYER_DEAD",
+    "floor": 5,
+    "level": 9,
+    "score": 355,
+    "turns": 3381,
+    "killer": "Nameless remains"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 3,
+    "level": 8,
+    "score": 253,
+    "turns": 150064,
+    "killer": "Time"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 5,
+    "level": 9,
+    "score": 399,
+    "turns": 150218,
+    "killer": "Time"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 5,
+    "level": 9,
+    "score": 498,
+    "turns": 150188,
+    "killer": "Time"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 4,
+    "level": 8,
+    "score": 276,
+    "turns": 150227,
+    "killer": "Time"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 5,
+    "level": 8,
+    "score": 457,
+    "turns": 150207,
+    "killer": "Time"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 3,
+    "level": 7,
+    "score": 192,
+    "turns": 150003,
+    "killer": "Time"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 4,
+    "level": 10,
+    "score": 879,
+    "turns": 150148,
+    "killer": "Time"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 2,
+    "level": 5,
+    "score": 68,
+    "turns": 150115,
+    "killer": "Time"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 2,
+    "level": 8,
+    "score": 174,
+    "turns": 150050,
+    "killer": "Time"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 3,
+    "level": 8,
+    "score": 176,
+    "turns": 150179,
+    "killer": "Time"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 3,
+    "level": 8,
+    "score": 284,
+    "turns": 150063,
+    "killer": "Time"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 4,
+    "level": 8,
+    "score": 332,
+    "turns": 150119,
+    "killer": "Time"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 4,
+    "level": 9,
+    "score": 440,
+    "turns": 150159,
+    "killer": "Time"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 5,
+    "level": 9,
+    "score": 480,
+    "turns": 150175,
+    "killer": "Time"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 5,
+    "level": 9,
+    "score": 498,
+    "turns": 150102,
+    "killer": "Time"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 7,
+    "level": 10,
+    "score": 1136,
+    "turns": 150194,
+    "killer": "Time"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 6,
+    "level": 10,
+    "score": 869,
+    "turns": 150207,
+    "killer": "Time"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 6,
+    "level": 9,
+    "score": 513,
+    "turns": 150140,
+    "killer": "Time"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 4,
+    "level": 9,
+    "score": 508,
+    "turns": 150065,
+    "killer": "Time"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 5,
+    "level": 9,
+    "score": 562,
+    "turns": 150226,
+    "killer": "Time"
+  },
+  {
+    "status": "PLAYER_DEAD",
+    "floor": 3,
+    "level": 8,
+    "score": 288,
+    "turns": 2310,
+    "killer": "Nameless remains"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 6,
+    "level": 10,
+    "score": 750,
+    "turns": 150273,
+    "killer": "Time"
+  },
+  {
+    "status": "PLAYER_DEAD",
+    "floor": 6,
+    "level": 10,
+    "score": 862,
+    "turns": 5515,
+    "killer": "Nameless remains"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 2,
+    "level": 7,
+    "score": 55,
+    "turns": 150144,
+    "killer": "Time"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 5,
+    "level": 10,
+    "score": 868,
+    "turns": 150032,
+    "killer": "Time"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 4,
+    "level": 8,
+    "score": 275,
+    "turns": 150112,
+    "killer": "Time"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 3,
+    "level": 7,
+    "score": 114,
+    "turns": 150069,
+    "killer": "Time"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 5,
+    "level": 9,
+    "score": 670,
+    "turns": 150015,
+    "killer": "Time"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 2,
+    "level": 6,
+    "score": 147,
+    "turns": 150043,
+    "killer": "Time"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 7,
+    "level": 10,
+    "score": 981,
+    "turns": 150022,
+    "killer": "Time"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 5,
+    "level": 10,
+    "score": 1053,
+    "turns": 150155,
+    "killer": "Time"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 3,
+    "level": 8,
+    "score": 352,
+    "turns": 150071,
+    "killer": "Time"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 1,
+    "level": 1,
+    "score": 0,
+    "turns": 150265,
+    "killer": "Time"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 9,
+    "level": 11,
+    "score": 1310,
+    "turns": 150075,
+    "killer": "Time"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 4,
+    "level": 7,
+    "score": 264,
+    "turns": 150077,
+    "killer": "Time"
+  },
+  {
+    "status": "PLAYER_DEAD",
+    "floor": 5,
+    "level": 9,
+    "score": 450,
+    "turns": 3428,
+    "killer": "Nameless remains"
+  },
+  {
+    "status": "PLAYER_DEAD",
+    "floor": 8,
+    "level": 11,
+    "score": 1376,
+    "turns": 8905,
+    "killer": "Nameless remains"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 5,
+    "level": 10,
+    "score": 721,
+    "turns": 150237,
+    "killer": "Time"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 7,
+    "level": 10,
+    "score": 1039,
+    "turns": 150179,
+    "killer": "Time"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 3,
+    "level": 8,
+    "score": 244,
+    "turns": 150093,
+    "killer": "Time"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 6,
+    "level": 10,
+    "score": 886,
+    "turns": 150250,
+    "killer": "Time"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 6,
+    "level": 9,
+    "score": 771,
+    "turns": 150205,
+    "killer": "Time"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 10,
+    "level": 12,
+    "score": 2005,
+    "turns": 150009,
+    "killer": "Time"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 6,
+    "level": 9,
+    "score": 686,
+    "turns": 150178,
+    "killer": "Time"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 6,
+    "level": 9,
+    "score": 415,
+    "turns": 150251,
+    "killer": "Time"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 6,
+    "level": 9,
+    "score": 640,
+    "turns": 150097,
+    "killer": "Time"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 3,
+    "level": 8,
+    "score": 323,
+    "turns": 150012,
+    "killer": "Time"
+  },
+  {
+    "status": "TIMEOUT",
+    "floor": 7,
+    "level": 10,
+    "score": 1090,
+    "turns": 150055,
+    "killer": "Time"
+  },
+  {
+    "status": "PLAYER_DEAD",
+    "floor": 5,
+    "level": 8,
+    "score": 518,
+    "turns": 4146,
+    "killer": "Nameless remains"
+  },
+  {
+    "status": "PLAYER_DEAD",
+    "floor": 4,
+    "level": 7,
+    "score": 111,
+    "turns": 1983,
+    "killer": "Nameless remains"
+  },
+  {
+    "status": "PLAYER_DEAD",
+    "floor": 3,
+    "level": 8,
+    "score": 212,
+    "turns": 2536,
+    "killer": "Nameless remains"
+  }
+]
