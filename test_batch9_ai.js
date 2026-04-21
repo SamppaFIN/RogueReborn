@@ -77,7 +77,9 @@ let entities = [];
 let player = null;
 
 // Load game data
-eval(fs.readFileSync('src/data/enemies.js', 'utf8'));
+global.COLORS = COLORS; // Required by enemies.js
+const enemiesCode = fs.readFileSync('src/data/enemies.js', 'utf8').replace('const ENEMY_TYPES =', 'global.ENEMY_TYPES =');
+eval(enemiesCode);
 
 // Load AI
 eval(fs.readFileSync('src/systems/ai.js', 'utf8'));

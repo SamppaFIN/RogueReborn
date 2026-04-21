@@ -402,7 +402,10 @@ function handleBossPhase(e, dist, visible) {
                     let minionName = 'Skeleton';
                     if (e.element === 'fire') minionName = 'Fire Hound';
                     if (e.element === 'poison') minionName = 'Giant Spider';
-                    const sk = ENEMY_TYPES.find(t => t.name === minionName);
+                    let sk = null;
+                    if (typeof ENEMY_TYPES !== 'undefined') {
+                        sk = ENEMY_TYPES.find(t => t.name === minionName);
+                    }
                     if (sk) {
                         const ne = new Entity(sx, sy, sk.char, sk.color, sk.name, sk.hp, sk.atk, sk.def, sk.speed);
                         ne.element = sk.element; ne.baseXP = sk.baseXP;
@@ -522,7 +525,10 @@ function processMonsterAI(e) {
             for (const sd of skeleDirs) {
                 const sx = e.x + sd[0], sy = e.y + sd[1];
                 if (sx >= 0 && sx < MAP_WIDTH && sy >= 0 && sy < MAP_HEIGHT && map[sx][sy].type === 'floor' && !getEntityAt(sx, sy)) {
-                    const sk = ENEMY_TYPES.find(t => t.name === 'Skeleton');
+                    let sk = null;
+                    if (typeof ENEMY_TYPES !== 'undefined') {
+                        sk = ENEMY_TYPES.find(t => t.name === 'Skeleton');
+                    }
                     if (sk) {
                         const ne = new Entity(sx, sy, sk.char, sk.color, sk.name, sk.hp, sk.atk, sk.def, sk.speed);
                         ne.element = sk.element; ne.baseXP = sk.baseXP;

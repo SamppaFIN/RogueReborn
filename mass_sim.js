@@ -2,7 +2,7 @@ const { chromium } = require('playwright');
 const fs = require('fs');
 
 (async () => {
-    const numRuns = 5;
+    const numRuns = 20;
     const targetClass = 'Warrior';
     console.log(`🚀 Starting ${numRuns} Mass Simulations [Class: ${targetClass}]`);
     
@@ -68,8 +68,12 @@ const fs = require('fs');
                                 return;
                             }
 
+                            // Call processAutoPlay first to handle modal recovery
+                            // (runLogicalTick skips when gameState !== 'PLAYING')
                             if (typeof window.processAutoPlay === 'function' && window.isAutoPlayActive) {
-                                window.processAutoPlay();
+                                if (window.gameState !== 'PLAYING') {
+                                    window.processAutoPlay();
+                                }
                             }
                             if (typeof window.runLogicalTick === 'function') {
                                 window.runLogicalTick();

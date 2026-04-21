@@ -1,10 +1,15 @@
 /**
  * Rogue Reborn - Autoplay Interface
  * Built-in AI module for testing and user automated gameplay (idle gaming).
+ * 
+ * v2: Complete rewrite of processAutoPlay to bypass auto-explore system
+ *     and use direct pathfinding, eliminating the stuck-loop bug.
  */
 
 window.isAutoPlayActive = false;
 window.autoPlayTurns = 0;
+window._autoplayStuckCounter = 0;
+window._autoplayLastPos = null;
 
 function toggleAutoPlay(state) {
     if (typeof state !== 'undefined') {
@@ -18,6 +23,8 @@ function toggleAutoPlay(state) {
     
     if (window.isAutoPlayActive) {
         logMessage("Autoplay Initiated.", "magic");
+        window._autoplayStuckCounter = 0;
+        window._autoplayLastPos = null;
     } else {
         logMessage("Autoplay Disabled.", "hint");
     }
@@ -109,9 +116,84 @@ function getNearestVisibleMonster() {
     return { target: bestM, dist: bestDest };
 }
 
+// --- Direct pathfinding exploration (bypasses auto-explore system) ---
+function autoplayFindExploreTarget() {
+    // Use BFS to find nearest unexplored walkable tile
+    const queue = [{ x: player.x, y: player.y, path: [] }];
+    const visited = new Set([`${player.x},${player.y}`]);
+    const dirs = [
+        { dx: 0, dy: -1 }, { dx: 0, dy: 1 }, { dx: -1, dy: 0 }, { dx: 1, dy: 0 },
+        { dx: -1, dy: -1 }, { dx: 1, dy: -1 }, { dx: -1, dy: 1 }, { dx: 1, dy: 1 }
+    ];
+
+    let stairsPath = null;
+    let iteration = 0;
+    
+    // Determine if we should allow hazard traversal (when stuck)
+    const allowHazards = window._autoplayStuckCounter > 50;
+
+    while (queue.length > 0 && iteration < 30000) {
+        iteration++;
+        const curr = queue.shift();
+        const cTile = map[curr.x][curr.y];
+
+        // Found unexplored tile!
+        if (!cTile.explored && cTile.type !== 'wall') {
+            return curr.path;
+        }
+
+        // Track stairs as fallback
+        if (!stairsPath && cTile.type === 'stairs_down') {
+            stairsPath = curr.path;
+        }
+
+        for (let d of dirs) {
+            const nx = curr.x + d.dx;
+            const ny = curr.y + d.dy;
+            if (nx >= 0 && nx < MAP_WIDTH && ny >= 0 && ny < MAP_HEIGHT) {
+                const key = `${nx},${ny}`;
+                if (!visited.has(key)) {
+                    visited.add(key);
+                    const tile = map[nx][ny];
+                    const ent = getEntityAt(nx, ny);
+                    const hasKey = player.inventory.some(i => i.name === 'Dungeon Key');
+                    
+                    const blockingTypes = ['wall', 'locked_door', 'shop', 'healer', 'blacksmith', 'wizard', 'bank', 'well', 'mayor', 'gambler', 'shrine'];
+                    if (!allowHazards) blockingTypes.push('lava', 'gas');
+                    
+                    const isPassable = !blockingTypes.includes(tile.type) || (tile.type === 'locked_door' && hasKey);
+                    
+                    if (((tile.explored && isPassable) || (!tile.explored && !blockingTypes.includes(tile.type))) && (!ent || !ent.isTownNPC || !ent.blocksMovement)) {
+                        queue.push({ x: nx, y: ny, path: [...curr.path, { x: nx, y: ny }] });
+                    }
+                }
+            }
+        }
+    }
+
+    return stairsPath; // Fallback to stairs if no unexplored tiles
+}
+
+// Find a walkable item on the ground nearby
+function autoplayFindNearestItem() {
+    if (typeof items === 'undefined') return null;
+    let best = null;
+    let bestDist = Infinity;
+    for (let item of items) {
+        if (!map[item.x] || !map[item.x][item.y] || !map[item.x][item.y].visible) continue;
+        let d = Math.abs(item.x - player.x) + Math.abs(item.y - player.y);
+        // Prioritize Dungeon Keys heavily
+        if (item.name === 'Dungeon Key') d -= 100;
+        if (d < bestDist) { bestDist = d; best = item; }
+    }
+    return best;
+}
+
 function processAutoPlay() {
-    if (gameState === 'START' || gameState.includes('MENU') || gameState === 'INVENTORY' || gameState === 'QUEST_JOURNAL') {
+    // Close any open modal/NPC dialog immediately
+    if (gameState !== 'PLAYING' && gameState !== 'PLAYER_DEAD' && gameState !== 'VICTORY' && gameState !== 'LEVEL_UP' && gameState !== 'TARGETING' && gameState !== 'RANGED_TARGETING') {
         if (window.closeAllModals) window.closeAllModals();
+        gameState = 'PLAYING'; // Force back to playing
         return;
     }
 
@@ -134,7 +216,6 @@ function processAutoPlay() {
                 window.executeRangedAttack();
             }
         } else {
-            // Nobody around, cancel
             keys['Escape'] = true;
             setTimeout(() => { keys['Escape'] = false; }, 10);
         }
@@ -142,9 +223,7 @@ function processAutoPlay() {
     }
 
     if (gameState === 'LEVEL_UP') {
-        // Automatically pick the first available stat / skill randomly
         const buttons = document.querySelectorAll('#levelUpModal button, #skillModal button');
-        // Filter out finish buttons that might not be stats
         const upgradeButtons = Array.from(buttons).filter(b => b.id !== 'btn-finish-levelup');
         if (upgradeButtons.length > 0) {
             const btn = upgradeButtons[Math.floor(Math.random() * upgradeButtons.length)];
@@ -157,6 +236,15 @@ function processAutoPlay() {
     }
     
     if (gameState !== 'PLAYING') return;
+
+    // --- STUCK DETECTION ---
+    const posKey = `${player.x},${player.y}`;
+    if (window._autoplayLastPos === posKey) {
+        window._autoplayStuckCounter++;
+    } else {
+        window._autoplayStuckCounter = 0;
+        window._autoplayLastPos = posKey;
+    }
 
     // AI Maintenance
     if (window.autoPlayTurns % 50 === 0) autoDropJunk();
@@ -191,39 +279,85 @@ function processAutoPlay() {
         }
     }
 
-    // Priority 4: Movement / Combat
+    // Priority 4: Melee combat (adjacent)
     const isAdjacent = monster && Math.abs(monster.x - player.x) <= 1 && Math.abs(monster.y - player.y) <= 1;
     if (isAdjacent) {
         window.attemptAction(player, { type: 'move', dx: monster.x - player.x, dy: monster.y - player.y });
         return;
-    } else if (monster) {
-        // AI specifically pathfinds to visible monsters instead of relying on Auto-explore
+    }
+    
+    // Priority 5: Chase visible monsters directly
+    if (monster) {
         let path = window.findPath(player.x, player.y, monster.x, monster.y);
+        if (!path || path.length === 0) {
+            path = window.findPath(player.x, player.y, monster.x, monster.y, false, true);
+        }
         if (path && path.length > 0) {
-            let next = path.shift();
+            let next = path[0];
             window.attemptAction(player, { type: 'move', dx: next.x - player.x, dy: next.y - player.y });
             return;
         }
-    } else if (map[player.x][player.y].type === 'stairs_down') {
+    }
+
+    // Priority 6: Step on stairs if standing on them
+    if (map[player.x][player.y].type === 'stairs_down') {
         window.checkStairs(player.x, player.y, true);
         return;
     }
 
-    // Try to auto-explore via built-in system
-    keys['o'] = true;
-    
-    // Stuck override fallback
-    if (window.autoPlayTurns % 100 === 0 && (!window.activePath || window.activePath.length === 0)) {
-        let dirs = [[1,0],[-1,0],[0,1],[0,-1]];
-        // Filter out hazard tiles if possible
-        let safeDirs = dirs.filter(d => {
-            let tx = player.x + d[0]; let ty = player.y + d[1];
-            if (tx < 0 || tx >= MAP_WIDTH || ty < 0 || ty >= MAP_HEIGHT) return false;
-            let tile = map[tx][ty];
-            return tile && tile.type !== 'lava' && tile.type !== 'gas';
-        });
-        if (safeDirs.length === 0) safeDirs = dirs; // Force move if completely surrounded
-        let d = safeDirs[Math.floor(Math.random() * safeDirs.length)];
-        window.attemptAction(player, { type: 'move', dx: d[0], dy: d[1] });
+    // Priority 7: Pick up nearby items
+    const nearestItem = autoplayFindNearestItem();
+    if (nearestItem) {
+        let path = window.findPath(player.x, player.y, nearestItem.x, nearestItem.y);
+        if ((!path || path.length === 0) && nearestItem.name === 'Dungeon Key') {
+            path = window.findPath(player.x, player.y, nearestItem.x, nearestItem.y, false, true);
+        }
+        if (path && path.length > 0) {
+            let next = path[0];
+            window.attemptAction(player, { type: 'move', dx: next.x - player.x, dy: next.y - player.y });
+            return;
+        }
     }
+
+    // Priority 8: Explore (direct pathfinding, NOT auto-explore key)
+    let explorePath = autoplayFindExploreTarget();
+    if (explorePath && explorePath.length > 0) {
+        let next = explorePath[0];
+        window.attemptAction(player, { type: 'move', dx: next.x - player.x, dy: next.y - player.y });
+        return;
+    }
+
+    // Priority 9: Nothing to explore — find stairs and descend
+    for (let x = 0; x < MAP_WIDTH; x++) {
+        for (let y = 0; y < MAP_HEIGHT; y++) {
+            if (map[x][y].type === 'stairs_down') {
+                // Try with ignoreVisibility=true since we may know the stairs location
+                let path = window.findPath(player.x, player.y, x, y, true);
+                if (!path || path.length === 0) {
+                    path = window.findPath(player.x, player.y, x, y, true, true);
+                }
+                if (path && path.length > 0) {
+                    let next = path[0];
+                    window.attemptAction(player, { type: 'move', dx: next.x - player.x, dy: next.y - player.y });
+                    return;
+                }
+            }
+        }
+    }
+
+    // Priority 10: STUCK — random walk every tick (always fire, don't wait)
+    let allDirs = [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
+    // Prefer walkable, non-wall tiles. Allow hazards if very stuck.
+    let safeDirs = allDirs.filter(d => {
+        let tx = player.x + d[0]; let ty = player.y + d[1];
+        if (tx < 0 || tx >= MAP_WIDTH || ty < 0 || ty >= MAP_HEIGHT) return false;
+        let tile = map[tx][ty];
+        if (!tile || tile.type === 'wall') return false;
+        // Allow hazards after being stuck for 100 ticks
+        if (window._autoplayStuckCounter < 100 && (tile.type === 'lava' || tile.type === 'gas')) return false;
+        return true;
+    });
+    if (safeDirs.length === 0) safeDirs = allDirs;
+    let d = safeDirs[Math.floor(Math.random() * safeDirs.length)];
+    window.attemptAction(player, { type: 'move', dx: d[0], dy: d[1] });
 }

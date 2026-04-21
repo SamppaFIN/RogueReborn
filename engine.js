@@ -243,7 +243,9 @@ function runLogicalTick() {
 
     // Determine how many sub-ticks to process (auto modes get fast processing)
     let subTicks = 1;
-    if (isAutoRunning || isAutoExploring || (activePath && activePath.length > 0)) {
+    if (typeof window.isAutoPlayActive !== 'undefined' && window.isAutoPlayActive) {
+        subTicks = 10; // Autoplay uses fast processing
+    } else if (isAutoRunning || isAutoExploring || (activePath && activePath.length > 0)) {
         subTicks = 10; // Process up to 10 steps per heartbeat for auto modes
     }
 
@@ -265,30 +267,38 @@ function runLogicalTick() {
             if (st === 0) processPlayerTimedEffects();
             
             if (typeof window.isAutoPlayActive !== 'undefined' && window.isAutoPlayActive) {
+                const prevX = player.x, prevY = player.y;
+                const prevEnergy = player.energy;
                 if (typeof processAutoPlay === 'function') processAutoPlay();
-            }
-            
-            let act = bufferedAction || getPendingAction();
-            bufferedAction = null; 
-
-            if (act) {
-                let cost = ACTION_COSTS.MOVE;
-                if (act.type === 'move') {
-                    const target = getEntityAt(player.x + act.dx, player.y + act.dy);
-                    cost = target ? ACTION_COSTS.ATTACK : ACTION_COSTS.MOVE;
-                } else if (act.type === 'cast') { cost = ACTION_COSTS.CAST; }
-                  else if (act.type === 'use') { cost = ACTION_COSTS.USE; }
-                  else if (act.type === 'wait') { 
-                    cost = ACTION_COSTS.WAIT; 
-                    player.energy += 15; 
-                  }
-
-                attemptAction(player, act, cost);
+                // If autoplay didn't consume any energy (e.g. walked into wall), force drain
+                if (player.energy >= prevEnergy) {
+                    player.energy -= ENERGY_THRESHOLD;
+                }
                 computeFOV();
                 processItemFeelings();
             } else {
-                // No input available — stop fast-ticking
-                break;
+                let act = bufferedAction || getPendingAction();
+                bufferedAction = null; 
+
+                if (act) {
+                    let cost = ACTION_COSTS.MOVE;
+                    if (act.type === 'move') {
+                        const target = getEntityAt(player.x + act.dx, player.y + act.dy);
+                        cost = target ? ACTION_COSTS.ATTACK : ACTION_COSTS.MOVE;
+                    } else if (act.type === 'cast') { cost = ACTION_COSTS.CAST; }
+                      else if (act.type === 'use') { cost = ACTION_COSTS.USE; }
+                      else if (act.type === 'wait') { 
+                        cost = ACTION_COSTS.WAIT; 
+                        player.energy += 15; 
+                      }
+
+                    attemptAction(player, act, cost);
+                    computeFOV();
+                    processItemFeelings();
+                } else {
+                    // No input available — stop fast-ticking
+                    break;
+                }
             }
         }
 
