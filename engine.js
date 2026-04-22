@@ -238,13 +238,58 @@ function spawnRandomItemAt(x, y) {
     }
 }
 
+/**
+ * Returns true if the player is in a corridor (narrow passage).
+ * Corridors have few adjacent open floor tiles — rooms are more open.
+ */
+function isInCorridor(x, y) {
+    const dirs = [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
+    let openCount = 0;
+    for (const [dx, dy] of dirs) {
+        const nx = x + dx, ny = y + dy;
+        if (nx >= 0 && nx < MAP_WIDTH && ny >= 0 && ny < MAP_HEIGHT) {
+            const t = map[nx][ny].type;
+            if (t === 'floor' || t === 'stairs_down' || t === 'stairs_up') openCount++;
+        }
+    }
+    // Corridors: ≤3 adjacent open tiles. Rooms: 4+
+    return openCount <= 3;
+}
+
+/**
+ * Determine autoplay sub-ticks:
+ * - Corridor with no threats nearby → 4x speed (fast travel)
+ * - Room with monsters or items visible → normal (1 sub-tick)
+ * - Otherwise (room, empty) → 2x speed
+ */
+function getAutoplaySubTicks() {
+    if (!window.isAutoPlayActive) return 1;
+    const inCorridor = isInCorridor(player.x, player.y);
+    // Check for visible monsters
+    const hasNearbyMonster = entities.some(e =>
+        !e.isPlayer && e.hp > 0 && !e.isTownNPC &&
+        map[e.x] && map[e.x][e.y] && map[e.x][e.y].visible
+    );
+    // Check for visible items on the ground
+    const hasNearbyItem = typeof items !== 'undefined' && items.some(item =>
+        map[item.x] && map[item.x][item.y] && map[item.x][item.y].visible
+    );
+    if (hasNearbyMonster || hasNearbyItem) {
+        return 1; // Careful — room has threats or loot
+    }
+    if (inCorridor) {
+        return 4; // Sprint through corridors
+    }
+    return 2; // Empty room — moderate pace
+}
+
 function runLogicalTick() {
     if (gameState !== 'PLAYING') return;
 
     // Determine how many sub-ticks to process (auto modes get fast processing)
     let subTicks = 1;
     if (typeof window.isAutoPlayActive !== 'undefined' && window.isAutoPlayActive) {
-        subTicks = 10; // Autoplay uses fast processing
+        subTicks = getAutoplaySubTicks(); // Dynamic: corridor=4x, room w/threats=1x
     } else if (isAutoRunning || isAutoExploring || (activePath && activePath.length > 0)) {
         subTicks = 10; // Process up to 10 steps per heartbeat for auto modes
     }
