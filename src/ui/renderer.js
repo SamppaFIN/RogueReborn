@@ -281,12 +281,46 @@ function render() {
     if (gameState === 'PLAYING' && hoverX >= 0 && hoverY >= 0) {
         if (map[hoverX] && map[hoverX][hoverY] && map[hoverX][hoverY].explored) {
             const tx = hoverX; const ty = hoverY;
-            let text = "";
+            let tooltipLines = [];
             const ent = getEntityAt(tx, ty);
             if (ent) {
-                if (ent.isPlayer) text = "You (@)";
-                else text = `${ent.name} (${ent.hp > 0 ? ent.hp + '/' + ent.maxHp + ' HP' : 'Corpse'})`;
+                if (ent.isPlayer) {
+                    tooltipLines.push("You (@)");
+                } else if (ent.hp <= 0) {
+                    tooltipLines.push(`${ent.name} (Corpse)`);
+                } else {
+                    tooltipLines.push(`${ent.name} (${ent.hp}/${ent.maxHp} HP)`);
+                    if (ent.isMerchant || ent.isTownNPC) {
+                        tooltipLines.push("Friendly NPC");
+                    } else {
+                        // Bestiary logic
+                        let baseName = ent.name.replace('Elite ', '').replace('Mini-Boss ', '').replace('Hoarder ', '');
+                        let kills = (player.killsByType && player.killsByType[baseName]) ? player.killsByType[baseName] : 0;
+                        let multiplier = (player.class === 'Mage') ? 2 : 1;
+                        let effectiveKills = kills * multiplier;
+
+                        if (effectiveKills >= 1) {
+                            tooltipLines.push(`ATK: ${ent.atk} | DEF: ${ent.def}`);
+                        }
+                        if (effectiveKills >= 3) {
+                            tooltipLines.push(`Speed: ${ent.speed} | Element: ${ent.element || 'None'}`);
+                        }
+                        if (effectiveKills >= 6) {
+                            let traits = [];
+                            if (ent.blinker) traits.push("Blinker");
+                            if (ent.invisible) traits.push("Invisible");
+                            if (ent.breather) traits.push("Breather");
+                            if (ent.summoner) traits.push("Summoner");
+                            if (ent.lifeSteal) traits.push("Life Steal");
+                            if (ent.dissolver) traits.push("Acidic");
+                            if (ent.drainMaxHp) traits.push("Drains Max HP");
+                            if (traits.length > 0) tooltipLines.push(`Traits: ${traits.join(', ')}`);
+                            else tooltipLines.push("Traits: None");
+                        }
+                    }
+                }
             } else {
+                let text = "";
                 const itm = getItemAt(tx, ty);
                 if (itm) text = getItemName(itm);
                 else {
@@ -305,13 +339,18 @@ function render() {
                     else if (mType === 'lava') text = "Lava (~) DANGER";
                     else if (mType === 'shrine') text = map[tx][ty].used ? 'Spent Shrine' : 'Shrine (A) - Step to activate';
                 }
+                if (text) tooltipLines.push(text);
             }
 
-            if (text) {
+            if (tooltipLines.length > 0) {
                 ctx.font = '14px "Fira Code", monospace';
-                const metrics = ctx.measureText(text);
-                const w = metrics.width + 16;
-                const h = 26;
+                let maxWidth = 0;
+                tooltipLines.forEach(line => {
+                    const metrics = ctx.measureText(line);
+                    if (metrics.width > maxWidth) maxWidth = metrics.width;
+                });
+                const w = maxWidth + 16;
+                const h = (tooltipLines.length * 20) + 6;
                 let boxX = offsetX + tx * TILE_SIZE + 20;
                 let boxY = offsetY + ty * TILE_SIZE + 20;
 
@@ -325,9 +364,11 @@ function render() {
                 ctx.strokeRect(boxX, boxY, w, h);
 
                 ctx.fillStyle = 'white';
-                ctx.textBaseline = 'middle';
+                ctx.textBaseline = 'top';
                 ctx.textAlign = 'left';
-                ctx.fillText(text, boxX + 8, boxY + h / 2);
+                tooltipLines.forEach((line, idx) => {
+                    ctx.fillText(line, boxX + 8, boxY + 5 + (idx * 20));
+                });
             }
         }
     }

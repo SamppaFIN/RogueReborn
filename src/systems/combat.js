@@ -764,7 +764,7 @@ function handleMonsterDeath(defender) {
     logMessage(`${defender.name} is destroyed.`, 'kill');
     
     // Phase IV: AI Reputation tracking
-    let baseName = defender.name.replace('Elite ', '').replace('Mini-Boss ', '');
+    let baseName = defender.name.replace('Elite ', '').replace('Mini-Boss ', '').replace('Hoarder ', '');
     if (!player.killsByType) player.killsByType = {};
     player.killsByType[baseName] = (player.killsByType[baseName] || 0) + 1;
     
@@ -829,15 +829,31 @@ function handleMonsterDeath(defender) {
     }
 
     // Item Drop Logic
-    if (Math.random() < 0.25) {
+    if (defender.isTreasureBoss) {
+        let magicItems = ITEM_DB.filter(i => i.type === 'weapon' || i.type === 'armor' || i.type === 'ring' || i.type === 'amulet' || i.type === 'helm' || i.type === 'shield');
+        if (magicItems.length > 0) {
+            let drop = { ...magicItems[Math.floor(Math.random() * magicItems.length)] };
+            if (typeof applyEgo !== 'undefined') drop = applyEgo(drop);
+            // In combat.js we don't have spawnItem globally sometimes, wait, earlier code used spawnItem?
+            // "spawnItem(defender.x, defender.y, ...)"
+            // Let's use items.push directly since we might be out of scope for some helper, but items array is global.
+            items.push({ x: defender.x, y: defender.y, ...drop });
+            spawnParticle(defender.x, defender.y, "LEGENDARY DROP!", "#f1c40f");
+            logMessage(`The defeated ${defender.name} dropped a magical treasure!`, 'magic');
+        }
+    } else if (Math.random() < 0.40) {
         // #35 Scrap & Component Loot
         const r = Math.random();
         if (r < 0.4) {
-            spawnItem(defender.x, defender.y, { ...ITEM_DB.find(i => i.name === 'Scrap Metal') });
+            let scrap = ITEM_DB.find(i => i.name === 'Scrap Metal');
+            if (scrap) items.push({ x: defender.x, y: defender.y, ...scrap });
         } else if (r < 0.5 && currentFloor >= 4) {
-            spawnItem(defender.x, defender.y, { ...ITEM_DB.find(i => i.name === 'Magic Component') });
+            let comp = ITEM_DB.find(i => i.name === 'Magic Component');
+            if (comp) items.push({ x: defender.x, y: defender.y, ...comp });
         } else {
-            spawnRandomItemAt(defender.x, defender.y);
+            if (typeof spawnRandomItemAt === 'function') {
+                spawnRandomItemAt(defender.x, defender.y);
+            }
         }
     }
 }

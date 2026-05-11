@@ -862,6 +862,34 @@
         </div>
     </div>
 
+    <!-- Use Item Modal -->
+    <div id="useModal" class="modal">
+        <div class="modal-content" style="width: 500px; position: relative; border-color: #f1c40f;">
+            <button onclick="closeUseModal()"
+                style="position: absolute; top: 10px; right: 10px; background: transparent; border: none; color: #f1c40f; font-size: 1.5rem; cursor: pointer;">&times;</button>
+            <h2 style="color: #f1c40f; text-shadow: 0 0 20px rgba(241, 196, 15, 0.5);">USE ITEM</h2>
+            <p>Press a letter to use, or click.</p>
+            <ul class="shop-list" id="use-modal-list" style="max-height: 400px; overflow-y: auto;">
+                <!-- Injected via JS -->
+            </ul>
+            <button class="btn" style="margin-top: 20px;" onclick="closeUseModal()">Cancel [Esc]</button>
+        </div>
+    </div>
+
+    <!-- Drop Item Modal -->
+    <div id="dropModal" class="modal">
+        <div class="modal-content" style="width: 500px; position: relative; border-color: #e74c3c;">
+            <button onclick="closeDropModal()"
+                style="position: absolute; top: 10px; right: 10px; background: transparent; border: none; color: #e74c3c; font-size: 1.5rem; cursor: pointer;">&times;</button>
+            <h2 style="color: #e74c3c; text-shadow: 0 0 20px rgba(231, 76, 60, 0.5);">DROP ITEM</h2>
+            <p>Press a letter to drop, or click.</p>
+            <ul class="shop-list" id="drop-modal-list" style="max-height: 400px; overflow-y: auto;">
+                <!-- Injected via JS -->
+            </ul>
+            <button class="btn" style="margin-top: 20px;" onclick="closeDropModal()">Cancel [Esc]</button>
+        </div>
+    </div>
+
     <!-- Module Loading Order (Surgical Refactoring v3) -->
     <script src="src/data/constants.js?v=3"></script>
     <script src="src/data/enemies.js?v=3"></script>

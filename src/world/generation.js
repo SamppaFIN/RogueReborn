@@ -207,8 +207,8 @@ function generateDungeon() {
 
                     // Spawn monsters & items
                     if (!newRoom.isVault) {
-                        if (Math.random() < 0.6) spawnMonsters(newRoom);
-                        if (Math.random() < 0.4) spawnRandomItem(newRoom);
+                        if (Math.random() < 0.8) spawnMonsters(newRoom);
+                        if (Math.random() < 0.6) spawnRandomItem(newRoom);
                     }
                 }
                 rooms.push(newRoom);
@@ -439,7 +439,7 @@ function generateCave() {
         do { ex = Math.floor(Math.random() * MAP_WIDTH); ey = Math.floor(Math.random() * MAP_HEIGHT); } while (map[ex][ey].type !== 'floor' || (Math.abs(sx - ex) + Math.abs(sy - ey) < 20));
         map[ex][ey].type = 'stairs_down'; map[ex][ey].char = CHARS.STAIRS_DOWN;
 
-        for (let i = 0; i < 15 + currentFloor; i++) {
+        for (let i = 0; i < 30 + (currentFloor * 2); i++) {
             let mx, my; do { mx = Math.floor(Math.random() * MAP_WIDTH); my = Math.floor(Math.random() * MAP_HEIGHT); } while (map[mx][my].type !== 'floor' || getEntityAt(mx, my) || (mx === sx && my === sy));
             spawnMonsterAt(mx, my);
         }
@@ -533,7 +533,30 @@ function spawnMonsterAt(x, y, isElite = false) {
 }
 
 function spawnMonsters(room) {
-    let count = Math.floor(Math.random() * 3) + 1; // 1-3 monsters per room
+    // 8% chance to spawn a Treasure Boss Pack (starts from floor 2)
+    if (Math.random() < 0.08 && (typeof currentFloor === 'undefined' || currentFloor >= 2)) {
+        let bossSpawned = false;
+        let count = Math.floor(Math.random() * 3) + 3; // 3-5 elite monsters
+        for (let i = 0; i < count; i++) {
+            let x = Math.floor(Math.random() * (room.w - 2)) + room.x + 1;
+            let y = Math.floor(Math.random() * (room.h - 2)) + room.y + 1;
+            if (map[x] && map[x][y].type === 'floor' && !getEntityAt(x, y)) {
+                let e = spawnMonsterAt(x, y, true); // all elites
+                if (e && !bossSpawned) {
+                    e.isTreasureBoss = true;
+                    e.name = "Hoarder " + e.name;
+                    e.color = "#f1c40f"; // Gold color
+                    e.maxHp = Math.floor(e.maxHp * 1.5);
+                    e.hp = e.maxHp;
+                    e.baseXP = Math.floor(e.baseXP * 2);
+                    bossSpawned = true;
+                }
+            }
+        }
+        return;
+    }
+
+    let count = Math.floor(Math.random() * 4) + 2; // 2-5 monsters per room
     for (let i = 0; i < count; i++) {
         let x = Math.floor(Math.random() * (room.w - 2)) + room.x + 1;
         let y = Math.floor(Math.random() * (room.h - 2)) + room.y + 1;

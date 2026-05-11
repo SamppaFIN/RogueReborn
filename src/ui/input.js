@@ -55,8 +55,10 @@ if (!window.inputHandlersInitialized) {
     canvas.addEventListener('mousemove', e => {
     if (gameState === 'TARGETING') {
         const rect = canvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        const x = (e.clientX - rect.left) * scaleX;
+        const y = (e.clientY - rect.top) * scaleY;
 
         const cx = Math.floor(canvas.width / 2);
         const cy = Math.floor(canvas.height / 2);
@@ -80,8 +82,10 @@ if (!window.inputHandlersInitialized) {
         return;
     }
     const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const x = (e.clientX - rect.left) * scaleX;
+    const y = (e.clientY - rect.top) * scaleY;
 
     const cx = Math.floor(canvas.width / 2);
     const cy = Math.floor(canvas.height / 2);
@@ -105,8 +109,10 @@ if (!window.inputHandlersInitialized) {
     }
     if (gameState !== 'PLAYING') return;
     const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const x = (e.clientX - rect.left) * scaleX;
+    const y = (e.clientY - rect.top) * scaleY;
 
     const cx = Math.floor(canvas.width / 2);
     const cy = Math.floor(canvas.height / 2);
@@ -161,6 +167,36 @@ if (!window.inputHandlersInitialized) {
     if (e.key === 'i' || e.key === 'I') {
         if (gameState === 'PLAYING') openInventory();
         else if (gameState === 'INVENTORY') closeInventory();
+        return;
+    }
+
+    if (e.key === 'u' || e.key === 'U') {
+        if (gameState === 'PLAYING') openUseModal();
+        else if (gameState === 'USE_MENU') closeUseModal();
+        return;
+    }
+
+    if (e.key === 'x' || e.key === 'X') {
+        if (gameState === 'PLAYING') openDropModal();
+        else if (gameState === 'DROP_MENU') closeDropModal();
+        return;
+    }
+
+    // Handle a-z selections for USE and DROP menus
+    if (gameState === 'USE_MENU' && window.useModalMapping) {
+        const key = e.key.toLowerCase();
+        if (window.useModalMapping[key] !== undefined) {
+            useItem(window.useModalMapping[key]);
+            closeUseModal();
+        }
+        return;
+    }
+    if (gameState === 'DROP_MENU' && window.dropModalMapping) {
+        const key = e.key.toLowerCase();
+        if (window.dropModalMapping[key] !== undefined) {
+            dropItem(window.dropModalMapping[key]);
+            closeDropModal();
+        }
         return;
     }
 

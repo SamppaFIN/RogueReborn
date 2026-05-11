@@ -144,6 +144,14 @@ window.startGame = function (className) {
 
         logMessage("Rogue Perk: Backstab — first hit from unseen = 2x damage", 'magic');
     }
+
+    // Give every adventurer a Word of Recall scroll to return to town
+    const recallScrollBase = ITEM_DB.find(i => i.name === 'Word of Recall');
+    if (recallScrollBase) {
+        identifiedTypes['Word of Recall'] = true;
+        player.inventory.push({ ...recallScrollBase, identified: true });
+    }
+
     const modal = document.getElementById('charCreateModal');
     if (modal) modal.classList.remove('active');
     
@@ -229,7 +237,8 @@ window.closeAllModals = function () {
     const modals = [
         'shopModal', 'innkeeperModal', 'blacksmithModal', 'wizardModal',
         'bankModal', 'inventoryModal', 'alchemistModal', 'trainerModal',
-        'cartographerModal', 'guildhallModal', 'stashModal', 'deathModal'
+        'cartographerModal', 'guildhallModal', 'stashModal', 'deathModal',
+        'useModal', 'dropModal'
     ];
     modals.forEach(id => {
         const el = document.getElementById(id);
@@ -914,6 +923,87 @@ function renderShop() {
     }
 }
 
+window.useModalMapping = [];
+
+window.openUseModal = function () {
+    if (gameState !== 'PLAYING') return;
+    
+    // Usable items: not equipped and not equipment
+    const usables = player.inventory.map((item, index) => ({item, index}))
+        .filter(entry => !entry.item.equip && !Object.values(player.equipment).includes(entry.item));
+        
+    if (usables.length === 0) {
+        logMessage("You have no usable items.", "hint");
+        return;
+    }
+
+    gameState = 'USE_MENU';
+    document.getElementById('useModal').classList.add('active');
+    
+    const list = document.getElementById('use-modal-list');
+    list.innerHTML = '';
+    window.useModalMapping = [];
+    
+    const chars = 'abcdefghijklmnopqrstuvwxyz1234567890';
+    usables.forEach((entry, i) => {
+        const char = i < chars.length ? chars[i] : '?';
+        window.useModalMapping[char] = entry.index;
+        
+        list.innerHTML += `<li style="display:flex; justify-content:space-between; margin-bottom: 5px; align-items: center; padding: 5px; border-bottom: 1px solid #1f2833;">
+            <span><span style="color:#f1c40f; margin-right: 10px; font-weight: bold;">[${char}]</span> <span style="color:${entry.item.color}; cursor:pointer;" onclick="useItem(${entry.index}); closeUseModal();">${getItemName(entry.item)}</span></span>
+            <button class="btn" style="padding:2px 5px; font-size:0.7em;" onclick="useItem(${entry.index}); closeUseModal();">Use</button>
+        </li>`;
+    });
+};
+
+window.closeUseModal = function () {
+    document.getElementById('useModal').classList.remove('active');
+    if (gameState === 'USE_MENU') {
+        gameState = 'PLAYING';
+        updateUI();
+    }
+};
+
+window.dropModalMapping = [];
+
+window.openDropModal = function () {
+    if (gameState !== 'PLAYING') return;
+    
+    // Droppable items: unequipped
+    const droppables = player.inventory.map((item, index) => ({item, index}))
+        .filter(entry => !Object.values(player.equipment).includes(entry.item));
+        
+    if (droppables.length === 0) {
+        logMessage("You have nothing to drop.", "hint");
+        return;
+    }
+
+    gameState = 'DROP_MENU';
+    document.getElementById('dropModal').classList.add('active');
+    
+    const list = document.getElementById('drop-modal-list');
+    list.innerHTML = '';
+    window.dropModalMapping = [];
+    
+    const chars = 'abcdefghijklmnopqrstuvwxyz1234567890';
+    droppables.forEach((entry, i) => {
+        const char = i < chars.length ? chars[i] : '?';
+        window.dropModalMapping[char] = entry.index;
+        
+        list.innerHTML += `<li style="display:flex; justify-content:space-between; margin-bottom: 5px; align-items: center; padding: 5px; border-bottom: 1px solid #1f2833;">
+            <span><span style="color:#e74c3c; margin-right: 10px; font-weight: bold;">[${char}]</span> <span style="color:${entry.item.color}; cursor:pointer;" onclick="dropItem(${entry.index}); closeDropModal();">${getItemName(entry.item)}</span></span>
+            <button class="btn" style="padding:2px 5px; font-size:0.7em; background:#552222; border-color:#e74c3c;" onclick="dropItem(${entry.index}); closeDropModal();">Drop</button>
+        </li>`;
+    });
+};
+
+window.closeDropModal = function () {
+    document.getElementById('dropModal').classList.remove('active');
+    if (gameState === 'DROP_MENU') {
+        gameState = 'PLAYING';
+        updateUI();
+    }
+}
 window.openInventory = function () {
     if (gameState !== 'PLAYING') return;
     gameState = 'INVENTORY';
