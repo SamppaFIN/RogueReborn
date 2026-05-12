@@ -236,7 +236,7 @@ window.closeAllModals = function () {
         'shopModal', 'innkeeperModal', 'blacksmithModal', 'wizardModal',
         'bankModal', 'inventoryModal', 'alchemistModal', 'trainerModal',
         'cartographerModal', 'guildhallModal', 'stashModal', 'deathModal',
-        'useModal', 'dropModal'
+        'useModal', 'dropModal', 'historyModal', 'itemModal'
     ];
     modals.forEach(id => {
         const el = document.getElementById(id);

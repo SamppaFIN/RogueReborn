@@ -30,7 +30,13 @@ function updateParticles(dt) {
 }
 
 // --- Message Log ---
+// Full message history
+const fullMessageLog = [];
+
 function logMessage(text, className = '') {
+    fullMessageLog.push({ text, className, time: Date.now() });
+    if (fullMessageLog.length > 500) fullMessageLog.shift(); // cap at 500
+
     const msgs = msgLog.querySelectorAll('.log-msg');
     msgs.forEach(m => m.classList.remove('newest'));
     const div = document.createElement('div');
@@ -39,6 +45,21 @@ function logMessage(text, className = '') {
     msgLog.scrollTop = msgLog.scrollHeight;
     if (msgLog.children.length > 15) msgLog.removeChild(msgLog.children[0]);
 }
+
+window.openHistory = function() {
+    const modal = document.getElementById('historyModal');
+    const log = document.getElementById('fullHistoryLog');
+    if (!modal || !log) return;
+    log.innerHTML = fullMessageLog.slice().reverse().map(m =>
+        `<div class="log-msg ${m.className}" style="margin-bottom:3px;">${m.text}</div>`
+    ).join('');
+    modal.classList.add('active');
+};
+
+window.closeHistory = function() {
+    const modal = document.getElementById('historyModal');
+    if (modal) modal.classList.remove('active');
+};
 
 // --- UI Update ---
 function updateUI() {
@@ -112,8 +133,8 @@ function updateUI() {
         if (item) {
             h += `${getItemName(item)}`;
             h += `</span></span>`;
-            // Explicit Drop Button - using realIdx
-            h += `<button onclick="(function(e){ if(gameState==='PLAYING') { e.stopPropagation(); dropItem(${realIdx}, e); } })(event)" style="background:#552222; color:#ff9999; border:1px solid #ff3333; border-radius:3px; cursor:pointer; padding:2px 6px; font-size:0.7em;" title="Click to Drop. Shift+Click to Destroy.">DROP</button>`;
+            // Drop button - simple direct call
+            h += `<button onclick="dropItem(${realIdx})" style="background:#552222; color:#ff9999; border:1px solid #ff3333; border-radius:3px; cursor:pointer; padding:2px 6px; font-size:0.7em;" title="Click to Drop">DROP</button>`;
         } else {
             h += `<span style="opacity:0.3">Empty</span></span></span>`;
         }
