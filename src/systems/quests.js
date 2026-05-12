@@ -155,7 +155,7 @@ function claimQuestReward(questId) {
     }
     if (quest.rewards.item) {
         const itemTemplate = ITEM_DB.find(i => i.name === quest.rewards.item);
-        if (itemTemplate && player.inventory.length < 18) {
+        if (itemTemplate && player.inventory.length < 30) {
             player.inventory.push({ ...itemTemplate, identified: true });
             logMessage(`Received: ${quest.rewards.item}!`, 'pickup');
         }

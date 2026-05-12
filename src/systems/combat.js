@@ -443,7 +443,7 @@ function collectItems(x, y) {
             player.gold += item.amount;
             logMessage(`You pick up ${item.amount} gold.`, 'pickup');
         } else {
-            if (player.inventory.length < 18) {
+            if (player.inventory.length < 30) {
                 player.inventory.push(item);
                 logMessage(`You pick up ${getItemName(item)}.`, 'pickup');
             } else {
@@ -931,6 +931,7 @@ function useItem(index) {
         if (player.equipment[slot]) unequipSlot(slot);
 
         player.equipment[slot] = item;
+        player.inventory.splice(index, 1); // Remove from backpack
         item.identified = true;
         if (item.effect === 'esp') player.hasESP = true;
         // #14 Dual Wield speed bonus is applied via getEffectiveSpeed()

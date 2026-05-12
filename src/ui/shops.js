@@ -95,7 +95,6 @@ window.startGame = function (className) {
 
         const sword = { ...swordBase, identified: true, plusAtk: 0, plusDef: 0 };
         const armor = { ...armorBase, identified: true, plusAtk: 0, plusDef: 0 };
-        player.inventory.push(sword, armor);
         player.equipment.weapon = sword;
         player.equipment.armor = armor;
 
@@ -117,7 +116,7 @@ window.startGame = function (className) {
         const dagger = { ...daggerBase, identified: true, plusAtk: 0, plusDef: 0 };
         const robes = { ...robesBase, identified: true, plusAtk: 0, plusDef: 0 };
         
-        player.inventory.push(wand, dagger, robes);
+        player.inventory.push(wand); // Wand stays in inventory (usable consumable)
         player.equipment.weapon = dagger;
         player.equipment.armor = robes;
         
@@ -138,7 +137,6 @@ window.startGame = function (className) {
         const dagger = { ...daggerBase, identified: true, plusAtk: 0, plusDef: 0 };
         const cap = { ...capBase, identified: true, plusAtk: 0, plusDef: 0 };
         
-        player.inventory.push(dagger, cap);
         player.equipment.weapon = dagger;
         player.equipment.helm = cap;
 
@@ -255,7 +253,7 @@ window.closeShop = function () {
 window.buyItem = function buyItem(idx, isWizard = false) {
     const item = isWizard ? wizardInventory[idx] : currentShopItems[idx];
     if (player.gold >= item.cost) {
-        if (player.inventory.length >= 18) {
+        if (player.inventory.length >= 30) {
             logMessage(`Inventory full!`, 'damage');
             return;
         }
@@ -549,7 +547,7 @@ window.openAlchemist = function () {
 window.buyAlchemistItem = function(idx) {
     const item = alchemistInventory[idx];
     if (player.gold >= item.cost) {
-        if (player.inventory.length >= 18) {
+        if (player.inventory.length >= 30) {
             logMessage(`Inventory full!`, 'damage');
             return;
         }
@@ -806,7 +804,7 @@ window.putInStash = function(invIdx) {
 
 window.takeFromStash = function(stashIdx) {
     let stashItems = JSON.parse(localStorage.getItem('tomenet_stash') || '[]');
-    if (player.inventory.length >= 18) {
+    if (player.inventory.length >= 30) {
         logMessage("Inventory full!", "damage");
         return;
     }
@@ -1028,7 +1026,7 @@ window.renderInventoryModal = function () {
         if (item) {
             h += `<span>
                 <span style="color:${item.color}; margin-right: 10px;">${getItemName(item)}</span> 
-                <button class="btn" style="padding:2px 5px; font-size:0.7em; color:#bd93f9; margin-right: 5px;" onclick="openItemModal(player.inventory.indexOf(player.equipment['${slot}'])); closeInventory();">Info</button>
+                <button class="btn" style="padding:2px 5px; font-size:0.7em; color:#bd93f9; margin-right: 5px;" onclick="openItemModal('${slot}'); closeInventory();">Info</button>
                 <button class="btn" style="padding:2px 5px; font-size:0.7em" onclick="unequipSlot('${slot}')">Unequip</button>
             </span>`;
         } else {
@@ -1041,12 +1039,9 @@ window.renderInventoryModal = function () {
     const blist = document.getElementById('inv-modal-list');
     blist.innerHTML = '';
 
-    const unequippedItems = player.inventory.filter(item => !Object.values(player.equipment).includes(item));
-    document.getElementById('inv-count').innerText = unequippedItems.length;
+    document.getElementById('inv-count').innerText = player.inventory.length;
 
     player.inventory.forEach((item, i) => {
-        if (Object.values(player.equipment).includes(item)) return;
-
         let h = `<li style="display:flex; justify-content:space-between; margin-bottom: 5px; align-items: center;">
             <span style="color:${item.color}; cursor:pointer;" title="Click for Info" onclick="openItemModal(${i}); closeInventory();">${getItemName(item)}</span>
             <span>`;
@@ -1068,8 +1063,13 @@ window.unequipSlot = function (slot) {
             logMessage(`You cannot unequip the ${getItemName(item)}! It is cursed!`, 'damage');
             return;
         }
+        if (player.inventory.length >= 30) {
+            logMessage(`Inventory full! Cannot unequip ${getItemName(item)}.`, 'damage');
+            return;
+        }
         player.equipment[slot] = null;
         if (item.effect === 'esp') player.hasESP = false;
+        player.inventory.push(item);
         logMessage(`You unequip ${getItemName(item)}.`, 'magic');
         renderInventoryModal();
     }
@@ -1078,12 +1078,17 @@ window.unequipSlot = function (slot) {
 // --- Item Info Modal ---
 let currentItemModalIndex = -1;
 
-window.openItemModal = function (index) {
-    if (index < 0 || index >= player.inventory.length) return;
-    const item = player.inventory[index];
+window.openItemModal = function (indexOrSlot) {
+    let item;
+    if (typeof indexOrSlot === 'string') {
+        item = player.equipment[indexOrSlot];
+    } else {
+        if (indexOrSlot < 0 || indexOrSlot >= player.inventory.length) return;
+        item = player.inventory[indexOrSlot];
+    }
     if (!item) return;
 
-    currentItemModalIndex = index;
+    currentItemModalIndex = indexOrSlot;
     gameState = 'ITEM_MODAL';
 
     document.getElementById('itemModalName').innerText = getItemName(item);
@@ -1145,8 +1150,8 @@ window.openItemModal = function (index) {
         }
     }
 
-    let isEquir = Object.values(player.equipment).includes(item);
-    document.getElementById('btnItemUse').innerText = isEquir ? 'Unequip' : (item.equip ? 'Equip' : 'Use');
+    let isEquip = typeof indexOrSlot === 'string';
+    document.getElementById('btnItemUse').innerText = isEquip ? 'Unequip' : (item.equip ? 'Equip' : 'Use');
 
     const btnLore = document.getElementById('btnItemLore');
     if (btnLore) {
@@ -1168,23 +1173,35 @@ window.closeItemModal = function () {
 };
 
 window.modalUseItem = function () {
-    if (currentItemModalIndex >= 0) {
+    if (currentItemModalIndex !== -1) {
         let idx = currentItemModalIndex;
         closeItemModal(); // Need to close first so gameState allows useItem
-        useItem(idx);
+        if (typeof idx === 'string') {
+            unequipSlot(idx);
+        } else {
+            useItem(idx);
+        }
     }
 };
 
 window.modalDropItem = function () {
-    if (currentItemModalIndex >= 0) {
+    if (currentItemModalIndex !== -1) {
         let idx = currentItemModalIndex;
+        if (typeof idx === 'string') {
+            logMessage("Unequip first.", "damage");
+            return;
+        }
         closeItemModal();
         dropItem(idx);
     }
 };
 
 window.modalIdentifyItem = function () {
-    if (currentItemModalIndex >= 0) {
+    if (currentItemModalIndex !== -1) {
+        if (typeof currentItemModalIndex === 'string') {
+            logMessage("You must unequip it to identify.", "damage");
+            return;
+        }
         if (typeof attemptIdentify === 'function') {
             attemptIdentify(currentItemModalIndex);
             // Refresh modal directly

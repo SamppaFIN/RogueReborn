@@ -88,22 +88,32 @@ function updateUI() {
     document.getElementById('ui-energy').innerText = displayEnergy;
     document.getElementById('ui-energy-bar').style.width = `${Math.min(100, (player.energy / 100) * 100)}%`;
 
-    // Inventory
+    // Inventory Quickbar (Usable items only)
     const invDom = document.getElementById('ui-inventory');
     invDom.innerHTML = '';
-    for (let i = 0; i < 9; i++) {
+    
+    window.quickbarMap = [];
+    for (let i = 0; i < player.inventory.length; i++) {
         const item = player.inventory[i];
+        if (item && !item.equip && item.type !== 'crafting' && item.type !== 'material' && item.type !== 'quest' && item.type !== 'weapon' && item.type !== 'armor' && item.type !== 'shield' && item.type !== 'ring' && item.type !== 'amulet' && item.type !== 'helm') {
+            window.quickbarMap.push({ item: item, index: i });
+        }
+    }
+
+    for (let i = 0; i < 9; i++) {
+        const mapped = window.quickbarMap[i];
+        const item = mapped ? mapped.item : null;
+        const realIdx = mapped ? mapped.index : -1;
+
         let h = `<li style="display:flex; justify-content:space-between; align-items:center; cursor:${item ? 'pointer' : 'default'}">`;
-        h += `<span onclick="if(gameState==='PLAYING' && ${item ? 'true' : 'false'}) openItemModal(${i})" style="flex-grow:1; display:flex; align-items:center;">`;
+        h += `<span onclick="if(gameState==='PLAYING' && ${item ? 'true' : 'false'}) { event.stopPropagation(); openItemModal(${realIdx}); }" style="flex-grow:1; display:flex; align-items:center;">`;
         h += `<span class="inv-key" style="margin-right:5px">[${i + 1}]</span> <span class="inv-item" style="color:${item ? item.color : 'inherit'}">`;
 
         if (item) {
             h += `${getItemName(item)}`;
-            const isEquipped = Object.values(player.equipment).includes(item);
-            if (isEquipped) h += ` <span class="inv-equip" style="color:#f1c40f; font-size:0.8em">(Eq)</span>`;
             h += `</span></span>`;
-            // Explicit Drop Button
-            h += `<button onclick="if(gameState==='PLAYING') dropItem(${i}, event)" style="background:#552222; color:#ff9999; border:1px solid #ff3333; border-radius:3px; cursor:pointer; padding:2px 6px; font-size:0.7em;" title="Click to Drop. Shift+Click to Destroy.">DROP</button>`;
+            // Explicit Drop Button - using realIdx
+            h += `<button onclick="(function(e){ if(gameState==='PLAYING') { e.stopPropagation(); dropItem(${realIdx}, e); } })(event)" style="background:#552222; color:#ff9999; border:1px solid #ff3333; border-radius:3px; cursor:pointer; padding:2px 6px; font-size:0.7em;" title="Click to Drop. Shift+Click to Destroy.">DROP</button>`;
         } else {
             h += `<span style="opacity:0.3">Empty</span></span></span>`;
         }

@@ -344,10 +344,11 @@ if (!window.inputHandlersInitialized) {
     }
 
     // Inventory selection (1-9)
+    // Inventory selection (1-9) via Quickbar
     if (gameState === 'PLAYING' && e.key >= '1' && e.key <= '9' && !e.altKey) {
-        const index = parseInt(e.key) - 1;
-        if (player.inventory[index]) {
-            useItem(index);
+        const slot = parseInt(e.key) - 1;
+        if (window.quickbarMap && window.quickbarMap[slot]) {
+            useItem(window.quickbarMap[slot].index);
         }
     }
 

@@ -466,20 +466,24 @@ function processItemFeelings() {
 
 // --- Real-time Loop ---
 function gameLoop(timestamp) {
-    if (gameState !== 'PLAYING') {
-        requestAnimationFrame(gameLoop);
-        return;
-    }
-
     const dt = timestamp - lastTime;
     const logicalDt = timestamp - lastLogicalTick;
 
     // A. Rendering & Particles (60fps goal)
     if (dt >= TICK_RATE) {
         lastTime = timestamp;
-        updateParticles(dt);
-        updateUI();
-        render();
+        if (gameState !== 'START' && gameState !== 'CHAR_CREATE' && gameState !== 'PLAYER_DEAD') {
+            if (gameState === 'PLAYING') {
+                updateParticles(dt);
+            }
+            updateUI();
+            render();
+        }
+    }
+
+    if (gameState !== 'PLAYING') {
+        requestAnimationFrame(gameLoop);
+        return;
     }
 
     // B. Logical Heartbeat (TomeNET style - 10 ticks / sec)

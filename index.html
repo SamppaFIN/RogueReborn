@@ -362,6 +362,10 @@
                 display: grid;
             }
 
+            #btn-toggle-controls {
+                display: block !important;
+            }
+
             .modal-content {
                 width: 90% !important;
                 padding: 20px;
@@ -383,6 +387,9 @@
         <div id="canvas-wrapper">
             <canvas id="gameCanvas"></canvas>
             
+            <!-- Mobile Toggle -->
+            <button id="btn-toggle-controls" onclick="toggleMobileControls()" style="position: absolute; top: 10px; right: 10px; z-index: 50; background: rgba(0,0,0,0.7); color: #f1c40f; border: 1px solid #f1c40f; border-radius: 4px; padding: 8px 12px; cursor: pointer; display: none; font-family: inherit;">Hide Controls</button>
+
             <!-- Mobile Controls -->
             <div id="mobile-controls">
                 <div class="mobile-btn" id="btn-nw">↖</div>
@@ -850,7 +857,7 @@
                 <!-- Backpack Column -->
                 <div style="flex: 1; border: 1px solid #1f2833; padding: 10px; background: #0b0c10;">
                     <h3 style="color: #45a29e; border-bottom: 1px solid #1f2833; padding-bottom: 5px; margin-top: 0;">
-                        Backpack (<span id="inv-count">0</span>/18)</h3>
+                        Backpack (<span id="inv-count">0</span>/30)</h3>
                     <ul id="inv-modal-list"
                         style="list-style: none; padding: 0; margin: 0; line-height: 1.8; max-height: 300px; overflow-y: auto;">
                         <!-- Injected via JS -->
@@ -909,6 +916,23 @@
     <script src="src/ui/mobile_controls.js?v=1"></script>
     <script src="engine.js?v=13"></script>
     <script src="src/ui/input.js?v=3"></script>
+    <script>
+        function toggleMobileControls() {
+            const controls = document.getElementById('mobile-controls');
+            const actions = document.getElementById('mobile-actions');
+            const btn = document.getElementById('btn-toggle-controls');
+            
+            if (controls.style.display === 'none') {
+                controls.style.display = 'grid'; // Grid is used for movement buttons
+                actions.style.display = 'flex';
+                btn.innerText = 'Hide Controls';
+            } else {
+                controls.style.display = 'none';
+                actions.style.display = 'none';
+                btn.innerText = 'Show Controls';
+            }
+        }
+    </script>
 </body>
 
 </html>

@@ -67,7 +67,7 @@ function checkEquipment() {
 }
 
 function autoDropJunk() {
-    if (player.inventory.length < 17) return;
+    if (player.inventory.length < 29) return;
 
     let lowestScore = 9999;
     let worstIndex = -1;
