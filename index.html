@@ -587,6 +587,35 @@
         </div>
     </div>
 
+    <!-- Intro / Title Modal -->
+    <div id="introModal" class="modal">
+        <div class="modal-content" style="width: 700px; border-color: #66fcf1;">
+            <h2 style="color: #66fcf1; font-size: 3.5rem; margin-bottom: 10px;">ROGUE REBORN</h2>
+            <p style="color: #45a29e; font-style: italic; margin-bottom: 30px;">"The Factory's Sacred Descent"</p>
+            
+            <div style="display: flex; gap: 20px; text-align: left; margin-bottom: 30px;">
+                <div style="flex: 1.2; border: 1px solid #1f2833; padding: 20px; background: rgba(31, 40, 51, 0.4); line-height: 1.6;">
+                    <h3 style="color: #f1c40f; margin-top: 0;">The Descent</h3>
+                    <p>You awake in the sanctuary of the Town, clutching a tattered piece of parchment: a <strong style="color:#bd93f9">Word of Recall</strong>.</p>
+                    <p>The Conclave has chosen you to descend into the deep. Only this sacred scroll can whisk you back to safety when death looms near. <strong>Use it wisely</strong>, for once you are gone, your body remains, but your spirit — and your bank vault — shall persist.</p>
+                    <div style="margin-top: 15px; border-top: 1px solid #1f2833; padding-top: 10px;">
+                        <p style="color: #2ecc71;"><strong>Persistent Bank Vault:</strong> <span id="intro-vault-gold">0</span>g</p>
+                    </div>
+                    <p style="font-size: 0.9em; color: #888;">[I]nventory to use the scroll. Bank your gold to save it for future heroes.</p>
+                </div>
+                
+                <div style="flex: 0.8; border: 1px solid #1f2833; padding: 15px; background: #000;">
+                    <h3 style="color: #45a29e; margin-top: 0; border-bottom: 1px solid #1f2833; padding-bottom: 5px;">Legendary Deeds</h3>
+                    <div id="intro-highscores" style="font-size: 0.85em; max-height: 250px; overflow-y: auto;">
+                        <!-- JS fills this -->
+                    </div>
+                </div>
+            </div>
+            
+            <button class="btn" style="font-size: 1.5rem; padding: 15px 50px;" onclick="showCharacterCreation()">Begin the Cycle</button>
+        </div>
+    </div>
+
     <!-- Blacksmith Modal -->
     <div id="blacksmithModal" class="modal">
         <div class="modal-content" style="position: relative; width: 600px;">

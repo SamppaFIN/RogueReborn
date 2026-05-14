@@ -151,7 +151,27 @@ function attemptAction(entity, action, energyCost = ENERGY_THRESHOLD) {
             activePath = null;
 
             if (entity.isPlayer) {
-                if (mapTile.type === 'shop') {
+                if (mapTile.type === 'wall') {
+                    if (currentFloor === 0) {
+                        logMessage("These walls are made of ancient, indestructible stone.", "hint");
+                    } else {
+                        mapTile.digCount = (mapTile.digCount || 0) + 1;
+                        spawnParticle(tx, ty, `${mapTile.digCount}/10`, "#7f8c8d");
+                        
+                        if (mapTile.digCount >= 10) {
+                            mapTile.type = 'floor';
+                            mapTile.char = CHARS.FLOOR;
+                            mapTile.color = undefined;
+                            logMessage("You break through the rock!", "pickup");
+                            spawnParticle(tx, ty, "CRACK!", "#66fcf1");
+                            computeFOV();
+                        } else {
+                            logMessage("You dig into the wall...");
+                        }
+                        entity.energy -= energyCost;
+                        return;
+                    }
+                } else if (mapTile.type === 'shop') {
                     openShop();
                 } else if (mapTile.type === 'healer') {
                     openInnkeeper();
@@ -260,15 +280,6 @@ function attemptAction(entity, action, energyCost = ENERGY_THRESHOLD) {
                     }
                     entity.energy -= energyCost;
                     return;
-                } else if (mapTile.type === 'lava') {
-                    // Handled in move execution below
-                } else if (mapTile.hp <= 0) {
-                    mapTile.type = 'floor';
-                    mapTile.char = CHARS.FLOOR;
-                    logMessage("You break through the rock.", 'pickup');
-                    computeFOV();
-                } else {
-                    logMessage("You dig into the wall...");
                 }
                 entity.energy -= energyCost;
             }

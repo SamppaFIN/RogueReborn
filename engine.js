@@ -525,10 +525,54 @@ function init() {
     computeFOV();
     resizeCanvas();
     updateUI();
-    document.getElementById('charCreateModal').classList.add('active');
-    gameState = 'CHAR_CREATE';
+    
+    // Start with Intro Screen instead of character creation
+    showIntro();
     lastTime = performance.now();
     requestAnimationFrame(gameLoop);
+}
+
+function showIntro() {
+    gameState = 'INTRO';
+    document.getElementById('introModal').classList.add('active');
+    
+    // Show bank balance
+    const vaultGold = localStorage.getItem('vaultGold') || '0';
+    const vaultEl = document.getElementById('intro-vault-gold');
+    if (vaultEl) vaultEl.innerText = vaultGold;
+
+    renderHighscores('intro-highscores');
+}
+
+window.showCharacterCreation = function() {
+    document.getElementById('introModal').classList.remove('active');
+    document.getElementById('charCreateModal').classList.add('active');
+    gameState = 'CHAR_CREATE';
+};
+
+window.renderHighscores = function(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    
+    let scores = JSON.parse(localStorage.getItem('tomenet_highscores') || '[]');
+    if (scores.length === 0) {
+        container.innerHTML = '<p style="color:#666; font-style:italic; text-align:center;">No legends yet...</p>';
+        return;
+    }
+    
+    let html = '<table style="width:100%; border-collapse:collapse; color:#c5c6c7;">';
+    scores.forEach((s, i) => {
+        const color = i === 0 ? '#f1c40f' : (i === 1 ? '#bdc3c7' : (i === 2 ? '#cd7f32' : '#c5c6c7'));
+        html += `
+            <tr style="border-bottom: 1px solid #1f2833;">
+                <td style="padding:5px 0; color:${color};">#${i+1}</td>
+                <td style="padding:5px 0;">${s.name}</td>
+                <td style="padding:5px 0; text-align:right; color:#66fcf1;">${s.score}</td>
+            </tr>
+        `;
+    });
+    html += '</table>';
+    container.innerHTML = html;
 }
 
 // #66 Save / Load Game via localStorage

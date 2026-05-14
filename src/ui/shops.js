@@ -840,19 +840,13 @@ window.closeStash = function () {
 // --- Guildhall Modal ---
 window.openGuildhall = function () {
     gameState = 'GUILDHALL';
-    
-    let scores = JSON.parse(localStorage.getItem('tomenet_highscores') || '[]');
     const list = document.getElementById('guildhall-scores');
     list.innerHTML = '';
-    
-    if (scores.length === 0) {
-        list.innerHTML = "<li>No legends recorded yet.</li>";
-    } else {
-        scores.forEach(s => {
-            list.innerHTML += `<li><span style="color:#f1c40f">${s.score} pts</span> - <span style="color:#66fcf1">${s.name}</span> the Lvl ${s.level} ${s.class} (Floor ${s.floor})</li>`;
-        });
+    if (typeof renderHighscores === 'function') {
+        renderHighscores('guildhall-scores');
+    } else if (window.renderHighscores) {
+        window.renderHighscores('guildhall-scores');
     }
-
     document.getElementById('guildhallModal').classList.add('active');
 };
 
