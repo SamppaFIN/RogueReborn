@@ -224,9 +224,24 @@ window.openShop = function () {
     document.getElementById('shopModal').classList.add('active');
     document.getElementById('shopGold').innerText = player.gold;
 
-    currentShopItems = ITEM_DB.filter(i => i.cost).map(i => ({ ...i }));
+    // Always include Word of Recall in the shop
+    const recallBase = ITEM_DB.find(i => i.name === 'Word of Recall');
+    let pool = ITEM_DB.filter(i => i.cost && i.name !== 'Word of Recall').map(i => ({ ...i }));
+    pool.sort(() => Math.random() - 0.5);
+    
+    currentShopItems = pool.slice(0, 5);
+    if (recallBase) currentShopItems.push({ ...recallBase });
+    
+    // Mark all shop items as identified
+    currentShopItems.forEach(i => {
+        if (['potion', 'scroll', 'wand'].includes(i.type)) {
+            identifiedTypes[i.name] = true;
+        } else {
+            i.identified = true;
+        }
+    });
+
     currentShopItems.sort(() => Math.random() - 0.5);
-    currentShopItems = currentShopItems.slice(0, 6); // 6 random items
 
     renderShop();
 };

@@ -137,6 +137,77 @@ function generateTown() {
         }
     }
 
+    // --- Decorate Town: The Great River & Bridge ---
+    const riverY = c.y + 13;
+    const riverWidth = 3;
+    for (let x = townRect.x; x < townRect.x + townRect.w; x++) {
+        for (let ry = riverY; ry < riverY + riverWidth; ry++) {
+            if (x >= c.x - 3 && x <= c.x + 3) {
+                // The Bridge (wooden path across the river)
+                map[x][ry].type = 'bridge';
+                map[x][ry].char = '=';
+                map[x][ry].color = '#d35400';
+            } else {
+                // The River
+                map[x][ry].type = 'water';
+                map[x][ry].char = '~';
+                map[x][ry].color = '#3498db';
+            }
+        }
+    }
+
+    // Add some reeds/grass near the river edges
+    for (let x = townRect.x; x < townRect.x + townRect.w; x++) {
+        if (Math.random() < 0.3) {
+            const ry = riverY + (Math.random() < 0.5 ? -1 : riverWidth);
+            if (map[x] && map[x][ry] && map[x][ry].type === 'floor') {
+                map[x][ry].type = 'reeds';
+                map[x][ry].char = '║';
+                map[x][ry].color = '#27ae60';
+            }
+        }
+    }
+
+    // 2. Add Trees and Flowers randomly
+    for (let i = 0; i < 80; i++) {
+        let tx = townRect.x + Math.floor(Math.random() * townRect.w);
+        let ty = townRect.y + Math.floor(Math.random() * townRect.h);
+        
+        if (map[tx] && map[tx][ty] && map[tx][ty].type === 'floor') {
+            const distToCenter = Math.abs(tx - c.x) + Math.abs(ty - c.y);
+            if (distToCenter < 5) continue;
+
+            const r = Math.random();
+            if (r < 0.35) {
+                map[tx][ty].type = 'tree';
+                map[tx][ty].char = '♣';
+                map[tx][ty].color = '#27ae60';
+            } else if (r < 0.5) {
+                map[tx][ty].type = 'flower';
+                map[tx][ty].char = 'v';
+                map[tx][ty].color = Math.random() < 0.5 ? '#e74c3c' : '#f1c40f';
+            } else if (r < 0.65) {
+                map[tx][ty].type = 'grass';
+                map[tx][ty].char = '"';
+                map[tx][ty].color = '#2ecc71';
+            }
+        }
+    }
+
+    // 3. Add some Benches or Lamps near the center
+    const decorPositions = [
+        {x: c.x - 3, y: c.y - 1}, {x: c.x + 3, y: c.y - 1},
+        {x: c.x - 3, y: c.y + 1}, {x: c.x + 3, y: c.y + 1},
+        {x: c.x - 5, y: riverY - 2}, {x: c.x + 5, y: riverY - 2}
+    ];
+    decorPositions.forEach(pos => {
+        if (map[pos.x] && map[pos.x][pos.y] && map[pos.x][pos.y].type === 'floor') {
+            map[pos.x][pos.y].type = 'decor';
+            map[pos.x][pos.y].char = 'π'; // Bench
+            map[pos.x][pos.y].color = '#7f8c8d';
+        }
+    });
+
     // Local flavor log
     logMessage("Town Services: 1:Shop, 3:Blacksmith, 4:Healer, 5:Alchemist, 6:Wizard, A:Altar", "hint");
 

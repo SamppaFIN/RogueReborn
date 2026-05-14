@@ -284,7 +284,9 @@ function getAutoplaySubTicks() {
 }
 
 function runLogicalTick() {
-    if (gameState !== 'PLAYING') return;
+    const isAutoPlay = typeof window.isAutoPlayActive !== 'undefined' && window.isAutoPlayActive;
+    const isModalState = gameState === 'LEVEL_UP' || gameState === 'SHOP' || gameState === 'INNKEEPER';
+    if (gameState !== 'PLAYING' && !(isAutoPlay && isModalState)) return;
 
     // Determine how many sub-ticks to process (auto modes get fast processing)
     let subTicks = 1;
@@ -294,7 +296,7 @@ function runLogicalTick() {
         subTicks = 10; // Process up to 10 steps per heartbeat for auto modes
     }
 
-    for (let st = 0; st < subTicks && gameState === 'PLAYING'; st++) {
+    for (let st = 0; st < subTicks && (gameState === 'PLAYING' || (isAutoPlay && isModalState)); st++) {
         // 1. Accumulate Energy (capped to prevent burst freezes)
         player.energy = Math.min(200, player.energy + getEffectiveSpeed());
         for (let e of entities) {
@@ -307,7 +309,10 @@ function runLogicalTick() {
         if (st === 0) updateNoise();
 
         // 2. Process Player Actions
-        if (player.energy >= ENERGY_THRESHOLD && gameState === 'PLAYING') {
+        const isAutoPlay = typeof window.isAutoPlayActive !== 'undefined' && window.isAutoPlayActive;
+        const canAct = player.energy >= ENERGY_THRESHOLD || (isAutoPlay && (gameState === 'LEVEL_UP' || gameState === 'SHOP' || gameState === 'INNKEEPER'));
+        
+        if (canAct && (gameState === 'PLAYING' || isAutoPlay)) {
             // Status & Regen (once per heartbeat)
             if (st === 0) processPlayerTimedEffects();
             
@@ -315,9 +320,19 @@ function runLogicalTick() {
                 const prevX = player.x, prevY = player.y;
                 const prevEnergy = player.energy;
                 if (typeof processAutoPlay === 'function') processAutoPlay();
-                // If autoplay didn't consume any energy (e.g. walked into wall), force drain
+                // If autoplay didn't consume any energy (e.g. walked into wall or yielding to auto-explore),
+                // we check if it yielded to isAutoExploring.
                 if (player.energy >= prevEnergy) {
-                    player.energy -= ENERGY_THRESHOLD;
+                    if (isAutoExploring && gameState === 'PLAYING') {
+                        let act = getPendingAction();
+                        if (act) {
+                            attemptAction(player, act, ACTION_COSTS.MOVE);
+                        }
+                    }
+                    // Still didn't consume energy? Force drain to prevent infinite loop.
+                    if (player.energy >= prevEnergy) {
+                        player.energy -= ENERGY_THRESHOLD;
+                    }
                 }
                 computeFOV();
                 processItemFeelings();
@@ -481,7 +496,9 @@ function gameLoop(timestamp) {
         }
     }
 
-    if (gameState !== 'PLAYING') {
+    const isAutoPlay = typeof window.isAutoPlayActive !== 'undefined' && window.isAutoPlayActive;
+    const isModalState = gameState === 'LEVEL_UP' || gameState === 'SHOP' || gameState === 'INNKEEPER';
+    if (gameState !== 'PLAYING' && !(isAutoPlay && isModalState)) {
         requestAnimationFrame(gameLoop);
         return;
     }

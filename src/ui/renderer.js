@@ -111,35 +111,50 @@ function updateUI() {
 
     // Inventory Quickbar (Usable items only)
     const invDom = document.getElementById('ui-inventory');
-    invDom.innerHTML = '';
-    
-    window.quickbarMap = [];
-    for (let i = 0; i < player.inventory.length; i++) {
-        const item = player.inventory[i];
-        if (item && !item.equip && item.type !== 'crafting' && item.type !== 'material' && item.type !== 'quest' && item.type !== 'weapon' && item.type !== 'armor' && item.type !== 'shield' && item.type !== 'ring' && item.type !== 'amulet' && item.type !== 'helm') {
-            window.quickbarMap.push({ item: item, index: i });
+    if (invDom) {
+        invDom.innerHTML = '';
+        
+        window.quickbarMap = [];
+        for (let i = 0; i < player.inventory.length; i++) {
+            const item = player.inventory[i];
+            if (item && !item.equip && item.type !== 'crafting' && item.type !== 'material' && item.type !== 'quest' && item.type !== 'weapon' && item.type !== 'armor' && item.type !== 'shield' && item.type !== 'ring' && item.type !== 'amulet' && item.type !== 'helm') {
+                window.quickbarMap.push({ item: item, index: i });
+            }
+        }
+
+        for (let i = 0; i < 9; i++) {
+            const mapped = window.quickbarMap[i];
+            const item = mapped ? mapped.item : null;
+            const realIdx = mapped ? mapped.index : -1;
+
+            let h = `<li style="display:flex; justify-content:space-between; align-items:center; cursor:${item ? 'pointer' : 'default'}">`;
+            h += `<span onclick="if(gameState==='PLAYING' && ${item ? 'true' : 'false'}) { event.stopPropagation(); openItemModal(${realIdx}); }" style="flex-grow:1; display:flex; align-items:center;">`;
+            h += `<span class="inv-key" style="margin-right:5px">[${i + 1}]</span> <span class="inv-item" style="color:${item ? item.color : 'inherit'}">`;
+
+            if (item) {
+                h += `${getItemName(item)}`;
+                h += `</span></span>`;
+                // Drop button - simple direct call
+                h += `<button onclick="dropItem(${realIdx})" style="background:#552222; color:#ff9999; border:1px solid #ff3333; border-radius:3px; cursor:pointer; padding:2px 6px; font-size:0.7em;" title="Click to Drop">DROP</button>`;
+            } else {
+                h += `<span style="opacity:0.3">Empty</span></span></span>`;
+            }
+            h += `</li>`;
+            invDom.innerHTML += h;
         }
     }
 
-    for (let i = 0; i < 9; i++) {
-        const mapped = window.quickbarMap[i];
-        const item = mapped ? mapped.item : null;
-        const realIdx = mapped ? mapped.index : -1;
-
-        let h = `<li style="display:flex; justify-content:space-between; align-items:center; cursor:${item ? 'pointer' : 'default'}">`;
-        h += `<span onclick="if(gameState==='PLAYING' && ${item ? 'true' : 'false'}) { event.stopPropagation(); openItemModal(${realIdx}); }" style="flex-grow:1; display:flex; align-items:center;">`;
-        h += `<span class="inv-key" style="margin-right:5px">[${i + 1}]</span> <span class="inv-item" style="color:${item ? item.color : 'inherit'}">`;
-
-        if (item) {
-            h += `${getItemName(item)}`;
-            h += `</span></span>`;
-            // Drop button - simple direct call
-            h += `<button onclick="dropItem(${realIdx})" style="background:#552222; color:#ff9999; border:1px solid #ff3333; border-radius:3px; cursor:pointer; padding:2px 6px; font-size:0.7em;" title="Click to Drop">DROP</button>`;
+    // Mobile Controls visibility
+    const mobileControls = document.getElementById('mobile-controls');
+    const mobileActions = document.getElementById('mobile-actions');
+    if (mobileControls && mobileActions) {
+        if (gameState === 'PLAYING') {
+            if (mobileControls.style.display === 'none') mobileControls.style.display = '';
+            if (mobileActions.style.display === 'none') mobileActions.style.display = '';
         } else {
-            h += `<span style="opacity:0.3">Empty</span></span></span>`;
+            mobileControls.style.display = 'none';
+            mobileActions.style.display = 'none';
         }
-        h += `</li>`;
-        invDom.innerHTML += h;
     }
 }
 
@@ -182,11 +197,17 @@ function render() {
             if (tile.explored || player.hasESP) {
                 let color = tile.visible ? (tile.type === 'wall' ? COLORS.LIT_WALL : COLORS.LIT_FLOOR)
                     : (tile.type === 'wall' ? COLORS.DARK_WALL : COLORS.DARK_FLOOR);
-                if (tile.isTown && tile.visible) {
+                
+                if (tile.color) {
+                    // Use custom color if it's not just a generic floor/wall, or if it's town floor/wall but we want that specific color
+                    if (tile.type !== 'floor' && tile.type !== 'wall') color = tile.color;
+                    else if (tile.isTown && tile.visible) color = tile.color;
+                } else if (tile.isTown && tile.visible) {
                     color = tile.type === 'wall' ? COLORS.TOWN_WALL : COLORS.TOWN_FLOOR;
                 }
+
                 if (tile.type === 'stairs_up' || tile.type === 'stairs_down') color = tile.visible ? COLORS.STAIRS : '#666';
-                if (tile.type === 'shop' || tile.type === 'healer' || tile.type === 'blacksmith' || tile.type === 'wizard' || tile.type === 'alchemist' || tile.type === 'trainer' || tile.type === 'bank' || tile.type === 'cartographer') {
+                if (tile.type === 'shop' || tile.type === 'healer' || tile.type === 'blacksmith' || tile.type === 'wizard' || tile.type === 'alchemist' || tile.type === 'trainer' || tile.type === 'bank' || tile.type === 'cartographer' || tile.type === 'altar' || tile.type === 'stash') {
                     if (timeOfDay === 'Night' && tile.visible) color = '#f1c40f'; // Glow yellow at night
                     else if (tile.type === 'healer') color = tile.visible ? '#e74c3c' : '#666';
                     else if (tile.type === 'shop') color = tile.visible ? COLORS.GOLD : '#666';

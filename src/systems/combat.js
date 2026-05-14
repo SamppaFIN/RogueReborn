@@ -146,7 +146,7 @@ function attemptAction(entity, action, energyCost = ENERGY_THRESHOLD) {
             }
         }
 
-        if (mapTile.type === 'wall' || mapTile.type === 'shop' || mapTile.type === 'healer' || mapTile.type === 'blacksmith' || mapTile.type === 'wizard' || mapTile.type === 'bank' || mapTile.type === 'well' || mapTile.type === 'mayor' || mapTile.type === 'gambler' || mapTile.type === 'shrine' || mapTile.type === 'altar' || mapTile.type === 'stash') {
+        if (mapTile.type === 'wall' || mapTile.type === 'shop' || mapTile.type === 'healer' || mapTile.type === 'blacksmith' || mapTile.type === 'wizard' || mapTile.type === 'bank' || mapTile.type === 'well' || mapTile.type === 'mayor' || mapTile.type === 'gambler' || mapTile.type === 'shrine' || mapTile.type === 'altar' || mapTile.type === 'stash' || mapTile.type === 'water' || mapTile.type === 'tree') {
             isAutoRunning = false;
             activePath = null;
 

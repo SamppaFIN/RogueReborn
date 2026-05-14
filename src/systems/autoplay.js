@@ -67,7 +67,7 @@ function checkEquipment() {
 }
 
 function autoDropJunk() {
-    if (player.inventory.length < 29) return;
+    if (player.inventory.length < 28) return false;
 
     let lowestScore = 9999;
     let worstIndex = -1;
@@ -77,18 +77,19 @@ function autoDropJunk() {
         let score = 0;
 
         // Scoring rules
-        if (item.name === 'Dungeon Key') score += 1000;
-        if (item.artifact) score += 500;
-        if (Object.values(player.equipment).includes(item)) score += 1000;
-        if (item.effect === 'heal' || item.effect === 'full_heal') score += 100;
-        if (item.type === 'scroll' || item.type === 'potion') score += 50;
+        if (item.name === 'Dungeon Key') score += 5000;
+        if (item.artifact) score += 2000;
+        if (Object.values(player.equipment).includes(item)) score += 10000;
+        if (item.effect === 'heal' || item.effect === 'full_heal') score += 500;
+        if (item.name === 'Word of Recall') score += 1000;
+        if (item.type === 'scroll' || item.type === 'potion' || item.type === 'wand') score += 100;
         
         // Unidentified items might be good
-        if (!item.identified) score += 40;
+        if (!item.identified && !identifiedTypes[item.name]) score += 40;
 
         // Compare equipment stats
-        if (['weapon', 'armor', 'helm', 'shield'].includes(item.type)) {
-            score += (item.atkBonus || 0) + (item.defBonus || 0) + (item.plusAtk || 0) + (item.plusDef || 0);
+        if (['weapon', 'armor', 'helm', 'shield', 'ring', 'amulet'].includes(item.type)) {
+            score += (item.atkBonus || 0) * 10 + (item.defBonus || 0) * 10 + (item.plusAtk || 0) * 10 + (item.plusDef || 0) * 10;
         }
 
         if (score < lowestScore) {
@@ -97,10 +98,50 @@ function autoDropJunk() {
         }
     }
 
-    if (worstIndex >= 0 && lowestScore < 500) {
-        console.log(`[Autoplay] Dropping junk to free space: ${player.inventory[worstIndex].name}`);
+    // If inventory is critical (30), drop the worst item regardless of score, 
+    // but try to keep equipment and keys.
+    const critical = player.inventory.length >= 30;
+    if (worstIndex >= 0 && (lowestScore < 500 || critical)) {
+        console.log(`[Autoplay] Dropping junk to free space: ${player.inventory[worstIndex].name} (Score: ${lowestScore})`);
         window.dropItem(worstIndex, null, true); // true for silent/simulated drop
+        return true;
     }
+    return false;
+}
+
+function autoUseConsumables() {
+    if (player.inventory.length < 25) return false;
+
+    // 1. Identify scrolls if we have many
+    const identifyIdx = player.inventory.findIndex(i => i.effect === 'identify');
+    if (identifyIdx >= 0) {
+        const unidIdx = player.inventory.findIndex(i => !i.identified && !identifiedTypes[i.name]);
+        if (unidIdx >= 0) {
+            console.log(`[Autoplay] Using Identify scroll to free space and learn.`);
+            window.useItem(identifyIdx);
+            return true;
+        }
+    }
+
+    // 2. Mapping or detect items scrolls (just to use them up)
+    const utilityIdx = player.inventory.findIndex(i => i.effect === 'mapping' || i.effect === 'detect_items');
+    if (utilityIdx >= 0) {
+        console.log(`[Autoplay] Using utility scroll to free space.`);
+        window.useItem(utilityIdx);
+        return true;
+    }
+
+    // 3. Potions if HP < 90%
+    if (player.hp < player.maxHp * 0.9) {
+        const healIdx = player.inventory.findIndex(i => i.effect === 'heal' || i.effect === 'full_heal');
+        if (healIdx >= 0) {
+            console.log(`[Autoplay] Using Potion early to free space.`);
+            window.useItem(healIdx);
+            return true;
+        }
+    }
+
+    return false;
 }
 
 function getNearestVisibleMonster() {
@@ -191,7 +232,7 @@ function autoplayFindNearestItem() {
 
 function processAutoPlay() {
     // Close any open modal/NPC dialog immediately
-    if (gameState !== 'PLAYING' && gameState !== 'PLAYER_DEAD' && gameState !== 'VICTORY' && gameState !== 'LEVEL_UP' && gameState !== 'TARGETING' && gameState !== 'RANGED_TARGETING') {
+    if (gameState !== 'PLAYING' && gameState !== 'PLAYER_DEAD' && gameState !== 'VICTORY' && gameState !== 'LEVEL_UP' && gameState !== 'TARGETING' && gameState !== 'RANGED_TARGETING' && gameState !== 'SHOP' && gameState !== 'INNKEEPER') {
         if (window.closeAllModals) window.closeAllModals();
         gameState = 'PLAYING'; // Force back to playing
         return;
@@ -199,6 +240,68 @@ function processAutoPlay() {
 
     if (gameState === 'PLAYER_DEAD' || gameState === 'VICTORY') {
         window.isAutoPlayActive = false;
+        return;
+    }
+
+    // --- MODAL INTERACTION ---
+    if (gameState === 'SHOP') {
+        // 1. Sell Junk first
+        for (let i = 0; i < player.inventory.length; i++) {
+            let item = player.inventory[i];
+            if (!item) continue;
+            // Scoring from autoDropJunk logic roughly
+            // Use global identifiedTypes for consumables
+            let isIdentified = item.identified || (identifiedTypes && identifiedTypes[item.name]);
+            let isJunk = !isIdentified || (!item.artifact && (item.type === 'weapon' || item.type === 'armor' || item.type === 'helm' || item.type === 'shield'));
+            
+            // If it's not equipped and it's worse than current eq (or unidentified junk), it's junk
+            // For now, we only sell non-consumable junk to avoid selling potions/scrolls
+            if (isJunk && !Object.values(player.equipment).includes(item) && !['potion', 'scroll', 'wand'].includes(item.type)) {
+                console.log(`[Autoplay] Selling junk: ${item.name}`);
+                if (window.sellItem) window.sellItem(i);
+                return; // Return to process next turn
+            }
+        }
+
+        // 2. Buy Necessities
+        const hasRecall = player.inventory.some(i => i.name === 'Word of Recall');
+        const recallItem = currentShopItems.find(i => i.name === 'Word of Recall');
+        const recallIdx = currentShopItems.indexOf(recallItem);
+        
+        if (!hasRecall && recallIdx >= 0 && player.gold >= recallItem.cost) {
+            console.log(`[Autoplay] Buying Word of Recall (${recallItem.cost}g)`);
+            window.buyItem(recallIdx);
+            return;
+        }
+
+        const potionCount = player.inventory.filter(i => i.effect === 'heal' || i.effect === 'full_heal').length;
+        const potionItem = currentShopItems.find(i => i.effect === 'heal' || i.effect === 'full_heal');
+        const potionIdx = currentShopItems.indexOf(potionItem);
+        
+        if (potionCount < 2 && potionIdx >= 0 && player.gold >= potionItem.cost && player.inventory.length < 30) {
+            console.log(`[Autoplay] Buying Potion (${potionItem.name})`);
+            window.buyItem(potionIdx);
+            return;
+        }
+
+        // 3. Nothing else to do, close
+        console.log(`[Autoplay] Done shopping. Closing modal.`);
+        window.closeAllModals();
+        player._didShopThisVisit = true; 
+        player._townActionCooldown = 5; 
+        return;
+    }
+
+    if (gameState === 'INNKEEPER') {
+        if (player.hp < player.maxHp && player.gold >= 20) {
+            console.log(`[Autoplay] Healing at Inn`);
+            window.buyHeal();
+        } else {
+            console.log(`[Autoplay] Done healing. Closing modal.`);
+            window.closeAllModals();
+            player._didHealThisVisit = true; 
+            player._townActionCooldown = 5;
+        }
         return;
     }
 
@@ -223,6 +326,11 @@ function processAutoPlay() {
     }
 
     if (gameState === 'LEVEL_UP') {
+        if (!window._levelUpOpenedTime) window._levelUpOpenedTime = Date.now();
+        
+        // Wait 3 seconds before AI takes over
+        if (Date.now() - window._levelUpOpenedTime < 3000) return;
+
         const buttons = document.querySelectorAll('#levelUpModal button, #skillModal button');
         const upgradeButtons = Array.from(buttons).filter(b => b.id !== 'btn-finish-levelup');
         if (upgradeButtons.length > 0) {
@@ -233,21 +341,107 @@ function processAutoPlay() {
              if(finishBtn && finishBtn.style.display !== 'none') finishBtn.click();
         }
         return;
+    } else {
+        window._levelUpOpenedTime = 0;
     }
     
     if (gameState !== 'PLAYING') return;
 
-    // --- STUCK DETECTION ---
+    // --- STUCK DETECTION (Enhanced) ---
     const posKey = `${player.x},${player.y}`;
-    if (window._autoplayLastPos === posKey) {
+    window._autoplayPosHistory = window._autoplayPosHistory || [];
+    window._autoplayPosHistory.push(posKey);
+    if (window._autoplayPosHistory.length > 20) window._autoplayPosHistory.shift();
+
+    // Detect loops: if we've been in the same position too many times in the last 20 turns
+    const occurrences = window._autoplayPosHistory.filter(p => p === posKey).length;
+    if (occurrences > 5) {
         window._autoplayStuckCounter++;
+        if (window._autoplayStuckCounter % 10 === 0) console.log(`[Autoplay] Stuck detected! Counter: ${window._autoplayStuckCounter}`);
     } else {
-        window._autoplayStuckCounter = 0;
-        window._autoplayLastPos = posKey;
+        // Decrease counter slowly if we are moving
+        if (window._autoplayStuckCounter > 0) window._autoplayStuckCounter--;
+    }
+    window._autoplayLastPos = posKey;
+
+    // AI Maintenance & Inventory Management
+    if (player.inventory.length >= 28) {
+        if (autoUseConsumables()) return; // Stop if we used an item (takes energy/turn)
+        autoDropJunk(); // Silent drop, can continue
     }
 
-    // AI Maintenance
-    if (window.autoPlayTurns % 50 === 0) autoDropJunk();
+    // Priority 0: Emergency Recall (Survival & Inventory)
+    if (currentFloor > 0) {
+        player._didShopThisVisit = false; 
+        player._didHealThisVisit = false;
+        player._townActionCooldown = 0;
+        const needsRecall = (player.hp < player.maxHp * 0.25) || (player.inventory.length >= 29);
+        if (needsRecall) {
+            const recallIdx = player.inventory.findIndex(i => i.name === 'Word of Recall');
+            if (recallIdx >= 0) {
+                console.log(`[Autoplay] Emergency Recall! HP: ${player.hp}/${player.maxHp}, Inv: ${player.inventory.length}`);
+                window.useItem(recallIdx);
+                return;
+            }
+        }
+    }
+
+    // Priority 0.5: Town Logic (If in Town)
+    if (currentFloor === 0) {
+        if (player._townActionCooldown > 0) player._townActionCooldown--;
+
+        // a. Heal if damaged
+        const needsToHeal = player.hp < player.maxHp && player.gold >= 20 && !player._didHealThisVisit;
+        
+        // b. Shop if full inventory or low on supplies
+        const hasRecall = player.inventory.some(i => i.name === 'Word of Recall');
+        const potionCount = player.inventory.filter(i => i.effect === 'heal' || i.effect === 'full_heal').length;
+        const needsToShop = ((player.inventory.length >= 28) || !hasRecall || (potionCount < 1)) && !player._didShopThisVisit;
+
+        let townTarget = null;
+        let targetType = '';
+
+        if (needsToHeal && player._townActionCooldown <= 0) {
+            targetType = 'healer';
+        } else if (needsToShop && player._townActionCooldown <= 0) {
+            targetType = 'shop';
+        } else {
+            targetType = 'stairs_down';
+        }
+
+        for (let x=0; x<MAP_WIDTH; x++) {
+            for (let y=0; y<MAP_HEIGHT; y++) {
+                if (map[x][y].type === targetType) { townTarget = {x,y}; break; }
+            }
+            if (townTarget) break;
+        }
+
+        if (townTarget) {
+            const dist = Math.abs(player.x - townTarget.x) + Math.abs(player.y - townTarget.y);
+            if (dist <= 1 && targetType !== 'stairs_down') {
+                console.log(`[Autoplay] Interacting with ${targetType} at ${townTarget.x},${townTarget.y}`);
+                window.attemptAction(player, { type: 'move', dx: townTarget.x - player.x, dy: townTarget.y - player.y });
+                return;
+            }
+
+            if (player.x === townTarget.x && player.y === townTarget.y) {
+                if (targetType === 'stairs_down') {
+                    console.log(`[Autoplay] Descending to dungeon...`);
+                    window.checkStairs(player.x, player.y, true);
+                    return;
+                }
+            } else {
+                let path = window.findPath(player.x, player.y, townTarget.x, townTarget.y, true);
+                if (path && path.length > 0) {
+                    let next = path[0];
+                    window.attemptAction(player, { type: 'move', dx: next.x - player.x, dy: next.y - player.y });
+                    return;
+                } else {
+                    console.log(`[Autoplay] No path to ${targetType}!`);
+                }
+            }
+        }
+    }
 
     // Priority 1: Healing
     if (player.hp < player.maxHp * 0.55) {
@@ -305,21 +499,52 @@ function processAutoPlay() {
         return;
     }
 
-    // Priority 7: Pick up nearby items
+    // Priority 7: Pick up nearby items (Only if we have space)
     const nearestItem = autoplayFindNearestItem();
     if (nearestItem) {
-        let path = window.findPath(player.x, player.y, nearestItem.x, nearestItem.y);
-        if ((!path || path.length === 0) && nearestItem.name === 'Dungeon Key') {
-            path = window.findPath(player.x, player.y, nearestItem.x, nearestItem.y, false, true);
+        // If inventory is full, try to free space before moving to item
+        if (player.inventory.length >= 30) {
+            if (autoUseConsumables()) return; // Used an item, stop turn
+            autoDropJunk(); // Dropped junk, can continue
         }
-        if (path && path.length > 0) {
-            let next = path[0];
-            window.attemptAction(player, { type: 'move', dx: next.x - player.x, dy: next.y - player.y });
-            return;
+        
+        // Only move if we have space OR it's gold (doesn't take space)
+        if (player.inventory.length < 30 || nearestItem.type === 'gold') {
+            let path = window.findPath(player.x, player.y, nearestItem.x, nearestItem.y);
+            if ((!path || path.length === 0) && nearestItem.name === 'Dungeon Key') {
+                path = window.findPath(player.x, player.y, nearestItem.x, nearestItem.y, false, true);
+            }
+            if (path && path.length > 0) {
+                let next = path[0];
+                window.attemptAction(player, { type: 'move', dx: next.x - player.x, dy: next.y - player.y });
+                return;
+            }
         }
     }
 
-    // Priority 8: Explore (direct pathfinding, NOT auto-explore key)
+    // Priority 8: Explore (Yield to Fast-Explore if possible)
+    if (currentFloor > 0 && gameState === 'PLAYING') {
+        const { target: monster } = getNearestVisibleMonster();
+        const nearestItem = autoplayFindNearestItem();
+
+        // Don't fast-explore if we were recently stuck or isAutoExploring just failed
+        const canFastExplore = !monster && !nearestItem && window._autoplayStuckCounter < 5;
+
+        if (canFastExplore) {
+            if (!isAutoExploring) {
+                console.log("[Autoplay] Area clear. Enabling fast-explore.");
+                isAutoExploring = true;
+                activePath = null;
+            }
+            return; // Yield to engine.js / input.js
+        }
+    }
+    
+    // Fallback normal explore
+    if (isAutoExploring) {
+        console.log("[Autoplay] Disabling fast-explore (Stuck or Target spotted).");
+        isAutoExploring = false;
+    }
     let explorePath = autoplayFindExploreTarget();
     if (explorePath && explorePath.length > 0) {
         let next = explorePath[0];
@@ -345,19 +570,21 @@ function processAutoPlay() {
         }
     }
 
-    // Priority 10: STUCK — random walk every tick (always fire, don't wait)
-    let allDirs = [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
-    // Prefer walkable, non-wall tiles. Allow hazards if very stuck.
-    let safeDirs = allDirs.filter(d => {
-        let tx = player.x + d[0]; let ty = player.y + d[1];
-        if (tx < 0 || tx >= MAP_WIDTH || ty < 0 || ty >= MAP_HEIGHT) return false;
-        let tile = map[tx][ty];
-        if (!tile || tile.type === 'wall') return false;
-        // Allow hazards after being stuck for 100 ticks
-        if (window._autoplayStuckCounter < 100 && (tile.type === 'lava' || tile.type === 'gas')) return false;
-        return true;
-    });
-    if (safeDirs.length === 0) safeDirs = allDirs;
-    let d = safeDirs[Math.floor(Math.random() * safeDirs.length)];
-    window.attemptAction(player, { type: 'move', dx: d[0], dy: d[1] });
+    // Priority 10: STUCK — random walk to break loops
+    if (window._autoplayStuckCounter > 15) {
+        let allDirs = [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
+        let safeDirs = allDirs.filter(d => {
+            let tx = player.x + d[0]; let ty = player.y + d[1];
+            if (tx < 0 || tx >= MAP_WIDTH || ty < 0 || ty >= MAP_HEIGHT) return false;
+            let tile = map[tx][ty];
+            if (!tile || tile.type === 'wall' || tile.type === 'locked_door') return false;
+            if (window._autoplayStuckCounter < 100 && (tile.type === 'lava' || tile.type === 'gas')) return false;
+            return true;
+        });
+        if (safeDirs.length === 0) safeDirs = allDirs;
+        let d = safeDirs[Math.floor(Math.random() * safeDirs.length)];
+        console.log(`[Autoplay] Stuck loop! Force move: ${d[0]},${d[1]}`);
+        window.attemptAction(player, { type: 'move', dx: d[0], dy: d[1] });
+        return;
+    }
 }
