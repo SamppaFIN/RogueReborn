@@ -378,6 +378,10 @@
                 font-size: 2rem;
             }
         }
+
+        .mobile-hidden {
+            display: none !important;
+        }
     </style>
 </head>
 
@@ -391,7 +395,7 @@
             <canvas id="gameCanvas"></canvas>
             
             <!-- Mobile Toggle -->
-            <button id="btn-toggle-controls" onclick="toggleMobileControls()" style="position: absolute; top: 10px; right: 10px; z-index: 50; background: rgba(0,0,0,0.7); color: #f1c40f; border: 1px solid #f1c40f; border-radius: 4px; padding: 8px 12px; cursor: pointer; display: none; font-family: inherit;">Hide Controls</button>
+            <button id="btn-toggle-controls" style="position: absolute; top: 10px; right: 10px; z-index: 50; background: rgba(0,0,0,0.7); color: #f1c40f; border: 1px solid #f1c40f; border-radius: 4px; padding: 8px 12px; cursor: pointer; display: none; font-family: inherit;">Hide Controls</button>
 
             <!-- Mobile Controls -->
             <div id="mobile-controls">
@@ -937,7 +941,7 @@
     <script src="src/data/lore.js?v=2"></script>
     <script src="src/data/skill_trees.js?v=2"></script>
     <script src="src/ui/shops.js?v=6"></script>
-    <script src="src/ui/renderer.js?v=4"></script>
+    <script src="src/ui/renderer.js?v=5"></script>
     <script src="src/systems/combat.js?v=6"></script>
     <script src="src/systems/skills.js?v=2"></script>
     <script src="src/systems/quests.js?v=2"></script>
@@ -949,21 +953,42 @@
     <script src="engine.js?v=13"></script>
     <script src="src/ui/input.js?v=3"></script>
     <script>
-        function toggleMobileControls() {
+        window.mobileControlsVisible = true; // Global state for persistence
+
+        function toggleMobileControls(e) {
+            if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
             const controls = document.getElementById('mobile-controls');
             const actions = document.getElementById('mobile-actions');
             const btn = document.getElementById('btn-toggle-controls');
             
-            if (controls.style.display === 'none') {
-                controls.style.display = 'grid'; // Grid is used for movement buttons
-                actions.style.display = 'flex';
+            window.mobileControlsVisible = !window.mobileControlsVisible;
+            
+            console.log("Toggle Mobile Controls: visible =", window.mobileControlsVisible);
+
+            if (window.mobileControlsVisible) {
+                controls.classList.remove('mobile-hidden');
+                actions.classList.remove('mobile-hidden');
                 btn.innerText = 'Hide Controls';
             } else {
-                controls.style.display = 'none';
-                actions.style.display = 'none';
+                controls.classList.add('mobile-hidden');
+                actions.classList.add('mobile-hidden');
                 btn.innerText = 'Show Controls';
             }
         }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const toggleBtn = document.getElementById('btn-toggle-controls');
+            if (toggleBtn) {
+                // Unified event handling to prevent double-firing
+                ['click', 'touchstart'].forEach(evtType => {
+                    toggleBtn.addEventListener(evtType, toggleMobileControls, { passive: false });
+                });
+            }
+        });
     </script>
 </body>
 

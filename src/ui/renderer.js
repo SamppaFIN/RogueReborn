@@ -148,12 +148,12 @@ function updateUI() {
     const mobileControls = document.getElementById('mobile-controls');
     const mobileActions = document.getElementById('mobile-actions');
     if (mobileControls && mobileActions) {
-        if (gameState === 'PLAYING') {
-            if (mobileControls.style.display === 'none') mobileControls.style.display = '';
-            if (mobileActions.style.display === 'none') mobileActions.style.display = '';
+        if (gameState === 'PLAYING' && window.mobileControlsVisible !== false) {
+            mobileControls.classList.remove('mobile-hidden');
+            mobileActions.classList.remove('mobile-hidden');
         } else {
-            mobileControls.style.display = 'none';
-            mobileActions.style.display = 'none';
+            mobileControls.classList.add('mobile-hidden');
+            mobileActions.classList.add('mobile-hidden');
         }
     }
 }
