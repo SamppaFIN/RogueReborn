@@ -226,6 +226,21 @@ function autoplayFindNearestItem() {
     let bestDist = Infinity;
     for (let item of items) {
         if (!map[item.x] || !map[item.x][item.y] || !map[item.x][item.y].visible) continue;
+        
+        // If inventory is nearly full, ignore items that we would immediately drop as junk!
+        if (player.inventory.length >= 28 && item.type !== 'gold' && item.name !== 'Dungeon Key' && !item.artifact) {
+            let score = 0;
+            if (item.effect === 'heal' || item.effect === 'full_heal') score += 500;
+            if (item.effect === 'food' || item.effect === 'food_heal') score += 300;
+            if (item.name === 'Word of Recall') score += 1000;
+            if (item.type === 'scroll' || item.type === 'potion' || item.type === 'wand') score += 100;
+            if (!item.identified && (typeof identifiedTypes === 'undefined' || !identifiedTypes[item.name])) score += 40;
+            if (['weapon', 'armor', 'helm', 'shield', 'ring', 'amulet'].includes(item.type)) {
+                score += (item.atkBonus || 0) * 10 + (item.defBonus || 0) * 10 + (item.plusAtk || 0) * 10 + (item.plusDef || 0) * 10;
+            }
+            if (score < 500) continue; // Skip junk item to avoid pickup-and-drop infinite loop
+        }
+
         let d = Math.abs(item.x - player.x) + Math.abs(item.y - player.y);
         // Prioritize Dungeon Keys heavily
         if (item.name === 'Dungeon Key') d -= 100;
@@ -533,16 +548,25 @@ function processAutoPlay() {
     const { target: monster, dist: mDist } = getNearestVisibleMonster();
 
     // Priority 3: Skill Usage
-    if (player.skillCooldown <= 0 && player.energy >= window.ENERGY_THRESHOLD) {
+    if (player.skillCooldown <= 0 && player.energy >= 40) {
         if (player.class === 'Warrior' && monster && mDist <= 2) {
-            keys['q'] = true; setTimeout(() => keys['q']=false, 10);
-            return;
+            if (typeof window.useClassSkill === 'function') {
+                console.log("[Autoplay] Warrior casts Class Skill!");
+                window.useClassSkill();
+                return;
+            }
         } else if (player.class === 'Mage' && monster && mDist <= 6) {
-            keys['q'] = true; setTimeout(() => keys['q']=false, 10);
-            return;
+            if (typeof window.useClassSkill === 'function') {
+                console.log("[Autoplay] Mage casts Class Skill!");
+                window.useClassSkill();
+                return;
+            }
         } else if (player.class === 'Rogue' && monster && mDist <= 3) {
-            keys['q'] = true; setTimeout(() => keys['q']=false, 10);
-            return;
+            if (typeof window.useClassSkill === 'function') {
+                console.log("[Autoplay] Rogue casts Class Skill!");
+                window.useClassSkill();
+                return;
+            }
         }
     }
 

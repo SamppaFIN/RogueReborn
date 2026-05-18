@@ -329,7 +329,23 @@ window.buyHeal = function () {
         player.hp = player.maxHp;
         if (typeof player.food !== 'undefined') player.food = 3000;
         player.energy = 0; // Resting passes a little time safely
-        logMessage("You rest at the inn. Fully healed and well-fed!", 'magic');
+        
+        // Advance Time
+        if (typeof window.gameDay !== 'undefined') {
+            window.gameDay++;
+            window.moonPhaseIndex = (window.moonPhaseIndex + 1) % window.moonPhases.length;
+            window.isBloodMoon = false;
+            
+            // Check for Full Moon -> Blood Moon
+            if (window.moonPhases[window.moonPhaseIndex] === 'Full Moon') {
+                if (Math.random() < 0.25) { // 25% chance of blood moon
+                    window.isBloodMoon = true;
+                    logMessage(`The sky turns crimson... It is a Blood Moon!`, 'damage');
+                }
+            }
+        }
+
+        logMessage("You rest at the inn. You wake up the next day, fully healed!", 'magic');
         closeInnkeeper();
     } else {
         logMessage("Not enough gold!", 'damage');

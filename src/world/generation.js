@@ -426,7 +426,7 @@ function generateHazards(rooms) {
         let hy = Math.floor(Math.random() * (room.h - 2)) + room.y + 1;
         const center = room.center();
         if (hx === center.x && hy === center.y) continue;
-        if (!map[hx] || map[hx][hy].type !== 'floor' || getEntityAt(hx, hy)) continue;
+        if (!map[hx] || map[hx][hy].type !== 'floor' || getEntityAt(hx, hy) || items.some(i => i.x === hx && i.y === hy)) continue;
         const roll = Math.random();
         if (roll < 0.15 && currentFloor >= 2) {
             // #32 Locked Door â€” place door, drop key nearby
@@ -600,7 +600,18 @@ function spawnRandomItemAt(x, y) {
 
 function spawnMonsterAt(x, y, isElite = false) {
     if (typeof ENEMY_TYPES === 'undefined') return;
-    let validEnemies = ENEMY_TYPES.filter(e => currentFloor >= (e.minFloor || 1));
+    
+    // Default pool
+    let validEnemies = ENEMY_TYPES.filter(e => currentFloor >= (e.minFloor || 1) && !e.bloodMoonOnly);
+    
+    // Blood Moon Injection (25% chance to replace spawn with a Blood Moon exclusive)
+    if (typeof window.isBloodMoon !== 'undefined' && window.isBloodMoon && Math.random() < 0.25) {
+        let bloodEnemies = ENEMY_TYPES.filter(e => e.bloodMoonOnly);
+        if (bloodEnemies.length > 0) {
+            validEnemies = bloodEnemies;
+        }
+    }
+    
     if (validEnemies.length === 0) validEnemies = [ENEMY_TYPES[0]];
     
     let template = validEnemies[Math.floor(Math.random() * validEnemies.length)];

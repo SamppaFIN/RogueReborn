@@ -78,5 +78,10 @@ const ENEMY_TYPES = [
     // Phase VII — Ranged Enemies
     { char: 'g', name: 'Goblin Archer', color: '#16a085', hp: 8, atk: 3, def: 1, speed: 10, element: 'none', baseXP: 15, ranged: true, rangedType: 'arrow' }, // 45
     { char: 'Z', name: 'Skeleton Bowman', color: '#bdc3c7', hp: 12, atk: 5, def: 2, speed: 8, element: 'none', baseXP: 40, ranged: true, rangedType: 'arrow' }, // 46
-    { char: 'm', name: 'Dark Mage', color: '#9b59b6', hp: 18, atk: 6, def: 1, speed: 9, element: 'magic', baseXP: 65, ranged: true, rangedType: 'magic' } // 47
+    { char: 'm', name: 'Dark Mage', color: '#9b59b6', hp: 18, atk: 6, def: 1, speed: 9, element: 'magic', baseXP: 65, ranged: true, rangedType: 'magic' }, // 47
+
+    // Phase VIII — Blood Moon Exclusives
+    { char: 'w', name: 'Blood-Crazed Lycanthrope', color: '#c0392b', hp: 55, atk: 12, def: 4, speed: 18, element: 'none', baseXP: 150, elite: true, bloodMoonOnly: true, lifeSteal: true, personality: 'vengeful' },
+    { char: 'V', name: 'Lunar Vampire', color: '#ff3b3b', hp: 85, atk: 15, def: 8, speed: 14, element: 'drain', drainMaxHp: true, baseXP: 250, elite: true, bloodMoonOnly: true, lifeSteal: true },
+    { char: 'N', name: 'Blood Cultist', color: '#e74c3c', hp: 40, atk: 10, def: 3, speed: 10, element: 'magic', baseXP: 100, summoner: true, elite: true, bloodMoonOnly: true, ranged: true, rangedType: 'magic' }
 ];

@@ -11,6 +11,7 @@ function resetAI() {
     ctx.player.hp = 100; ctx.player.maxHp = 100;
     ctx.player.killsByType = {};
     ctx.player.inventory = [];
+    ctx.player.stats = { str: 10, int: 10, dex: 10 };
     ctx.entities = [ctx.player];
     // Reset noiseMap
     for (let x = 0; x < ctx.MAP_WIDTH; x++)
@@ -46,6 +47,7 @@ describe('AI — Personalities', () => {
         
         const orc = new Entity(13, 10, 'o', '#f00', 'Orc', 20, 5, 2, 10);
         orc.personality = 'vengeful';
+        orc.sleeping = false;
         orc.energy = 100;
         const baseAtk = orc.atk;
         ctx.entities = [ctx.player, orc];
@@ -111,6 +113,7 @@ describe('AI — Personalities', () => {
         
         const orc = new Entity(13, 10, 'o', '#f00', 'Orc', 20, 5, 2, 10);
         orc.personality = 'vengeful';
+        orc.sleeping = false;
         orc.energy = 100;
         const baseAtk = orc.atk;
         ctx.entities = [ctx.player, orc];

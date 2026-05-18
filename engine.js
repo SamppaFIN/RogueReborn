@@ -18,6 +18,12 @@ let totalTurns = 0;
 let bountyTarget = null;
 let bountyClaimed = false;
 
+// Calendar System
+window.gameDay = 1;
+window.moonPhases = ['New Moon', 'Waxing Crescent', 'First Quarter', 'Waxing Gibbous', 'Full Moon', 'Waning Gibbous', 'Last Quarter', 'Waning Crescent'];
+window.moonPhaseIndex = 0;
+window.isBloodMoon = false;
+
 // --- Global State ---
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');

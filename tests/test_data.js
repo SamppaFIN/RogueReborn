@@ -108,7 +108,7 @@ describe('ITEM_DB — Structure', () => {
     });
 
     it('all items have valid type', () => {
-        const validTypes = ['potion', 'scroll', 'wand', 'weapon', 'armor', 'helm', 'ring', 'amulet', 'shield', 'ammo', 'key', 'consumable'];
+        const validTypes = ['potion', 'scroll', 'wand', 'weapon', 'armor', 'helm', 'ring', 'amulet', 'shield', 'ammo', 'key', 'consumable', 'material', 'orb', 'food'];
         for (const item of ITEM_DB) {
             assertIncludes(validTypes, item.type, `${item.name} has invalid type: ${item.type}`);
         }

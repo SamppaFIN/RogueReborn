@@ -1,162 +1,2859 @@
 [
   {
-    "status": "TIMEOUT",
-    "floor": 4,
-    "level": 7,
-    "score": 205,
-    "turns": 150002,
-    "killer": "Time"
-  },
-  {
-    "status": "TIMEOUT",
-    "floor": 2,
-    "level": 6,
-    "score": 80,
-    "turns": 150004,
-    "killer": "Time"
-  },
-  {
-    "status": "PLAYER_DEAD",
-    "floor": 3,
-    "level": 7,
-    "score": 75,
-    "turns": 755,
-    "killer": "Nameless remains"
-  },
-  {
-    "status": "PLAYER_DEAD",
-    "floor": 2,
-    "level": 5,
-    "score": 59,
-    "turns": 470,
-    "killer": "Vault Guardian"
-  },
-  {
-    "status": "TIMEOUT",
-    "floor": 6,
-    "level": 10,
-    "score": 942,
-    "turns": 150011,
-    "killer": "Time"
-  },
-  {
-    "status": "PLAYER_DEAD",
-    "floor": 9,
-    "level": 10,
-    "score": 1104,
-    "turns": 2183,
-    "killer": "Dragon King"
-  },
-  {
-    "status": "TIMEOUT",
-    "floor": 5,
-    "level": 9,
-    "score": 444,
-    "turns": 150003,
-    "killer": "Time"
-  },
-  {
-    "status": "TIMEOUT",
-    "floor": 5,
-    "level": 8,
-    "score": 381,
-    "turns": 150006,
-    "killer": "Time"
-  },
-  {
-    "status": "TIMEOUT",
-    "floor": 3,
-    "level": 8,
-    "score": 276,
-    "turns": 150002,
-    "killer": "Time"
-  },
-  {
-    "status": "TIMEOUT",
+    "class": "Warrior",
+    "level": 2,
     "floor": 1,
-    "level": 3,
-    "score": 38,
-    "turns": 150009,
-    "killer": "Time"
+    "gold": 20,
+    "causeOfDeath": "Ongoing",
+    "turns": 366,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Word of Recall"
+    ]
   },
   {
-    "status": "TIMEOUT",
-    "floor": 6,
-    "level": 10,
-    "score": 843,
-    "turns": 150003,
-    "killer": "Time"
-  },
-  {
-    "status": "TIMEOUT",
+    "class": "Mage",
+    "level": 1,
     "floor": 1,
-    "level": 3,
-    "score": 15,
-    "turns": 150004,
-    "killer": "Time"
+    "gold": 20,
+    "causeOfDeath": "Unknown",
+    "turns": 551,
+    "inventory": [
+      "Wand of Magic Missile",
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
   },
   {
-    "status": "PLAYER_DEAD",
+    "class": "Rogue",
+    "level": 2,
+    "floor": 1,
+    "gold": 35,
+    "causeOfDeath": "Ongoing",
+    "turns": 1093,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Scrap Metal",
+      "Scrap Metal"
+    ]
+  },
+  {
+    "class": "Warrior",
+    "level": 1,
+    "floor": 1,
+    "gold": 60,
+    "causeOfDeath": "Unknown",
+    "turns": 858,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Short Bow"
+    ]
+  },
+  {
+    "class": "Mage",
+    "level": 1,
+    "floor": 1,
+    "gold": 65,
+    "causeOfDeath": "Unknown",
+    "turns": 1077,
+    "inventory": [
+      "Wand of Magic Missile",
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Bundle of Arrows"
+    ]
+  },
+  {
+    "class": "Rogue",
+    "level": 1,
+    "floor": 1,
+    "gold": 70,
+    "causeOfDeath": "Unknown",
+    "turns": 964,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Scrap Metal",
+      "Scroll of Identify",
+      "Wooden Shield"
+    ]
+  },
+  {
+    "class": "Warrior",
+    "level": 2,
+    "floor": 1,
+    "gold": 80,
+    "causeOfDeath": "Ongoing",
+    "turns": 1577,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Leather Whip"
+    ]
+  },
+  {
+    "class": "Mage",
+    "level": 1,
+    "floor": 1,
+    "gold": 80,
+    "causeOfDeath": "Unknown",
+    "turns": 125,
+    "inventory": [
+      "Wand of Magic Missile",
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Bundle of Arrows"
+    ]
+  },
+  {
+    "class": "Rogue",
+    "level": 2,
+    "floor": 1,
+    "gold": 134,
+    "causeOfDeath": "Ongoing",
+    "turns": 2015,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Warrior",
+    "level": 2,
     "floor": 2,
-    "level": 5,
-    "score": 25,
+    "gold": 150,
+    "causeOfDeath": "Ongoing",
+    "turns": 1156,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Wand of Magic Missile"
+    ]
+  },
+  {
+    "class": "Mage",
+    "level": 1,
+    "floor": 1,
+    "gold": 150,
+    "causeOfDeath": "Unknown",
+    "turns": 1152,
+    "inventory": [
+      "Wand of Magic Missile",
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Dungeon Key"
+    ]
+  },
+  {
+    "class": "Rogue",
+    "level": 2,
+    "floor": 2,
+    "gold": 220,
+    "causeOfDeath": "Ongoing",
+    "turns": 1556,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Scroll of Identify"
+    ]
+  },
+  {
+    "class": "Warrior",
+    "level": 1,
+    "floor": 1,
+    "gold": 225,
+    "causeOfDeath": "Unknown",
+    "turns": 856,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Mage",
+    "level": 1,
+    "floor": 1,
+    "gold": 225,
+    "causeOfDeath": "Unknown",
+    "turns": 171,
+    "inventory": [
+      "Wand of Magic Missile",
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Rogue",
+    "level": 1,
+    "floor": 1,
+    "gold": 225,
+    "causeOfDeath": "Unknown",
+    "turns": 191,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Warrior",
+    "level": 2,
+    "floor": 2,
+    "gold": 255,
+    "causeOfDeath": "Ongoing",
+    "turns": 1251,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Potion of Curing"
+    ]
+  },
+  {
+    "class": "Mage",
+    "level": 1,
+    "floor": 1,
+    "gold": 255,
+    "causeOfDeath": "Unknown",
+    "turns": 918,
+    "inventory": [
+      "Wand of Magic Missile",
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Dungeon Key",
+      "Wooden Shield"
+    ]
+  },
+  {
+    "class": "Rogue",
+    "level": 2,
+    "floor": 1,
+    "gold": 260,
+    "causeOfDeath": "Ongoing",
+    "turns": 777,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Mage Robes"
+    ]
+  },
+  {
+    "class": "Warrior",
+    "level": 2,
+    "floor": 1,
+    "gold": 265,
+    "causeOfDeath": "Ongoing",
+    "turns": 907,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Dagger",
+      "Bundle of Arrows"
+    ]
+  },
+  {
+    "class": "Mage",
+    "level": 1,
+    "floor": 1,
+    "gold": 283,
+    "causeOfDeath": "Unknown",
+    "turns": 2420,
+    "inventory": [
+      "Wand of Magic Missile",
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Leather Cap"
+    ]
+  },
+  {
+    "class": "Rogue",
+    "level": 2,
+    "floor": 2,
+    "gold": 303,
+    "causeOfDeath": "Ongoing",
+    "turns": 2787,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Scrap Metal",
+      "Scroll of Remove Curse"
+    ]
+  },
+  {
+    "class": "Warrior",
+    "level": 1,
+    "floor": 1,
+    "gold": 319,
+    "causeOfDeath": "Unknown",
+    "turns": 475,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Mage",
+    "level": 1,
+    "floor": 1,
+    "gold": 319,
+    "causeOfDeath": "Unknown",
+    "turns": 563,
+    "inventory": [
+      "Wand of Magic Missile",
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Rogue",
+    "level": 2,
+    "floor": 1,
+    "gold": 319,
+    "causeOfDeath": "Ongoing",
+    "turns": 914,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Potion of Antidote"
+    ]
+  },
+  {
+    "class": "Warrior",
+    "level": 2,
+    "floor": 1,
+    "gold": 340,
+    "causeOfDeath": "Ongoing",
+    "turns": 530,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Mage",
+    "level": 1,
+    "floor": 1,
+    "gold": 350,
+    "causeOfDeath": "Unknown",
+    "turns": 391,
+    "inventory": [
+      "Wand of Magic Missile",
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Rogue",
+    "level": 2,
+    "floor": 2,
+    "gold": 375,
+    "causeOfDeath": "Ongoing",
+    "turns": 1901,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Scroll of Identify",
+      "Leather Armor",
+      "Leather Armor",
+      "Scroll of Magic Mapping"
+    ]
+  },
+  {
+    "class": "Warrior",
+    "level": 1,
+    "floor": 1,
+    "gold": 375,
+    "causeOfDeath": "Unknown",
+    "turns": 399,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Mage",
+    "level": 2,
+    "floor": 1,
+    "gold": 395,
+    "causeOfDeath": "Ongoing",
+    "turns": 2457,
+    "inventory": [
+      "Wand of Magic Missile",
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Crossbow Bolts",
+      "Scrap Metal",
+      "Scroll of Identify"
+    ]
+  },
+  {
+    "class": "Rogue",
+    "level": 2,
+    "floor": 2,
+    "gold": 395,
+    "causeOfDeath": "Ongoing",
+    "turns": 1916,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Warrior",
+    "level": 1,
+    "floor": 1,
+    "gold": 420,
+    "causeOfDeath": "Unknown",
+    "turns": 1267,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Short Bow"
+    ]
+  },
+  {
+    "class": "Mage",
+    "level": 2,
+    "floor": 1,
+    "gold": 430,
+    "causeOfDeath": "Ongoing",
+    "turns": 285,
+    "inventory": [
+      "Wand of Magic Missile",
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Short Bow"
+    ]
+  },
+  {
+    "class": "Rogue",
+    "level": 2,
+    "floor": 1,
+    "gold": 440,
+    "causeOfDeath": "Ongoing",
+    "turns": 981,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Warrior",
+    "level": 1,
+    "floor": 1,
+    "gold": 440,
+    "causeOfDeath": "Unknown",
+    "turns": 135,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Mage",
+    "level": 1,
+    "floor": 1,
+    "gold": 440,
+    "causeOfDeath": "Unknown",
+    "turns": 1028,
+    "inventory": [
+      "Wand of Magic Missile",
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Rogue",
+    "level": 1,
+    "floor": 1,
+    "gold": 445,
+    "causeOfDeath": "Unknown",
+    "turns": 2291,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Warrior",
+    "level": 2,
+    "floor": 1,
+    "gold": 475,
+    "causeOfDeath": "Ongoing",
+    "turns": 1841,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Potion of Antidote"
+    ]
+  },
+  {
+    "class": "Mage",
+    "level": 2,
+    "floor": 1,
+    "gold": 498,
+    "causeOfDeath": "Ongoing",
+    "turns": 1478,
+    "inventory": [
+      "Wand of Magic Missile",
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Short Bow",
+      "Scrap Metal",
+      "Leather Whip"
+    ]
+  },
+  {
+    "class": "Rogue",
+    "level": 2,
+    "floor": 2,
+    "gold": 503,
+    "causeOfDeath": "Ongoing",
+    "turns": 906,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Short Bow",
+      "Short Bow"
+    ]
+  },
+  {
+    "class": "Warrior",
+    "level": 1,
+    "floor": 1,
+    "gold": 503,
+    "causeOfDeath": "Unknown",
+    "turns": 522,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Scroll of Identify",
+      "Short Bow",
+      "Scrap Metal"
+    ]
+  },
+  {
+    "class": "Mage",
+    "level": 1,
+    "floor": 2,
+    "gold": 508,
+    "causeOfDeath": "Unknown",
+    "turns": 1233,
+    "inventory": [
+      "Wand of Magic Missile",
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Potion of Antidote"
+    ]
+  },
+  {
+    "class": "Rogue",
+    "level": 1,
+    "floor": 1,
+    "gold": 508,
+    "causeOfDeath": "Unknown",
+    "turns": 160,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Warrior",
+    "level": 2,
+    "floor": 1,
+    "gold": 508,
+    "causeOfDeath": "Ongoing",
+    "turns": 1599,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Leather Armor",
+      "Scrap Metal",
+      "Wooden Shield"
+    ]
+  },
+  {
+    "class": "Mage",
+    "level": 1,
+    "floor": 1,
+    "gold": 508,
+    "causeOfDeath": "Unknown",
+    "turns": 264,
+    "inventory": [
+      "Wand of Magic Missile",
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Rogue",
+    "level": 2,
+    "floor": 1,
+    "gold": 518,
+    "causeOfDeath": "Ongoing",
+    "turns": 836,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Scrap Metal",
+      "Scrap Metal"
+    ]
+  },
+  {
+    "class": "Warrior",
+    "level": 1,
+    "floor": 2,
+    "gold": 528,
+    "causeOfDeath": "Unknown",
+    "turns": 1443,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Potion of Poison",
+      "Dungeon Key"
+    ]
+  },
+  {
+    "class": "Mage",
+    "level": 1,
+    "floor": 1,
+    "gold": 533,
+    "causeOfDeath": "Unknown",
+    "turns": 850,
+    "inventory": [
+      "Wand of Magic Missile",
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Leather Armor"
+    ]
+  },
+  {
+    "class": "Rogue",
+    "level": 1,
+    "floor": 1,
+    "gold": 533,
+    "causeOfDeath": "Unknown",
+    "turns": 230,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Short Bow"
+    ]
+  },
+  {
+    "class": "Warrior",
+    "level": 2,
+    "floor": 1,
+    "gold": 571,
+    "causeOfDeath": "Ongoing",
+    "turns": 1881,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Bundle of Arrows"
+    ]
+  },
+  {
+    "class": "Mage",
+    "level": 2,
+    "floor": 1,
+    "gold": 571,
+    "causeOfDeath": "Ongoing",
+    "turns": 1832,
+    "inventory": [
+      "Wand of Magic Missile",
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Bundle of Arrows",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Rogue",
+    "level": 1,
+    "floor": 1,
+    "gold": 576,
+    "causeOfDeath": "Unknown",
+    "turns": 785,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Warrior",
+    "level": 2,
+    "floor": 1,
+    "gold": 581,
+    "causeOfDeath": "Ongoing",
+    "turns": 717,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Potion of Minor Healing",
+      "Mage Robes"
+    ]
+  },
+  {
+    "class": "Mage",
+    "level": 2,
+    "floor": 2,
+    "gold": 591,
+    "causeOfDeath": "Ongoing",
+    "turns": 1281,
+    "inventory": [
+      "Wand of Magic Missile",
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Word of Recall",
+      "Scrap Metal",
+      "Potion of Curing"
+    ]
+  },
+  {
+    "class": "Rogue",
+    "level": 1,
+    "floor": 1,
+    "gold": 591,
+    "causeOfDeath": "Unknown",
+    "turns": 987,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Scroll of Identify"
+    ]
+  },
+  {
+    "class": "Warrior",
+    "level": 2,
+    "floor": 1,
+    "gold": 612,
+    "causeOfDeath": "Ongoing",
+    "turns": 166,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Scrap Metal"
+    ]
+  },
+  {
+    "class": "Mage",
+    "level": 2,
+    "floor": 1,
+    "gold": 617,
+    "causeOfDeath": "Ongoing",
+    "turns": 1223,
+    "inventory": [
+      "Wand of Magic Missile",
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Dungeon Key",
+      "Short Bow",
+      "Leather Armor"
+    ]
+  },
+  {
+    "class": "Rogue",
+    "level": 1,
+    "floor": 1,
+    "gold": 643,
+    "causeOfDeath": "Unknown",
+    "turns": 1589,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Scroll of Identify"
+    ]
+  },
+  {
+    "class": "Warrior",
+    "level": 1,
+    "floor": 1,
+    "gold": 643,
+    "causeOfDeath": "Unknown",
+    "turns": 166,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Mage",
+    "level": 1,
+    "floor": 1,
+    "gold": 667,
+    "causeOfDeath": "Unknown",
+    "turns": 1564,
+    "inventory": [
+      "Wand of Magic Missile",
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Bundle of Arrows",
+      "Scrap Metal",
+      "Scrap Metal",
+      "Potion of Antidote"
+    ]
+  },
+  {
+    "class": "Rogue",
+    "level": 1,
+    "floor": 1,
+    "gold": 672,
+    "causeOfDeath": "Unknown",
+    "turns": 482,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Leather Armor"
+    ]
+  },
+  {
+    "class": "Warrior",
+    "level": 1,
+    "floor": 1,
+    "gold": 672,
+    "causeOfDeath": "Unknown",
+    "turns": 626,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Mage",
+    "level": 2,
+    "floor": 1,
+    "gold": 677,
+    "causeOfDeath": "Ongoing",
+    "turns": 536,
+    "inventory": [
+      "Wand of Magic Missile",
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Scrap Metal",
+      "Wooden Shield"
+    ]
+  },
+  {
+    "class": "Rogue",
+    "level": 1,
+    "floor": 1,
+    "gold": 682,
+    "causeOfDeath": "Unknown",
+    "turns": 1350,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Dagger"
+    ]
+  },
+  {
+    "class": "Warrior",
+    "level": 1,
+    "floor": 1,
+    "gold": 687,
+    "causeOfDeath": "Unknown",
+    "turns": 655,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Scrap Metal"
+    ]
+  },
+  {
+    "class": "Mage",
+    "level": 1,
+    "floor": 1,
+    "gold": 687,
+    "causeOfDeath": "Unknown",
+    "turns": 1224,
+    "inventory": [
+      "Wand of Magic Missile",
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Wooden Shield",
+      "Scrap Metal"
+    ]
+  },
+  {
+    "class": "Rogue",
+    "level": 1,
+    "floor": 1,
+    "gold": 716,
+    "causeOfDeath": "Unknown",
+    "turns": 227,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Warrior",
+    "level": 1,
+    "floor": 1,
+    "gold": 716,
+    "causeOfDeath": "Unknown",
+    "turns": 132,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Mage",
+    "level": 1,
+    "floor": 1,
+    "gold": 716,
+    "causeOfDeath": "Unknown",
+    "turns": 31,
+    "inventory": [
+      "Wand of Magic Missile",
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Dungeon Key"
+    ]
+  },
+  {
+    "class": "Rogue",
+    "level": 2,
+    "floor": 1,
+    "gold": 741,
+    "causeOfDeath": "Ongoing",
+    "turns": 210,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Word of Recall",
+      "Word of Recall"
+    ]
+  },
+  {
+    "class": "Warrior",
+    "level": 2,
+    "floor": 1,
+    "gold": 751,
+    "causeOfDeath": "Ongoing",
+    "turns": 794,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Word of Recall",
+      "Mage Robes"
+    ]
+  },
+  {
+    "class": "Mage",
+    "level": 1,
+    "floor": 1,
+    "gold": 751,
+    "causeOfDeath": "Unknown",
+    "turns": 380,
+    "inventory": [
+      "Wand of Magic Missile",
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Rogue",
+    "level": 2,
+    "floor": 1,
+    "gold": 794,
+    "causeOfDeath": "Ongoing",
+    "turns": 1314,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Dungeon Key",
+      "Scrap Metal",
+      "Scrap Metal"
+    ]
+  },
+  {
+    "class": "Warrior",
+    "level": 2,
+    "floor": 1,
+    "gold": 804,
+    "causeOfDeath": "Ongoing",
+    "turns": 692,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Mage",
+    "level": 1,
+    "floor": 1,
+    "gold": 804,
+    "causeOfDeath": "Unknown",
+    "turns": 23,
+    "inventory": [
+      "Wand of Magic Missile",
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Rogue",
+    "level": 2,
+    "floor": 1,
+    "gold": 823,
+    "causeOfDeath": "Ongoing",
+    "turns": 1479,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Leather Cap",
+      "Scrap Metal"
+    ]
+  },
+  {
+    "class": "Warrior",
+    "level": 1,
+    "floor": 1,
+    "gold": 828,
+    "causeOfDeath": "Unknown",
+    "turns": 138,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Mage",
+    "level": 2,
+    "floor": 2,
+    "gold": 869,
+    "causeOfDeath": "Ongoing",
+    "turns": 1101,
+    "inventory": [
+      "Wand of Magic Missile",
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Scrap Metal"
+    ]
+  },
+  {
+    "class": "Rogue",
+    "level": 1,
+    "floor": 1,
+    "gold": 874,
+    "causeOfDeath": "Unknown",
+    "turns": 1244,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Warrior",
+    "level": 1,
+    "floor": 1,
+    "gold": 901,
+    "causeOfDeath": "Unknown",
+    "turns": 329,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Scrap Metal"
+    ]
+  },
+  {
+    "class": "Mage",
+    "level": 1,
+    "floor": 1,
+    "gold": 901,
+    "causeOfDeath": "Unknown",
+    "turns": 144,
+    "inventory": [
+      "Wand of Magic Missile",
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Rogue",
+    "level": 2,
+    "floor": 1,
+    "gold": 906,
+    "causeOfDeath": "Ongoing",
+    "turns": 495,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Wooden Shield",
+      "Scrap Metal"
+    ]
+  },
+  {
+    "class": "Warrior",
+    "level": 2,
+    "floor": 1,
+    "gold": 939,
+    "causeOfDeath": "Ongoing",
+    "turns": 1527,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Short Bow"
+    ]
+  },
+  {
+    "class": "Mage",
+    "level": 1,
+    "floor": 1,
+    "gold": 944,
+    "causeOfDeath": "Unknown",
+    "turns": 143,
+    "inventory": [
+      "Wand of Magic Missile",
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Bundle of Arrows"
+    ]
+  },
+  {
+    "class": "Rogue",
+    "level": 1,
+    "floor": 1,
+    "gold": 944,
+    "causeOfDeath": "Unknown",
+    "turns": 31,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Warrior",
+    "level": 2,
+    "floor": 2,
+    "gold": 949,
+    "causeOfDeath": "Ongoing",
+    "turns": 1003,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Leather Armor"
+    ]
+  },
+  {
+    "class": "Mage",
+    "level": 2,
+    "floor": 1,
+    "gold": 995,
+    "causeOfDeath": "Ongoing",
+    "turns": 1702,
+    "inventory": [
+      "Wand of Magic Missile",
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Leather Whip",
+      "Leather Whip",
+      "Scrap Metal"
+    ]
+  },
+  {
+    "class": "Rogue",
+    "level": 2,
+    "floor": 1,
+    "gold": 1005,
+    "causeOfDeath": "Ongoing",
+    "turns": 591,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Scrap Metal",
+      "Leather Whip"
+    ]
+  },
+  {
+    "class": "Warrior",
+    "level": 2,
+    "floor": 1,
+    "gold": 1054,
+    "causeOfDeath": "Ongoing",
+    "turns": 968,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Scrap Metal",
+      "Mage Robes"
+    ]
+  },
+  {
+    "class": "Mage",
+    "level": 1,
+    "floor": 1,
+    "gold": 1054,
+    "causeOfDeath": "Unknown",
+    "turns": 249,
+    "inventory": [
+      "Wand of Magic Missile",
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Rogue",
+    "level": 1,
+    "floor": 1,
+    "gold": 1054,
+    "causeOfDeath": "Unknown",
+    "turns": 59,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Warrior",
+    "level": 2,
+    "floor": 1,
+    "gold": 1091,
+    "causeOfDeath": "Ongoing",
+    "turns": 1019,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Bundle of Arrows"
+    ]
+  },
+  {
+    "class": "Mage",
+    "level": 1,
+    "floor": 1,
+    "gold": 1091,
+    "causeOfDeath": "Unknown",
+    "turns": 463,
+    "inventory": [
+      "Wand of Magic Missile",
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Rogue",
+    "level": 1,
+    "floor": 1,
+    "gold": 1091,
+    "causeOfDeath": "Unknown",
+    "turns": 340,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Warrior",
+    "level": 1,
+    "floor": 1,
+    "gold": 1096,
+    "causeOfDeath": "Unknown",
+    "turns": 1276,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Potion of Antidote",
+      "Scrap Metal",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Mage",
+    "level": 2,
+    "floor": 1,
+    "gold": 1101,
+    "causeOfDeath": "Ongoing",
+    "turns": 365,
+    "inventory": [
+      "Wand of Magic Missile",
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Scrap Metal"
+    ]
+  },
+  {
+    "class": "Rogue",
+    "level": 1,
+    "floor": 1,
+    "gold": 1101,
+    "causeOfDeath": "Unknown",
+    "turns": 8,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Warrior",
+    "level": 1,
+    "floor": 1,
+    "gold": 1106,
+    "causeOfDeath": "Unknown",
+    "turns": 131,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Mage",
+    "level": 1,
+    "floor": 1,
+    "gold": 1106,
+    "causeOfDeath": "Unknown",
+    "turns": 313,
+    "inventory": [
+      "Wand of Magic Missile",
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Rogue",
+    "level": 2,
+    "floor": 1,
+    "gold": 1116,
+    "causeOfDeath": "Ongoing",
+    "turns": 362,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Warrior",
+    "level": 2,
+    "floor": 2,
+    "gold": 1121,
+    "causeOfDeath": "Ongoing",
+    "turns": 896,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Mage",
+    "level": 2,
+    "floor": 1,
+    "gold": 1121,
+    "causeOfDeath": "Ongoing",
+    "turns": 895,
+    "inventory": [
+      "Wand of Magic Missile",
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Dungeon Key"
+    ]
+  },
+  {
+    "class": "Rogue",
+    "level": 2,
+    "floor": 1,
+    "gold": 1126,
+    "causeOfDeath": "Ongoing",
+    "turns": 1467,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Leather Whip"
+    ]
+  },
+  {
+    "class": "Warrior",
+    "level": 1,
+    "floor": 1,
+    "gold": 1126,
+    "causeOfDeath": "Unknown",
+    "turns": 126,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Mage",
+    "level": 1,
+    "floor": 1,
+    "gold": 1131,
+    "causeOfDeath": "Unknown",
     "turns": 343,
-    "killer": "Vault Guardian"
+    "inventory": [
+      "Wand of Magic Missile",
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
   },
   {
-    "status": "TIMEOUT",
-    "floor": 3,
-    "level": 9,
-    "score": 608,
-    "turns": 150006,
-    "killer": "Time"
+    "class": "Rogue",
+    "level": 2,
+    "floor": 1,
+    "gold": 1141,
+    "causeOfDeath": "Ongoing",
+    "turns": 1284,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Leather Armor",
+      "Mage Robes"
+    ]
   },
   {
-    "status": "PLAYER_DEAD",
-    "floor": 3,
-    "level": 8,
-    "score": 179,
-    "turns": 965,
-    "killer": "Mimic"
+    "class": "Warrior",
+    "level": 1,
+    "floor": 1,
+    "gold": 1141,
+    "causeOfDeath": "Unknown",
+    "turns": 12,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
   },
   {
-    "status": "TIMEOUT",
-    "floor": 5,
-    "level": 9,
-    "score": 545,
-    "turns": 150004,
-    "killer": "Time"
+    "class": "Mage",
+    "level": 2,
+    "floor": 1,
+    "gold": 1146,
+    "causeOfDeath": "Ongoing",
+    "turns": 621,
+    "inventory": [
+      "Wand of Magic Missile",
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Scrap Metal",
+      "Scrap Metal"
+    ]
   },
   {
-    "status": "TIMEOUT",
+    "class": "Rogue",
+    "level": 2,
+    "floor": 1,
+    "gold": 1151,
+    "causeOfDeath": "Ongoing",
+    "turns": 1483,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Scroll of Identify",
+      "Scroll of Identify",
+      "Scroll of Identify"
+    ]
+  },
+  {
+    "class": "Warrior",
+    "level": 2,
+    "floor": 1,
+    "gold": 1156,
+    "causeOfDeath": "Ongoing",
+    "turns": 1407,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Scrap Metal",
+      "Leather Armor"
+    ]
+  },
+  {
+    "class": "Mage",
+    "level": 1,
+    "floor": 1,
+    "gold": 1156,
+    "causeOfDeath": "Unknown",
+    "turns": 723,
+    "inventory": [
+      "Wand of Magic Missile",
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Rogue",
+    "level": 1,
+    "floor": 1,
+    "gold": 1169,
+    "causeOfDeath": "Unknown",
+    "turns": 144,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Warrior",
+    "level": 2,
+    "floor": 1,
+    "gold": 1169,
+    "causeOfDeath": "Ongoing",
+    "turns": 1558,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Scroll of Identify"
+    ]
+  },
+  {
+    "class": "Mage",
+    "level": 1,
+    "floor": 1,
+    "gold": 1169,
+    "causeOfDeath": "Unknown",
+    "turns": 210,
+    "inventory": [
+      "Wand of Magic Missile",
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Rogue",
+    "level": 2,
+    "floor": 1,
+    "gold": 1179,
+    "causeOfDeath": "Ongoing",
+    "turns": 2072,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Wooden Shield",
+      "Scrap Metal"
+    ]
+  },
+  {
+    "class": "Warrior",
+    "level": 1,
+    "floor": 1,
+    "gold": 1179,
+    "causeOfDeath": "Unknown",
+    "turns": 318,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Mage",
+    "level": 2,
+    "floor": 1,
+    "gold": 1198,
+    "causeOfDeath": "Ongoing",
+    "turns": 1352,
+    "inventory": [
+      "Wand of Magic Missile",
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Rogue",
+    "level": 1,
+    "floor": 1,
+    "gold": 1198,
+    "causeOfDeath": "Unknown",
+    "turns": 280,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Warrior",
+    "level": 1,
+    "floor": 1,
+    "gold": 1203,
+    "causeOfDeath": "Unknown",
+    "turns": 663,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Mage",
+    "level": 1,
+    "floor": 1,
+    "gold": 1203,
+    "causeOfDeath": "Unknown",
+    "turns": 79,
+    "inventory": [
+      "Wand of Magic Missile",
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Rogue",
+    "level": 1,
+    "floor": 1,
+    "gold": 1203,
+    "causeOfDeath": "Unknown",
+    "turns": 479,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Warrior",
+    "level": 2,
     "floor": 2,
-    "level": 4,
-    "score": 78,
-    "turns": 150016,
-    "killer": "Time"
+    "gold": 1223,
+    "causeOfDeath": "Ongoing",
+    "turns": 1076,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Scrap Metal"
+    ]
   },
   {
-    "status": "TIMEOUT",
-    "floor": 4,
-    "level": 8,
-    "score": 222,
-    "turns": 150003,
-    "killer": "Time"
+    "class": "Mage",
+    "level": 2,
+    "floor": 1,
+    "gold": 1228,
+    "causeOfDeath": "Ongoing",
+    "turns": 896,
+    "inventory": [
+      "Wand of Magic Missile",
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Bundle of Arrows"
+    ]
   },
   {
-    "status": "TIMEOUT",
-    "floor": 4,
-    "level": 8,
-    "score": 252,
-    "turns": 150018,
-    "killer": "Time"
+    "class": "Rogue",
+    "level": 1,
+    "floor": 2,
+    "gold": 1233,
+    "causeOfDeath": "Unknown",
+    "turns": 2318,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Wand of Magic Missile"
+    ]
   },
   {
-    "status": "TIMEOUT",
-    "floor": 5,
-    "level": 9,
-    "score": 556,
-    "turns": 150015,
-    "killer": "Time"
+    "class": "Warrior",
+    "level": 2,
+    "floor": 1,
+    "gold": 1278,
+    "causeOfDeath": "Ongoing",
+    "turns": 2186,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Crossbow Bolts",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Mage",
+    "level": 2,
+    "floor": 1,
+    "gold": 1288,
+    "causeOfDeath": "Ongoing",
+    "turns": 757,
+    "inventory": [
+      "Wand of Magic Missile",
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Rogue",
+    "level": 1,
+    "floor": 1,
+    "gold": 1298,
+    "causeOfDeath": "Unknown",
+    "turns": 253,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Warrior",
+    "level": 2,
+    "floor": 2,
+    "gold": 1311,
+    "causeOfDeath": "Ongoing",
+    "turns": 1059,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Potion of Antidote",
+      "Scroll of Identify"
+    ]
+  },
+  {
+    "class": "Mage",
+    "level": 1,
+    "floor": 1,
+    "gold": 1337,
+    "causeOfDeath": "Unknown",
+    "turns": 2588,
+    "inventory": [
+      "Wand of Magic Missile",
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Rogue",
+    "level": 1,
+    "floor": 1,
+    "gold": 1337,
+    "causeOfDeath": "Unknown",
+    "turns": 16,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Warrior",
+    "level": 1,
+    "floor": 1,
+    "gold": 1337,
+    "causeOfDeath": "Unknown",
+    "turns": 632,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Mage",
+    "level": 2,
+    "floor": 1,
+    "gold": 1355,
+    "causeOfDeath": "Ongoing",
+    "turns": 643,
+    "inventory": [
+      "Wand of Magic Missile",
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Leather Whip",
+      "Dungeon Key"
+    ]
+  },
+  {
+    "class": "Rogue",
+    "level": 1,
+    "floor": 1,
+    "gold": 1365,
+    "causeOfDeath": "Unknown",
+    "turns": 984,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Warrior",
+    "level": 1,
+    "floor": 1,
+    "gold": 1370,
+    "causeOfDeath": "Unknown",
+    "turns": 82,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Scrap Metal"
+    ]
+  },
+  {
+    "class": "Mage",
+    "level": 1,
+    "floor": 1,
+    "gold": 1421,
+    "causeOfDeath": "Unknown",
+    "turns": 1765,
+    "inventory": [
+      "Wand of Magic Missile",
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Rogue",
+    "level": 1,
+    "floor": 1,
+    "gold": 1421,
+    "causeOfDeath": "Unknown",
+    "turns": 247,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Warrior",
+    "level": 1,
+    "floor": 1,
+    "gold": 1421,
+    "causeOfDeath": "Unknown",
+    "turns": 89,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Mage",
+    "level": 2,
+    "floor": 1,
+    "gold": 1431,
+    "causeOfDeath": "Ongoing",
+    "turns": 1197,
+    "inventory": [
+      "Wand of Magic Missile",
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Scrap Metal",
+      "Dagger"
+    ]
+  },
+  {
+    "class": "Rogue",
+    "level": 1,
+    "floor": 2,
+    "gold": 1436,
+    "causeOfDeath": "Unknown",
+    "turns": 156,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Warrior",
+    "level": 1,
+    "floor": 1,
+    "gold": 1441,
+    "causeOfDeath": "Unknown",
+    "turns": 449,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Mage",
+    "level": 1,
+    "floor": 1,
+    "gold": 1441,
+    "causeOfDeath": "Unknown",
+    "turns": 94,
+    "inventory": [
+      "Wand of Magic Missile",
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Rogue",
+    "level": 2,
+    "floor": 2,
+    "gold": 1441,
+    "causeOfDeath": "Ongoing",
+    "turns": 1021,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Scroll of Magic Mapping",
+      "Scrap Metal"
+    ]
+  },
+  {
+    "class": "Warrior",
+    "level": 2,
+    "floor": 1,
+    "gold": 1451,
+    "causeOfDeath": "Ongoing",
+    "turns": 929,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Short Bow"
+    ]
+  },
+  {
+    "class": "Mage",
+    "level": 1,
+    "floor": 1,
+    "gold": 1451,
+    "causeOfDeath": "Unknown",
+    "turns": 88,
+    "inventory": [
+      "Wand of Magic Missile",
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Rogue",
+    "level": 2,
+    "floor": 1,
+    "gold": 1461,
+    "causeOfDeath": "Ongoing",
+    "turns": 983,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Warrior",
+    "level": 2,
+    "floor": 1,
+    "gold": 1482,
+    "causeOfDeath": "Ongoing",
+    "turns": 466,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Short Bow"
+    ]
+  },
+  {
+    "class": "Mage",
+    "level": 2,
+    "floor": 1,
+    "gold": 1492,
+    "causeOfDeath": "Ongoing",
+    "turns": 1441,
+    "inventory": [
+      "Wand of Magic Missile",
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Short Bow"
+    ]
+  },
+  {
+    "class": "Rogue",
+    "level": 1,
+    "floor": 1,
+    "gold": 1497,
+    "causeOfDeath": "Unknown",
+    "turns": 53,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Warrior",
+    "level": 1,
+    "floor": 1,
+    "gold": 1534,
+    "causeOfDeath": "Unknown",
+    "turns": 815,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Mage",
+    "level": 2,
+    "floor": 1,
+    "gold": 1539,
+    "causeOfDeath": "Ongoing",
+    "turns": 2188,
+    "inventory": [
+      "Wand of Magic Missile",
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Mage Robes"
+    ]
+  },
+  {
+    "class": "Rogue",
+    "level": 2,
+    "floor": 1,
+    "gold": 1539,
+    "causeOfDeath": "Ongoing",
+    "turns": 678,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Scrap Metal",
+      "Leather Armor"
+    ]
+  },
+  {
+    "class": "Warrior",
+    "level": 2,
+    "floor": 1,
+    "gold": 1544,
+    "causeOfDeath": "Ongoing",
+    "turns": 610,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Scrap Metal",
+      "Wooden Shield",
+      "Short Bow",
+      "Leather Whip"
+    ]
+  },
+  {
+    "class": "Mage",
+    "level": 2,
+    "floor": 2,
+    "gold": 1559,
+    "causeOfDeath": "Ongoing",
+    "turns": 221,
+    "inventory": [
+      "Wand of Magic Missile",
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Rogue",
+    "level": 2,
+    "floor": 1,
+    "gold": 1564,
+    "causeOfDeath": "Ongoing",
+    "turns": 1420,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Potion of Minor Healing"
+    ]
+  },
+  {
+    "class": "Warrior",
+    "level": 1,
+    "floor": 1,
+    "gold": 1564,
+    "causeOfDeath": "Unknown",
+    "turns": 52,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Mage",
+    "level": 1,
+    "floor": 1,
+    "gold": 1592,
+    "causeOfDeath": "Unknown",
+    "turns": 361,
+    "inventory": [
+      "Wand of Magic Missile",
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Rogue",
+    "level": 2,
+    "floor": 1,
+    "gold": 1607,
+    "causeOfDeath": "Ongoing",
+    "turns": 1681,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Leather Armor",
+      "Bundle of Arrows"
+    ]
+  },
+  {
+    "class": "Warrior",
+    "level": 2,
+    "floor": 1,
+    "gold": 1622,
+    "causeOfDeath": "Ongoing",
+    "turns": 1688,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Ration of Food",
+      "Crossbow Bolts"
+    ]
+  },
+  {
+    "class": "Mage",
+    "level": 1,
+    "floor": 1,
+    "gold": 1642,
+    "causeOfDeath": "Unknown",
+    "turns": 1040,
+    "inventory": [
+      "Wand of Magic Missile",
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Rogue",
+    "level": 2,
+    "floor": 1,
+    "gold": 1652,
+    "causeOfDeath": "Ongoing",
+    "turns": 773,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Bundle of Arrows"
+    ]
+  },
+  {
+    "class": "Warrior",
+    "level": 2,
+    "floor": 1,
+    "gold": 1672,
+    "causeOfDeath": "Ongoing",
+    "turns": 431,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Ration of Food",
+      "Wooden Shield"
+    ]
+  },
+  {
+    "class": "Mage",
+    "level": 1,
+    "floor": 1,
+    "gold": 1672,
+    "causeOfDeath": "Unknown",
+    "turns": 173,
+    "inventory": [
+      "Wand of Magic Missile",
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Rogue",
+    "level": 1,
+    "floor": 1,
+    "gold": 1697,
+    "causeOfDeath": "Unknown",
+    "turns": 2015,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Leather Armor",
+      "Scroll of Identify"
+    ]
+  },
+  {
+    "class": "Warrior",
+    "level": 2,
+    "floor": 1,
+    "gold": 1731,
+    "causeOfDeath": "Ongoing",
+    "turns": 1232,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Scrap Metal",
+      "Potion of Antidote",
+      "Potion of Antidote"
+    ]
+  },
+  {
+    "class": "Mage",
+    "level": 2,
+    "floor": 1,
+    "gold": 1741,
+    "causeOfDeath": "Ongoing",
+    "turns": 401,
+    "inventory": [
+      "Wand of Magic Missile",
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Wooden Shield"
+    ]
+  },
+  {
+    "class": "Rogue",
+    "level": 1,
+    "floor": 1,
+    "gold": 1785,
+    "causeOfDeath": "Unknown",
+    "turns": 1506,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Scrap Metal",
+      "Potion of Antidote",
+      "Scroll of Identify"
+    ]
+  },
+  {
+    "class": "Warrior",
+    "level": 2,
+    "floor": 1,
+    "gold": 1790,
+    "causeOfDeath": "Ongoing",
+    "turns": 246,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Mage",
+    "level": 1,
+    "floor": 1,
+    "gold": 1790,
+    "causeOfDeath": "Unknown",
+    "turns": 64,
+    "inventory": [
+      "Wand of Magic Missile",
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Rogue",
+    "level": 1,
+    "floor": 1,
+    "gold": 1800,
+    "causeOfDeath": "Unknown",
+    "turns": 1845,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Scrap Metal",
+      "Crossbow Bolts",
+      "Scrap Metal"
+    ]
+  },
+  {
+    "class": "Warrior",
+    "level": 2,
+    "floor": 2,
+    "gold": 1810,
+    "causeOfDeath": "Ongoing",
+    "turns": 1072,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Scrap Metal"
+    ]
+  },
+  {
+    "class": "Mage",
+    "level": 1,
+    "floor": 1,
+    "gold": 1815,
+    "causeOfDeath": "Unknown",
+    "turns": 322,
+    "inventory": [
+      "Wand of Magic Missile",
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Leather Armor"
+    ]
+  },
+  {
+    "class": "Rogue",
+    "level": 1,
+    "floor": 1,
+    "gold": 1815,
+    "causeOfDeath": "Unknown",
+    "turns": 1050,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Warrior",
+    "level": 1,
+    "floor": 1,
+    "gold": 1815,
+    "causeOfDeath": "Unknown",
+    "turns": 316,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Scrap Metal"
+    ]
+  },
+  {
+    "class": "Mage",
+    "level": 1,
+    "floor": 1,
+    "gold": 1815,
+    "causeOfDeath": "Unknown",
+    "turns": 136,
+    "inventory": [
+      "Wand of Magic Missile",
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Rogue",
+    "level": 2,
+    "floor": 1,
+    "gold": 1820,
+    "causeOfDeath": "Ongoing",
+    "turns": 1092,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Scrap Metal"
+    ]
+  },
+  {
+    "class": "Warrior",
+    "level": 1,
+    "floor": 1,
+    "gold": 1825,
+    "causeOfDeath": "Unknown",
+    "turns": 404,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Mage",
+    "level": 2,
+    "floor": 1,
+    "gold": 1830,
+    "causeOfDeath": "Ongoing",
+    "turns": 864,
+    "inventory": [
+      "Wand of Magic Missile",
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Rogue",
+    "level": 1,
+    "floor": 1,
+    "gold": 1830,
+    "causeOfDeath": "Unknown",
+    "turns": 1829,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Wooden Shield",
+      "Leather Whip"
+    ]
+  },
+  {
+    "class": "Warrior",
+    "level": 1,
+    "floor": 1,
+    "gold": 1830,
+    "causeOfDeath": "Unknown",
+    "turns": 83,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Mage",
+    "level": 1,
+    "floor": 2,
+    "gold": 1830,
+    "causeOfDeath": "Unknown",
+    "turns": 1022,
+    "inventory": [
+      "Wand of Magic Missile",
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Elvish Berries"
+    ]
+  },
+  {
+    "class": "Rogue",
+    "level": 1,
+    "floor": 1,
+    "gold": 1830,
+    "causeOfDeath": "Unknown",
+    "turns": 181,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Warrior",
+    "level": 1,
+    "floor": 2,
+    "gold": 1835,
+    "causeOfDeath": "Unknown",
+    "turns": 473,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Mage",
+    "level": 1,
+    "floor": 1,
+    "gold": 1835,
+    "causeOfDeath": "Unknown",
+    "turns": 109,
+    "inventory": [
+      "Wand of Magic Missile",
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Rogue",
+    "level": 1,
+    "floor": 1,
+    "gold": 1840,
+    "causeOfDeath": "Unknown",
+    "turns": 1050,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Crossbow Bolts"
+    ]
+  },
+  {
+    "class": "Warrior",
+    "level": 1,
+    "floor": 1,
+    "gold": 1845,
+    "causeOfDeath": "Unknown",
+    "turns": 581,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Dagger",
+      "Word of Recall"
+    ]
+  },
+  {
+    "class": "Mage",
+    "level": 2,
+    "floor": 2,
+    "gold": 1855,
+    "causeOfDeath": "Ongoing",
+    "turns": 631,
+    "inventory": [
+      "Wand of Magic Missile",
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Rogue",
+    "level": 1,
+    "floor": 1,
+    "gold": 1855,
+    "causeOfDeath": "Unknown",
+    "turns": 18,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Scrap Metal"
+    ]
+  },
+  {
+    "class": "Warrior",
+    "level": 1,
+    "floor": 1,
+    "gold": 1866,
+    "causeOfDeath": "Unknown",
+    "turns": 1140,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Wooden Shield",
+      "Scrap Metal"
+    ]
+  },
+  {
+    "class": "Mage",
+    "level": 1,
+    "floor": 1,
+    "gold": 1893,
+    "causeOfDeath": "Unknown",
+    "turns": 108,
+    "inventory": [
+      "Wand of Magic Missile",
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Rogue",
+    "level": 2,
+    "floor": 1,
+    "gold": 1903,
+    "causeOfDeath": "Ongoing",
+    "turns": 1352,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Warrior",
+    "level": 2,
+    "floor": 1,
+    "gold": 1934,
+    "causeOfDeath": "Ongoing",
+    "turns": 1146,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Mage",
+    "level": 1,
+    "floor": 1,
+    "gold": 1939,
+    "causeOfDeath": "Unknown",
+    "turns": 875,
+    "inventory": [
+      "Wand of Magic Missile",
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Mage Robes"
+    ]
+  },
+  {
+    "class": "Rogue",
+    "level": 2,
+    "floor": 1,
+    "gold": 1949,
+    "causeOfDeath": "Ongoing",
+    "turns": 684,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Short Bow"
+    ]
+  },
+  {
+    "class": "Warrior",
+    "level": 1,
+    "floor": 1,
+    "gold": 1997,
+    "causeOfDeath": "Unknown",
+    "turns": 671,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Mage",
+    "level": 1,
+    "floor": 1,
+    "gold": 1997,
+    "causeOfDeath": "Unknown",
+    "turns": 31,
+    "inventory": [
+      "Wand of Magic Missile",
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Rogue",
+    "level": 2,
+    "floor": 1,
+    "gold": 2002,
+    "causeOfDeath": "Ongoing",
+    "turns": 1259,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Scrap Metal"
+    ]
+  },
+  {
+    "class": "Warrior",
+    "level": 1,
+    "floor": 1,
+    "gold": 2002,
+    "causeOfDeath": "Unknown",
+    "turns": 214,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Mage",
+    "level": 2,
+    "floor": 1,
+    "gold": 2007,
+    "causeOfDeath": "Ongoing",
+    "turns": 972,
+    "inventory": [
+      "Wand of Magic Missile",
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Scrap Metal",
+      "Wooden Shield"
+    ]
+  },
+  {
+    "class": "Rogue",
+    "level": 2,
+    "floor": 1,
+    "gold": 2032,
+    "causeOfDeath": "Ongoing",
+    "turns": 63,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food"
+    ]
+  },
+  {
+    "class": "Warrior",
+    "level": 1,
+    "floor": 1,
+    "gold": 2032,
+    "causeOfDeath": "Unknown",
+    "turns": 131,
+    "inventory": [
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Short Bow"
+    ]
+  },
+  {
+    "class": "Mage",
+    "level": 2,
+    "floor": 1,
+    "gold": 2054,
+    "causeOfDeath": "Ongoing",
+    "turns": 1400,
+    "inventory": [
+      "Wand of Magic Missile",
+      "Word of Recall",
+      "Ration of Food",
+      "Ration of Food",
+      "Dagger",
+      "Scrap Metal",
+      "Scrap Metal",
+      "Scrap Metal"
+    ]
   }
 ]

@@ -65,6 +65,14 @@ window.closeHistory = function() {
 function updateUI() {
     if (!player) return;
     document.getElementById('ui-location').innerText = currentFloor === 0 ? 'Town' : currentFloor > 10 ? `Abyss Lvl ${currentFloor}` : `Dungeon Lvl ${currentFloor}`;
+    
+    const timeEl = document.getElementById('ui-time');
+    if (timeEl) {
+        let moonStr = window.isBloodMoon ? 'Blood Moon' : window.moonPhases[window.moonPhaseIndex];
+        timeEl.innerText = `Day ${window.gameDay} (${moonStr})`;
+        timeEl.style.color = window.isBloodMoon ? '#e74c3c' : '#c5c6c7';
+    }
+
     document.getElementById('ui-speed').innerText = getEffectiveSpeed();
 
     // Status HUD indicators
