@@ -230,6 +230,15 @@ function generateDungeon() {
             return;
         }
 
+        // --- Phase VI: Floor Hazard ---
+        if (currentFloor >= 3 && Math.random() < 0.25) {
+            const hazards = ['fire', 'ice', 'poison'];
+            window.floorHazard = hazards[Math.floor(Math.random() * hazards.length)];
+            logMessage(`You feel a strong aura of ${window.floorHazard}...`, 'damage');
+        } else {
+            window.floorHazard = null;
+        }
+
         // After many failed attempts, skip vault generation to ensure connectivity
         const allowVaults = (tries < 20);
 
@@ -566,7 +575,19 @@ function spawnRandomItem(room) {
 function spawnRandomItemAt(x, y) {
     let validItems = ITEM_DB.filter(i => currentFloor >= (i.minFloor || 1));
     if (validItems.length > 0) {
-        let it = { ...validItems[Math.floor(Math.random() * validItems.length)] };
+        let it;
+        
+        // 15% chance to force a food drop to prevent starvation
+        if (Math.random() < 0.15) {
+            let foodItems = validItems.filter(i => i.type === 'food');
+            if (foodItems.length > 0) {
+                it = { ...foodItems[Math.floor(Math.random() * foodItems.length)] };
+            }
+        }
+        
+        if (!it) {
+            it = { ...validItems[Math.floor(Math.random() * validItems.length)] };
+        }
         
         // #12 Apply Ego if applicable
         if (typeof applyEgo !== 'undefined' && (it.type === 'weapon' || it.type === 'armor' || it.type === 'shield' || it.type === 'helm')) {

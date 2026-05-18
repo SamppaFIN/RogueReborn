@@ -625,6 +625,29 @@ function processMonsterAI(e) {
     // #42 Retreat Logic — Smart flee (replaces old #54 Fear)
     if (handleRetreat(e, dist)) return;
 
+    // Phase VII — Ranged Enemies AI
+    let templateForRanged = typeof ENEMY_TYPES !== 'undefined' ? ENEMY_TYPES.find(t => t.name === baseName) : null;
+    let isRanged = e.ranged || (templateForRanged && templateForRanged.ranged);
+    if (isRanged && visible && dist >= 2 && dist <= 6) {
+        if (typeof getLine === 'function') {
+            const line = getLine(e.x, e.y, player.x, player.y);
+            let clear = true;
+            for (let i = 1; i < line.length - 1; i++) {
+                if (map[line[i].x][line[i].y].type === 'wall' || map[line[i].x][line[i].y].type === 'locked_door') {
+                    clear = false;
+                    break;
+                }
+            }
+            if (clear) {
+                if (typeof executeMonsterRangedAttack === 'function') {
+                    executeMonsterRangedAttack(e);
+                    e.energy -= ENERGY_THRESHOLD;
+                    return;
+                }
+            }
+        }
+    }
+
     if (dist <= 1 && (visible || dist < 2)) {
         attemptAction(e, { type: 'move', dx: Math.sign(dx), dy: Math.sign(dy) });
     } else if (visible) {

@@ -311,13 +311,30 @@ function attemptAction(entity, action, energyCost = ENERGY_THRESHOLD) {
             if (player.equipment.armor && player.equipment.armor.weight > 10) n += 5;
             addNoise(tx, ty, n);
             
+            // #31 Trap trigger (MUST be before other tile effects)
+            if (mapTile.type === 'trap' && mapTile.hidden) {
+                mapTile.hidden = false;
+                mapTile.color = '#c0392b';
+                const kind = mapTile.trapKind;
+                logMessage(`You triggered a ${kind} trap!`, 'damage');
+                if (kind === 'dart')     { player.hp -= 5; spawnParticle(player.x, player.y, '-5 DART', '#e74c3c'); }
+                if (kind === 'poison')   { player.poisonTimer = (player.poisonTimer||0)+15; spawnParticle(player.x, player.y, 'POISON!', '#27ae60'); }
+                if (kind === 'teleport') {
+                    let rx, ry, tries=0;
+                    do { rx=Math.floor(Math.random()*MAP_WIDTH); ry=Math.floor(Math.random()*MAP_HEIGHT); tries++; }
+                    while(tries<50 && (map[rx][ry].type !== 'floor' || getEntityAt(rx,ry)));
+                    if(tries<50){ player.x=rx; player.y=ry; logMessage('You are teleported!','magic'); computeFOV(); }
+                }
+                if (player.hp <= 0) { showGameOverModal('Trap'); return; }
+            }
+
             // #28 Lava Damage
             if (mapTile.type === 'lava') {
                 const dmg = 4 + currentFloor;
                 player.hp -= dmg;
                 spawnParticle(tx, ty, `-${dmg} LAVA`, '#e67e22');
                 logMessage("The lava burns you!", 'damage');
-                if (player.hp <= 0) showGameOverModal('Lava');
+                if (player.hp <= 0) { showGameOverModal('Lava'); return; }
             }
 
             // #29 Trapdoor
@@ -336,31 +353,7 @@ function attemptAction(entity, action, energyCost = ENERGY_THRESHOLD) {
                 }, 50);
             }
 
-            totalTurns++; 
-            checkStairs(tx, ty); 
-            checkAutoRunStop(tx, ty); 
-            collectItems(tx, ty);
-        }
-        return;
-
-        // #31 Trap trigger
-        if (entity.isPlayer && map[tx][ty].type === 'trap' && map[tx][ty].hidden) {
-            map[tx][ty].hidden = false;
-            map[tx][ty].color = '#c0392b';
-            const kind = map[tx][ty].trapKind;
-            logMessage(`You triggered a ${kind} trap!`, 'damage');
-            if (kind === 'dart')     { player.hp -= 5; spawnParticle(player.x, player.y, '-5 DART', '#e74c3c'); }
-            if (kind === 'poison')   { player.poisonTimer = (player.poisonTimer||0)+15; spawnParticle(player.x, player.y, 'POISON!', '#27ae60'); }
-            if (kind === 'teleport') {
-                let rx, ry, tries=0;
-                do { rx=Math.floor(Math.random()*MAP_WIDTH); ry=Math.floor(Math.random()*MAP_HEIGHT); tries++; }
-                while(tries<50 && (map[rx][ry].type !== 'floor' || getEntityAt(rx,ry)));
-                if(tries<50){ player.x=rx; player.y=ry; logMessage('You are teleported!','magic'); computeFOV(); }
-            }
-            if (player.hp <= 0) { showGameOverModal('Trap'); }
-        }
-
-        if (entity.isPlayer) {
+            // Day/Night cycle
             totalTurns++;
             if (totalTurns % 500 === 0) {
                 timeOfDay = timeOfDay === 'Day' ? 'Night' : 'Day';
@@ -372,8 +365,8 @@ function attemptAction(entity, action, energyCost = ENERGY_THRESHOLD) {
                 }
             }
 
-            checkStairs(tx, ty);
-            checkAutoRunStop(tx, ty);
+            checkStairs(tx, ty); 
+            checkAutoRunStop(tx, ty); 
             collectItems(tx, ty);
         }
     }
@@ -763,6 +756,53 @@ function executeBreathAttack(attacker) {
     updateUI();
 }
 
+// Phase VII — Ranged Enemy Attack
+function executeMonsterRangedAttack(attacker) {
+    if (!player) return;
+    const dx = player.x - attacker.x;
+    const dy = player.y - attacker.y;
+    
+    // Determine ranged type from template or default to arrow
+    let baseName = attacker.name.replace('Elite ', '').replace('Mini-Boss ', '');
+    let template = typeof ENEMY_TYPES !== 'undefined' ? ENEMY_TYPES.find(t => t.name === baseName) : null;
+    let rType = attacker.rangedType || (template && template.rangedType) || 'arrow';
+
+    let projectileChar = rType === 'magic' ? '*' : (Math.abs(dx) > Math.abs(dy) ? '-' : '|');
+    let color = rType === 'magic' ? '#9b59b6' : '#bdc3c7';
+
+    logMessage(`${attacker.name} shoots at you!`, 'damage');
+    
+    // Particle animation for projectile
+    let steps = Math.max(Math.abs(dx), Math.abs(dy));
+    for (let i = 1; i <= steps; i++) {
+        setTimeout(() => {
+            let px = attacker.x + Math.round(dx * (i / steps));
+            let py = attacker.y + Math.round(dy * (i / steps));
+            spawnParticle(px, py, projectileChar, color);
+        }, i * 30);
+    }
+
+    setTimeout(() => {
+        let atkPower = attacker.atk;
+        let defPower = getEffectiveDef();
+
+        let dmg = Math.max(1, atkPower - defPower + (Math.floor(Math.random() * 3) - 1));
+        
+        // Base resistance checks if magic
+        if (rType === 'magic' && attacker.element === 'fire' && player.equipment.ring?.effect === 'resist_fire') dmg = Math.max(1, Math.floor(dmg / 2));
+        if (rType === 'magic' && attacker.element === 'ice' && player.equipment.ring?.effect === 'resist_ice') dmg = Math.max(1, Math.floor(dmg / 2));
+        
+        player.hp -= dmg;
+        spawnParticle(player.x, player.y, `-${dmg}`, '#e74c3c');
+        
+        if (player.hp <= 0) {
+            showGameOverModal(`Shot by ${attacker.name}`);
+        } else {
+            updateUI();
+        }
+    }, steps * 30 + 50);
+}
+
 function handleMonsterDeath(defender) {
     if (defender.name.includes("Balrog")) {
         // Quest hook for Balrog kill
@@ -977,6 +1017,11 @@ function useItem(index) {
         player.hp = Math.min(player.maxHp, player.hp + item.value);
         spawnParticle(player.x, player.y, `+${item.value}`, '#2ecc71');
         logMessage(`You drink ${getItemName(item)}. You feel better.`, 'magic');
+    } else if (item.effect === 'full_heal') {
+        const healed = player.maxHp - player.hp;
+        player.hp = player.maxHp;
+        spawnParticle(player.x, player.y, `+${healed} FULL`, '#2ecc71');
+        logMessage(`You drink ${getItemName(item)}. You are fully restored!`, 'magic');
     } else if (item.effect === 'poison') {
         player.poisonTimer = (player.poisonTimer || 0) + 10;
         spawnParticle(player.x, player.y, "Poison!", '#2ecc71');
@@ -1032,6 +1077,15 @@ function useItem(index) {
         player.regenBoost = (player.regenBoost || 0) + 30;
         spawnParticle(player.x, player.y, "REGEN!", '#2ecc71');
         logMessage(`You drink ${getItemName(item)}. You feel your wounds closing!`, 'magic');
+    } else if (item.effect === 'food') {
+        player.food = Math.min(5000, (player.food || 0) + item.value);
+        spawnParticle(player.x, player.y, 'FULL!', '#d35400');
+        logMessage(`You eat the ${getItemName(item)}. You feel satisfied.`, 'magic');
+    } else if (item.effect === 'food_heal') {
+        player.food = Math.min(5000, (player.food || 0) + item.value);
+        player.hp = Math.min(player.maxHp, player.hp + (item.healValue || 15));
+        spawnParticle(player.x, player.y, `+${item.healValue} NOURISH`, '#27ae60');
+        logMessage(`You eat the ${getItemName(item)}. Delicious and restorative!`, 'magic');
     } else if (item.effect === 'strength_boost') {
         player.stats.str++;
         spawnParticle(player.x, player.y, "STR +1!", '#e74c3c');

@@ -73,5 +73,10 @@ const ENEMY_TYPES = [
     // #44 Support Units — healers and buffers
     { char: 'g', name: 'Goblin Shaman', color: '#9b59b6', hp: 12, atk: 2, def: 1, speed: 8, element: 'magic', baseXP: 25, support: 'healer' },
     { char: 'o', name: 'Orc Warpriest', color: '#f39c12', hp: 25, atk: 4, def: 3, speed: 7, element: 'magic', baseXP: 50, support: 'healer' },
-    { char: 'c', name: 'Dark Channeler', color: '#8e44ad', hp: 20, atk: 3, def: 2, speed: 9, element: 'magic', baseXP: 55, support: 'buffer' }
+    { char: 'c', name: 'Dark Channeler', color: '#8e44ad', hp: 20, atk: 3, def: 2, speed: 9, element: 'magic', baseXP: 55, support: 'buffer' },
+
+    // Phase VII — Ranged Enemies
+    { char: 'g', name: 'Goblin Archer', color: '#16a085', hp: 8, atk: 3, def: 1, speed: 10, element: 'none', baseXP: 15, ranged: true, rangedType: 'arrow' }, // 45
+    { char: 'Z', name: 'Skeleton Bowman', color: '#bdc3c7', hp: 12, atk: 5, def: 2, speed: 8, element: 'none', baseXP: 40, ranged: true, rangedType: 'arrow' }, // 46
+    { char: 'm', name: 'Dark Mage', color: '#9b59b6', hp: 18, atk: 6, def: 1, speed: 9, element: 'magic', baseXP: 65, ranged: true, rangedType: 'magic' } // 47
 ];

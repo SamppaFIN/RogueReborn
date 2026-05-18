@@ -83,6 +83,16 @@ function updateUI() {
         let skillReady = (player.skillCooldown && player.skillCooldown > 0) ? `<span style="color:#e74c3c">Cd: ${player.skillCooldown}</span>` : `<span style="color:#66fcf1">Rdy</span>`;
         statuses.push(`<span style="color:#bd93f9; border: 1px solid #333; padding: 2px;">[Q] ${skillName} (${skillReady})</span>`);
 
+        // TomeNet-inspired Hunger Display
+        if (typeof player.food !== 'undefined') {
+            let hungerLabel, hungerColor;
+            if (player.food > 2000) { hungerLabel = 'Full'; hungerColor = '#2ecc71'; }
+            else if (player.food > 500) { hungerLabel = 'Sated'; hungerColor = '#f1c40f'; }
+            else if (player.food > 0) { hungerLabel = 'Hungry'; hungerColor = '#e67e22'; }
+            else { hungerLabel = 'Starving!'; hungerColor = '#e74c3c'; }
+            statuses.push(`<span style="color:${hungerColor}">🍖 ${hungerLabel}</span>`);
+        }
+
         statusEl.innerHTML = statuses.join(' ') || '';
     }
 
@@ -134,8 +144,6 @@ function updateUI() {
             if (item) {
                 h += `${getItemName(item)}`;
                 h += `</span></span>`;
-                // Drop button - simple direct call
-                h += `<button onclick="dropItem(${realIdx})" style="background:#552222; color:#ff9999; border:1px solid #ff3333; border-radius:3px; cursor:pointer; padding:2px 6px; font-size:0.7em;" title="Click to Drop">DROP</button>`;
             } else {
                 h += `<span style="opacity:0.3">Empty</span></span></span>`;
             }
@@ -327,6 +335,45 @@ function render() {
 
         ctx.fillStyle = gradient;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+
+    // --- Minimap (top-left corner) ---
+    if (currentFloor > 0 && gameState === 'PLAYING') {
+        const mmScale = 2;
+        const mmPad = 10;
+        const mmW = MAP_WIDTH * mmScale;
+        const mmH = MAP_HEIGHT * mmScale;
+        
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        ctx.fillRect(mmPad - 2, mmPad - 2, mmW + 4, mmH + 4);
+        ctx.strokeStyle = 'rgba(69, 162, 158, 0.4)';
+        ctx.strokeRect(mmPad - 2, mmPad - 2, mmW + 4, mmH + 4);
+        
+        for (let x = 0; x < MAP_WIDTH; x++) {
+            for (let y = 0; y < MAP_HEIGHT; y++) {
+                const tile = map[x][y];
+                if (tile.explored) {
+                    if (tile.type === 'wall') ctx.fillStyle = 'rgba(69, 162, 158, 0.3)';
+                    else if (tile.type === 'stairs_down') ctx.fillStyle = '#f1c40f';
+                    else if (tile.type === 'stairs_up') ctx.fillStyle = '#3498db';
+                    else ctx.fillStyle = 'rgba(26, 31, 36, 0.8)';
+                    ctx.fillRect(mmPad + x * mmScale, mmPad + y * mmScale, mmScale, mmScale);
+                }
+            }
+        }
+        
+        // Draw entities on minimap
+        entities.forEach(e => {
+            if (e.hp > 0 && !e.isPlayer && !e.isTownNPC && map[e.x] && map[e.x][e.y] && map[e.x][e.y].visible) {
+                ctx.fillStyle = '#e74c3c';
+                ctx.fillRect(mmPad + e.x * mmScale, mmPad + e.y * mmScale, mmScale, mmScale);
+            }
+        });
+        
+        // Player blip (pulsing)
+        const pulse = 0.5 + 0.5 * Math.sin(Date.now() / 200);
+        ctx.fillStyle = `rgba(102, 252, 241, ${pulse})`;
+        ctx.fillRect(mmPad + player.x * mmScale - 1, mmPad + player.y * mmScale - 1, mmScale + 2, mmScale + 2);
     }
 
     // Native Canvas Tooltip Rendering

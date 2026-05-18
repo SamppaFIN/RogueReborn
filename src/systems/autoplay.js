@@ -10,6 +10,9 @@ window.isAutoPlayActive = false;
 window.autoPlayTurns = 0;
 window._autoplayStuckCounter = 0;
 window._autoplayLastPos = null;
+window._autoplayCommittedTarget = null; // {x, y, type, ttl}
+window._autoplayCommitTTL = 0;
+window._autoplayCachedPath = null; // Cached path steps for committed target
 
 function toggleAutoPlay(state) {
     if (typeof state !== 'undefined') {
@@ -81,6 +84,7 @@ function autoDropJunk() {
         if (item.artifact) score += 2000;
         if (Object.values(player.equipment).includes(item)) score += 10000;
         if (item.effect === 'heal' || item.effect === 'full_heal') score += 500;
+        if (item.effect === 'food' || item.effect === 'food_heal') score += 300;
         if (item.name === 'Word of Recall') score += 1000;
         if (item.type === 'scroll' || item.type === 'potion' || item.type === 'wand') score += 100;
         
@@ -199,7 +203,7 @@ function autoplayFindExploreTarget() {
                     const ent = getEntityAt(nx, ny);
                     const hasKey = player.inventory.some(i => i.name === 'Dungeon Key');
                     
-                    const blockingTypes = ['wall', 'locked_door', 'shop', 'healer', 'blacksmith', 'wizard', 'bank', 'well', 'mayor', 'gambler', 'shrine'];
+                    const blockingTypes = ['wall', 'locked_door', 'shop', 'healer', 'blacksmith', 'wizard', 'bank', 'well', 'mayor', 'gambler', 'shrine', 'water', 'tree'];
                     if (!allowHazards) blockingTypes.push('lava', 'gas');
                     
                     const isPassable = !blockingTypes.includes(tile.type) || (tile.type === 'locked_door' && hasKey);
@@ -284,6 +288,17 @@ function processAutoPlay() {
             return;
         }
 
+        // Buy food if hungry
+        const foodCount = player.inventory.filter(i => i.effect === 'food' || i.effect === 'food_heal').length;
+        const foodItem = currentShopItems.find(i => i.effect === 'food');
+        const foodIdx = currentShopItems.indexOf(foodItem);
+        
+        if (foodCount < 2 && foodIdx >= 0 && player.gold >= foodItem.cost && player.inventory.length < 30) {
+            console.log(`[Autoplay] Buying Food (${foodItem.name})`);
+            window.buyItem(foodIdx);
+            return;
+        }
+
         // 3. Nothing else to do, close
         console.log(`[Autoplay] Done shopping. Closing modal.`);
         window.closeAllModals();
@@ -328,17 +343,34 @@ function processAutoPlay() {
     if (gameState === 'LEVEL_UP') {
         if (!window._levelUpOpenedTime) window._levelUpOpenedTime = Date.now();
         
-        // Wait 3 seconds before AI takes over
-        if (Date.now() - window._levelUpOpenedTime < 3000) return;
+        // Wait 300ms before AI takes over (just enough for render)
+        if (Date.now() - window._levelUpOpenedTime < 300) return;
 
-        const buttons = document.querySelectorAll('#levelUpModal button, #skillModal button');
-        const upgradeButtons = Array.from(buttons).filter(b => b.id !== 'btn-finish-levelup');
-        if (upgradeButtons.length > 0) {
-            const btn = upgradeButtons[Math.floor(Math.random() * upgradeButtons.length)];
-            if(btn && btn.click) btn.click();
+        // Class-aware stat allocation
+        const skillPointsEl = document.getElementById('ui-skill-points');
+        const remaining = skillPointsEl ? parseInt(skillPointsEl.textContent) : 0;
+        
+        if (remaining > 0) {
+            // Choose stat based on class for optimal builds
+            let statChoice;
+            if (player.class === 'Warrior') {
+                // Warriors: prioritize STR for damage, then DEX for defense
+                statChoice = player.stats.str <= player.stats.dex ? 'str' : (Math.random() < 0.7 ? 'str' : 'dex');
+            } else if (player.class === 'Mage') {
+                // Mages: prioritize INT for spell power, occasional DEX for survival
+                statChoice = Math.random() < 0.8 ? 'int' : 'dex';
+            } else {
+                // Rogues: balanced DEX/STR with DEX slightly favored
+                statChoice = Math.random() < 0.6 ? 'dex' : 'str';
+            }
+            
+            if (typeof spendSkillPoint === 'function') {
+                spendSkillPoint(statChoice);
+                console.log(`[Autoplay] Level Up: +1 ${statChoice.toUpperCase()} (${player.class} build)`);
+            }
         } else {
-             const finishBtn = document.getElementById('btn-finish-levelup');
-             if(finishBtn && finishBtn.style.display !== 'none') finishBtn.click();
+            const finishBtn = document.getElementById('btn-finish-levelup');
+            if (finishBtn && finishBtn.style.display !== 'none') finishBtn.click();
         }
         return;
     } else {
@@ -364,22 +396,32 @@ function processAutoPlay() {
     }
     window._autoplayLastPos = posKey;
 
+    // Decay target commitment
+    if (window._autoplayCommitTTL > 0) window._autoplayCommitTTL--;
+    if (window._autoplayCommitTTL <= 0) window._autoplayCommittedTarget = null;
+
     // AI Maintenance & Inventory Management
     if (player.inventory.length >= 28) {
-        if (autoUseConsumables()) return; // Stop if we used an item (takes energy/turn)
-        autoDropJunk(); // Silent drop, can continue
+        if (autoUseConsumables()) return;
+        autoDropJunk();
     }
 
     // Priority 0: Emergency Recall (Survival & Inventory)
     if (currentFloor > 0) {
-        player._didShopThisVisit = false; 
-        player._didHealThisVisit = false;
-        player._townActionCooldown = 0;
+        // Reset town flags ONLY when first entering dungeon (not every tick!)
+        if (!player._inDungeon) {
+            player._didShopThisVisit = false; 
+            player._didHealThisVisit = false;
+            player._didBankThisVisit = false;
+            player._townActionCooldown = 0;
+            player._inDungeon = true;
+        }
         const needsRecall = (player.hp < player.maxHp * 0.25) || (player.inventory.length >= 29);
         if (needsRecall) {
             const recallIdx = player.inventory.findIndex(i => i.name === 'Word of Recall');
             if (recallIdx >= 0) {
                 console.log(`[Autoplay] Emergency Recall! HP: ${player.hp}/${player.maxHp}, Inv: ${player.inventory.length}`);
+                window._autoplayCommittedTarget = null;
                 window.useItem(recallIdx);
                 return;
             }
@@ -388,12 +430,16 @@ function processAutoPlay() {
 
     // Priority 0.5: Town Logic (If in Town)
     if (currentFloor === 0) {
+        player._inDungeon = false; // Mark that we left the dungeon
         if (player._townActionCooldown > 0) player._townActionCooldown--;
 
-        // a. Heal if damaged
+        // a. Deposit gold in bank if we have a lot
+        const shouldDeposit = player.gold > 200 && !player._didBankThisVisit;
+        
+        // b. Heal if damaged
         const needsToHeal = player.hp < player.maxHp && player.gold >= 20 && !player._didHealThisVisit;
         
-        // b. Shop if full inventory or low on supplies
+        // c. Shop if full inventory or low on supplies
         const hasRecall = player.inventory.some(i => i.name === 'Word of Recall');
         const potionCount = player.inventory.filter(i => i.effect === 'heal' || i.effect === 'full_heal').length;
         const needsToShop = ((player.inventory.length >= 28) || !hasRecall || (potionCount < 1)) && !player._didShopThisVisit;
@@ -401,7 +447,9 @@ function processAutoPlay() {
         let townTarget = null;
         let targetType = '';
 
-        if (needsToHeal && player._townActionCooldown <= 0) {
+        if (shouldDeposit && player._townActionCooldown <= 0) {
+            targetType = 'bank';
+        } else if (needsToHeal && player._townActionCooldown <= 0) {
             targetType = 'healer';
         } else if (needsToShop && player._townActionCooldown <= 0) {
             targetType = 'shop';
@@ -420,6 +468,21 @@ function processAutoPlay() {
             const dist = Math.abs(player.x - townTarget.x) + Math.abs(player.y - townTarget.y);
             if (dist <= 1 && targetType !== 'stairs_down') {
                 console.log(`[Autoplay] Interacting with ${targetType} at ${townTarget.x},${townTarget.y}`);
+                
+                // Special: bank interaction (deposit all gold)
+                if (targetType === 'bank') {
+                    if (typeof openBank === 'function') {
+                        // Direct deposit without opening modal
+                        if (typeof depositGold === 'function') {
+                            depositGold('all');
+                            console.log(`[Autoplay] Deposited all gold in bank`);
+                        }
+                        player._didBankThisVisit = true;
+                        player._townActionCooldown = 3;
+                    }
+                    return;
+                }
+                
                 window.attemptAction(player, { type: 'move', dx: townTarget.x - player.x, dy: townTarget.y - player.y });
                 return;
             }
@@ -452,6 +515,16 @@ function processAutoPlay() {
         }
     }
 
+    // Priority 1.5: Eat food when hungry (TomeNet hunger system)
+    if (typeof player.food !== 'undefined' && player.food < 500) {
+        const foodIdx = player.inventory.findIndex(i => i.effect === 'food' || i.effect === 'food_heal');
+        if (foodIdx >= 0) {
+            console.log(`[Autoplay] Eating ${player.inventory[foodIdx].name} (hunger: ${player.food})`);
+            window.useItem(foodIdx);
+            return;
+        }
+    }
+
     // Priority 2: Equip better gear
     if (window.autoPlayTurns % 20 === 0) {
         if (checkEquipment()) return;
@@ -473,20 +546,52 @@ function processAutoPlay() {
         }
     }
 
+    // Priority 3.5: Ranged Combat (Rogue and Mage shoot back)
+    if (monster && mDist > 1 && mDist <= 6 && (player.class === 'Rogue' || player.class === 'Mage')) {
+        const wepEffect = player.equipment.weapon?.effect;
+        if ((wepEffect === 'bow' || wepEffect === 'crossbow') && player.ammo > 0) {
+            if (typeof window.getLine === 'function') {
+                const line = window.getLine(player.x, player.y, monster.x, monster.y);
+                let clear = true;
+                for (let i = 1; i < line.length - 1; i++) {
+                    if (map[line[i].x][line[i].y].type === 'wall' || map[line[i].x][line[i].y].type === 'locked_door') {
+                        clear = false;
+                        break;
+                    }
+                }
+                if (clear) {
+                    window.targetX = monster.x;
+                    window.targetY = monster.y;
+                    if (typeof window.executeRangedAttack === 'function') {
+                        window.executeRangedAttack();
+                        return;
+                    }
+                }
+            }
+        }
+    }
+
     // Priority 4: Melee combat (adjacent)
     const isAdjacent = monster && Math.abs(monster.x - player.x) <= 1 && Math.abs(monster.y - player.y) <= 1;
     if (isAdjacent) {
+        isAutoExploring = false;
+        window._autoplayCommittedTarget = null;
+        window._autoplayCachedPath = null;
         window.attemptAction(player, { type: 'move', dx: monster.x - player.x, dy: monster.y - player.y });
         return;
     }
     
     // Priority 5: Chase visible monsters directly
     if (monster) {
+        isAutoExploring = false;
+        window._autoplayCachedPath = null; // Invalidate explore cache
         let path = window.findPath(player.x, player.y, monster.x, monster.y);
         if (!path || path.length === 0) {
             path = window.findPath(player.x, player.y, monster.x, monster.y, false, true);
         }
         if (path && path.length > 0) {
+            window._autoplayCommittedTarget = { x: monster.x, y: monster.y, type: 'monster', ttl: 15 };
+            window._autoplayCommitTTL = 15;
             let next = path[0];
             window.attemptAction(player, { type: 'move', dx: next.x - player.x, dy: next.y - player.y });
             return;
@@ -495,26 +600,80 @@ function processAutoPlay() {
 
     // Priority 6: Step on stairs if standing on them
     if (map[player.x][player.y].type === 'stairs_down') {
+        window._autoplayCommittedTarget = null;
         window.checkStairs(player.x, player.y, true);
         return;
+    }
+
+    // --- TARGET COMMITMENT SYSTEM (with cached path for speed) ---
+    // If we have a committed target, use cached path steps instead of re-pathfinding
+    if (window._autoplayCommittedTarget && window._autoplayCommitTTL > 0) {
+        const ct = window._autoplayCommittedTarget;
+        
+        // Reached target? Clear.
+        if (player.x === ct.x && player.y === ct.y) {
+            window._autoplayCommittedTarget = null;
+            window._autoplayCommitTTL = 0;
+            window._autoplayCachedPath = null;
+        } else if (window._autoplayCachedPath && window._autoplayCachedPath.length > 0) {
+            // Use cached path (fast — no pathfinding!)
+            let next = window._autoplayCachedPath.shift();
+            // Verify step is still valid (tile not blocked by new entity)
+            if (next && map[next.x] && map[next.x][next.y]) {
+                const tile = map[next.x][next.y];
+                const ent = getEntityAt(next.x, next.y);
+                const blocked = tile.type === 'wall' || (ent && ent.hp > 0 && !ent.isPlayer && !ent.isTownNPC && !ent.isMerchant);
+                if (!blocked) {
+                    window.attemptAction(player, { type: 'move', dx: next.x - player.x, dy: next.y - player.y });
+                    return;
+                }
+            }
+            // Step invalid — re-pathfind once
+            window._autoplayCachedPath = null;
+            let path = window.findPath(player.x, player.y, ct.x, ct.y, true);
+            if (path && path.length > 0) {
+                window._autoplayCachedPath = path.slice(1); // cache remaining
+                let step = path[0];
+                window.attemptAction(player, { type: 'move', dx: step.x - player.x, dy: step.y - player.y });
+                return;
+            } else {
+                window._autoplayCommittedTarget = null;
+                window._autoplayCommitTTL = 0;
+            }
+        } else {
+            // No cached path — compute one
+            let path = window.findPath(player.x, player.y, ct.x, ct.y, true);
+            if (path && path.length > 0) {
+                window._autoplayCachedPath = path.slice(1);
+                let step = path[0];
+                window.attemptAction(player, { type: 'move', dx: step.x - player.x, dy: step.y - player.y });
+                return;
+            } else {
+                window._autoplayCommittedTarget = null;
+                window._autoplayCommitTTL = 0;
+                window._autoplayCachedPath = null;
+            }
+        }
     }
 
     // Priority 7: Pick up nearby items (Only if we have space)
     const nearestItem = autoplayFindNearestItem();
     if (nearestItem) {
-        // If inventory is full, try to free space before moving to item
         if (player.inventory.length >= 30) {
-            if (autoUseConsumables()) return; // Used an item, stop turn
-            autoDropJunk(); // Dropped junk, can continue
+            if (autoUseConsumables()) return;
+            autoDropJunk();
         }
         
-        // Only move if we have space OR it's gold (doesn't take space)
         if (player.inventory.length < 30 || nearestItem.type === 'gold') {
             let path = window.findPath(player.x, player.y, nearestItem.x, nearestItem.y);
             if ((!path || path.length === 0) && nearestItem.name === 'Dungeon Key') {
                 path = window.findPath(player.x, player.y, nearestItem.x, nearestItem.y, false, true);
             }
             if (path && path.length > 0) {
+                isAutoExploring = false;
+                window._autoplayCommittedTarget = { x: nearestItem.x, y: nearestItem.y, type: 'item', ttl: 20 };
+                window._autoplayCommitTTL = 20;
+                window._autoplayCachedPath = path.slice(1); // Cache path
                 let next = path[0];
                 window.attemptAction(player, { type: 'move', dx: next.x - player.x, dy: next.y - player.y });
                 return;
@@ -522,33 +681,14 @@ function processAutoPlay() {
         }
     }
 
-    // Priority 8: Explore (Yield to Fast-Explore if possible)
-    if (currentFloor > 0 && gameState === 'PLAYING') {
-        const { target: monster } = getNearestVisibleMonster();
-        const nearestItem = autoplayFindNearestItem();
-
-        // Don't fast-explore if we were recently stuck or isAutoExploring just failed
-        const canFastExplore = !monster && !nearestItem && window._autoplayStuckCounter < 5;
-
-        if (canFastExplore) {
-            if (!isAutoExploring) {
-                console.log("[Autoplay] Area clear. Enabling fast-explore.");
-                isAutoExploring = true;
-                activePath = null;
-            }
-            return; // Yield to engine.js / input.js
-        }
-    }
-    
-    // Fallback normal explore
+    // Priority 8: Yield to Native Fast-Explore (Spacebar logic)
     if (isAutoExploring) {
-        console.log("[Autoplay] Disabling fast-explore (Stuck or Target spotted).");
-        isAutoExploring = false;
+        return; // Engine is handling it via getPendingAction()
     }
-    let explorePath = autoplayFindExploreTarget();
-    if (explorePath && explorePath.length > 0) {
-        let next = explorePath[0];
-        window.attemptAction(player, { type: 'move', dx: next.x - player.x, dy: next.y - player.y });
+    let path = window.findNearestUnexplored(player.x, player.y);
+    if (path && path.length > 0) {
+        isAutoExploring = true;
+        activePath = path; // Initialize so getPendingAction doesn't re-run BFS immediately
         return;
     }
 
@@ -562,6 +702,9 @@ function processAutoPlay() {
                     path = window.findPath(player.x, player.y, x, y, true, true);
                 }
                 if (path && path.length > 0) {
+                    window._autoplayCommittedTarget = { x: x, y: y, type: 'stairs', ttl: 50 };
+                    window._autoplayCommitTTL = 50;
+                    window._autoplayCachedPath = path.slice(1);
                     let next = path[0];
                     window.attemptAction(player, { type: 'move', dx: next.x - player.x, dy: next.y - player.y });
                     return;

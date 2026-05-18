@@ -135,16 +135,16 @@ function spawnMonsterAt(x, y) {
         // Difficulty scaling — indices match ENEMY_TYPES array
         // New: 41=Lurker, 42=Goblin Shaman, 43=Orc Warpriest, 44=Dark Channeler
         let allowedTypes = [];
-        if (currentFloor <= 2)      allowedTypes = [0, 1, 2, 14, 42];          // +Goblin Shaman
-        else if (currentFloor <= 4) allowedTypes = [1, 2, 3, 10, 11, 12, 13, 14, 15, 19, 42, 43]; // +Shaman, Warpriest
-        else if (currentFloor <= 6) allowedTypes = [2, 3, 4, 5, 12, 15, 16, 41, 43, 44]; // +Lurker, Warpriest, Channeler
-        else if (currentFloor <= 8) allowedTypes = [4, 5, 6, 7, 13, 17, 18, 41, 44]; // +Lurker, Channeler
-        else allowedTypes = [6, 7, 8, 12, 17, 18, 41, 44];
+        if (currentFloor <= 2)      allowedTypes = [0, 1, 2, 14, 42, 45];          // +Goblin Shaman, Goblin Archer
+        else if (currentFloor <= 4) allowedTypes = [1, 2, 3, 10, 11, 12, 13, 14, 15, 19, 42, 43, 45, 46]; // +Shaman, Warpriest, Skeleton Bowman
+        else if (currentFloor <= 6) allowedTypes = [2, 3, 4, 5, 12, 15, 16, 41, 43, 44, 45, 46, 47]; // +Lurker, Warpriest, Channeler, Dark Mage
+        else if (currentFloor <= 8) allowedTypes = [4, 5, 6, 7, 13, 17, 18, 41, 44, 46, 47]; // +Lurker, Channeler
+        else allowedTypes = [6, 7, 8, 12, 17, 18, 41, 44, 47];
 
         if (currentFloor === 10 && !entities.some(e => e.name === 'Balrog')) {
             allowedTypes = [30]; // Balrog index
         }
-        if (currentFloor > 10) allowedTypes = [7, 8, 9, 17, 18, 20, 21, 22, 23, 41, 44];
+        if (currentFloor > 10) allowedTypes = [7, 8, 9, 17, 18, 20, 21, 22, 23, 41, 44, 47];
 
         let typeIdx = allowedTypes[Math.floor(Math.random() * allowedTypes.length)];
         const t = ENEMY_TYPES[typeIdx];
@@ -259,30 +259,7 @@ function isInCorridor(x, y) {
 /**
  * Determine autoplay sub-ticks:
  * - Corridor with no threats nearby → 4x speed (fast travel)
- * - Room with monsters or items visible → normal (1 sub-tick)
- * - Otherwise (room, empty) → 2x speed
  */
-function getAutoplaySubTicks() {
-    if (!window.isAutoPlayActive) return 1;
-    const inCorridor = isInCorridor(player.x, player.y);
-    // Check for visible monsters
-    const hasNearbyMonster = entities.some(e =>
-        !e.isPlayer && e.hp > 0 && !e.isTownNPC &&
-        map[e.x] && map[e.x][e.y] && map[e.x][e.y].visible
-    );
-    // Check for visible items on the ground
-    const hasNearbyItem = typeof items !== 'undefined' && items.some(item =>
-        map[item.x] && map[item.x][item.y] && map[item.x][item.y].visible
-    );
-    if (hasNearbyMonster || hasNearbyItem) {
-        return 1; // Careful — room has threats or loot
-    }
-    if (inCorridor) {
-        return 4; // Sprint through corridors
-    }
-    return 2; // Empty room — moderate pace
-}
-
 function runLogicalTick() {
     const isAutoPlay = typeof window.isAutoPlayActive !== 'undefined' && window.isAutoPlayActive;
     const isModalState = gameState === 'LEVEL_UP' || gameState === 'SHOP' || gameState === 'INNKEEPER';
@@ -290,10 +267,8 @@ function runLogicalTick() {
 
     // Determine how many sub-ticks to process (auto modes get fast processing)
     let subTicks = 1;
-    if (typeof window.isAutoPlayActive !== 'undefined' && window.isAutoPlayActive) {
-        subTicks = getAutoplaySubTicks(); // Dynamic: corridor=4x, room w/threats=1x
-    } else if (isAutoRunning || isAutoExploring || (activePath && activePath.length > 0)) {
-        subTicks = 10; // Process up to 10 steps per heartbeat for auto modes
+    if ((typeof window.isAutoPlayActive !== 'undefined' && window.isAutoPlayActive) || isAutoRunning || isAutoExploring || (activePath && activePath.length > 0)) {
+        subTicks = 10; // Process up to 10 steps per heartbeat for all auto modes (matches spacebar)
     }
 
     for (let st = 0; st < subTicks && (gameState === 'PLAYING' || (isAutoPlay && isModalState)); st++) {
@@ -459,6 +434,51 @@ function processPlayerTimedEffects() {
         player.hp -= gasDmg;
         spawnParticle(player.x, player.y, `-${gasDmg} GAS`, '#2ecc71');
         if (player.hp <= 0) showGameOverModal('Poison Gas');
+    }
+
+    // --- Floor Hazard Damage ---
+    if (window.floorHazard && Math.random() < 0.05) { // 5% chance per tick to take damage
+        let hasResist = false;
+        let ringEffect = player.equipment.ring ? player.equipment.ring.effect : null;
+        let amuletEffect = player.equipment.amulet ? player.equipment.amulet.effect : null;
+        
+        if (window.floorHazard === 'fire' && (ringEffect === 'resist_fire' || amuletEffect === 'resist_fire')) hasResist = true;
+        if (window.floorHazard === 'ice' && (ringEffect === 'resist_ice' || amuletEffect === 'resist_ice')) hasResist = true;
+        if (window.floorHazard === 'poison' && (ringEffect === 'resist_poison' || amuletEffect === 'resist_poison')) hasResist = true;
+
+        if (!hasResist) {
+            const hazDmg = 1 + Math.floor(currentFloor / 5);
+            player.hp -= hazDmg;
+            
+            let color = '#fff';
+            if (window.floorHazard === 'fire') color = '#e74c3c';
+            else if (window.floorHazard === 'ice') color = '#3498db';
+            else if (window.floorHazard === 'poison') color = '#2ecc71';
+            
+            spawnParticle(player.x, player.y, `-${hazDmg} ${window.floorHazard.toUpperCase()}`, color);
+            logMessage(`The ${window.floorHazard} burns you!`, 'damage');
+            
+            if (player.hp <= 0) showGameOverModal(`Floor Hazard: ${window.floorHazard}`);
+        }
+    }
+
+    // TomeNet-inspired Hunger System
+    if (typeof player.food !== 'undefined') {
+        player.food = Math.max(0, player.food - 1);
+        
+        // Hunger thresholds
+        if (player.food === 500) {
+            logMessage('You are getting hungry.', 'hint');
+        } else if (player.food === 200) {
+            logMessage('You are very hungry!', 'damage');
+        } else if (player.food === 0) {
+            // Starving: lose HP
+            player.hp = Math.max(1, player.hp - 1);
+            if (totalTurns % 10 === 0) {
+                spawnParticle(player.x, player.y, '-1 STARVING', '#e67e22');
+                logMessage('You are starving! Find food!', 'damage');
+            }
+        }
     }
 }
 

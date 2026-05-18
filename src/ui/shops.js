@@ -150,6 +150,14 @@ window.startGame = function (className) {
         player.inventory.push({ ...recallScrollBase, identified: true });
     }
 
+    // TomeNet: Start with food rations
+    player.food = 3000; // Well-fed
+    const foodBase = ITEM_DB.find(i => i.name === 'Ration of Food');
+    if (foodBase) {
+        player.inventory.push({ ...foodBase });
+        player.inventory.push({ ...foodBase });
+    }
+
     const modal = document.getElementById('charCreateModal');
     if (modal) modal.classList.remove('active');
     
@@ -173,7 +181,7 @@ window.showGameOverModal = function (killerName) {
     document.getElementById('go-killer').innerText = killerName;
     document.getElementById('go-floor').innerText = currentFloor === 0 ? "Town" : currentFloor;
     document.getElementById('go-level').innerText = player.level;
-    document.getElementById('go-gold').innerText = player.gold;
+    document.getElementById('go-gold').innerText = player.gold + ` (+${parseInt(localStorage.getItem('vaultGold') || '0')} in vault)`;
     document.getElementById('go-score').innerText = score;
 
     // Record Score to Guildhall
@@ -224,13 +232,15 @@ window.openShop = function () {
     document.getElementById('shopModal').classList.add('active');
     document.getElementById('shopGold').innerText = player.gold;
 
-    // Always include Word of Recall in the shop
+    // Always include Word of Recall and Food in the shop
     const recallBase = ITEM_DB.find(i => i.name === 'Word of Recall');
-    let pool = ITEM_DB.filter(i => i.cost && i.name !== 'Word of Recall').map(i => ({ ...i }));
+    const foodBase = ITEM_DB.find(i => i.name === 'Ration of Food');
+    let pool = ITEM_DB.filter(i => i.cost && i.name !== 'Word of Recall' && i.name !== 'Ration of Food').map(i => ({ ...i }));
     pool.sort(() => Math.random() - 0.5);
     
     currentShopItems = pool.slice(0, 5);
     if (recallBase) currentShopItems.push({ ...recallBase });
+    if (foodBase) currentShopItems.push({ ...foodBase });
     
     // Mark all shop items as identified
     currentShopItems.forEach(i => {
@@ -310,15 +320,16 @@ window.openInnkeeper = function () {
 };
 
 window.buyHeal = function () {
-    if (player.hp === player.maxHp) {
-        logMessage("You are already at full health.");
+    if (player.hp === player.maxHp && (player.food === undefined || player.food >= 3000)) {
+        logMessage("You are already at full health and full stomach.");
         return;
     }
     if (player.gold >= 20) {
         player.gold -= 20;
         player.hp = player.maxHp;
+        if (typeof player.food !== 'undefined') player.food = 3000;
         player.energy = 0; // Resting passes a little time safely
-        logMessage("You rest at the inn. Fully healed!", 'magic');
+        logMessage("You rest at the inn. Fully healed and well-fed!", 'magic');
         closeInnkeeper();
     } else {
         logMessage("Not enough gold!", 'damage');

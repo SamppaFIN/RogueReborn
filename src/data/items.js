@@ -54,6 +54,11 @@ const ITEM_DB = [
     { type: 'scroll', char: CHARS.SCROLL, color: '#2ecc71', name: 'Scroll of Magic Mapping', effect: 'magic_map', minFloor: 2, cost: 100 },
     { type: 'scroll', char: CHARS.SCROLL, color: '#1abc9c', name: 'Scroll of Acquirement', effect: 'acquirement', minFloor: 8, cost: 1000 },
 
+    // ─── Food (TomeNet-inspired) ───
+    { type: 'food', char: '%', color: '#d35400', name: 'Ration of Food', effect: 'food', value: 2000, minFloor: 1, cost: 5 },
+    { type: 'food', char: '%', color: '#f1c40f', name: 'Elven Waybread', effect: 'food', value: 5000, minFloor: 3, cost: 25 },
+    { type: 'food', char: '%', color: '#27ae60', name: 'Elvish Berries', effect: 'food_heal', value: 1000, healValue: 15, minFloor: 2, cost: 15 },
+
     // ─── Keys ───
     { type: 'key', char: '!', color: '#f1c40f', name: 'Dungeon Key', effect: 'key', minFloor: 1, cost: 0 },
 
