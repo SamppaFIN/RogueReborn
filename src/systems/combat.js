@@ -1087,7 +1087,42 @@ function useItem(index) {
     }
 
     // Consumables
-    if (item.type === 'ammo') {
+    
+    // Scrap Metal: 25% chance to upgrade armor +1 DEF
+    if (item.name === 'Scrap Metal') {
+        if (player.equipment.armor && Math.random() < 0.25) {
+            player.equipment.armor.defBonus = (player.equipment.armor.defBonus || 0) + 1;
+            player.equipment.armor.identified = true;
+            logMessage("You hammer the Scrap Metal onto your armor. It feels stronger! (+1 DEF)", 'magic');
+            spawnParticle(player.x, player.y, 'SMITH!', '#3498db');
+        } else {
+            logMessage("You try to reinforce your armor, but the scrap crumbles uselessly.", 'hint');
+        }
+        player.inventory.splice(index, 1);
+        updateUI();
+        return;
+    }
+
+    // Magic Component: upgrade weapon with random elemental effect
+    if (item.name === 'Magic Component') {
+        const elements = ['fire', 'ice', 'lightning', 'poison', 'holy'];
+        const ele = elements[Math.floor(Math.random() * elements.length)];
+        if (player.equipment.weapon) {
+            player.equipment.weapon.element = ele;
+            player.equipment.weapon.identified = true;
+            logMessage("The Magic Component glows and infuses your weapon with " + ele + "!", 'magic');
+            spawnParticle(player.x, player.y, ele.toUpperCase() + '!', '#bd93f9');
+        } else {
+            logMessage("You hold the component but have no weapon to enchant.", 'hint');
+            player.inventory.splice(index, 1);
+            updateUI();
+            return;
+        }
+        player.inventory.splice(index, 1);
+        updateUI();
+        return;
+    }
+if (item.type === 'ammo') {
         player.ammo = (player.ammo || 0) + (item.amount || 20);
         logMessage(`You add ${item.amount} arrows to your quiver. (Total: ${player.ammo})`, 'pickup');
         player.inventory.splice(index, 1);

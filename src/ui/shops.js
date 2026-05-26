@@ -801,68 +801,6 @@ window.openStash = function () {
 };
 
 // #40 Artifact Lore Modal
-window.showLore = function(idx) {
-    const item = player.inventory[idx] || (Object.values(player.equipment).includes(idx) ? idx : null);
-    if (!item || !item.lore) {
-        logMessage("This item has no hidden history.", "hint");
-        return;
-    }
-    
-    document.getElementById('loreTitle').innerText = getItemName(item);
-    document.getElementById('loreText').innerText = item.lore;
-    document.getElementById('loreModal').classList.add('active');
-};
-
-
-
-// #39 Relic Altar Modal
-window.openRelicAltar = function() {
-    gameState = 'ALTAR';
-    document.getElementById('relicAltarModal').classList.add('active');
-    renderAltar();
-};
-
-window.renderAltar = function() {
-    const list = document.getElementById('altarItems');
-    list.innerHTML = '';
-    
-    const cursedItems = player.inventory.filter(i => i.cursed);
-    if (cursedItems.length === 0) {
-        list.innerHTML = '<li><span style="color:#888">No cursed items in inventory.</span></li>';
-    } else {
-        cursedItems.forEach((item, idx) => {
-            const hasComponent = player.inventory.some(i => i.name === 'Magic Component');
-            list.innerHTML += `
-                <li>
-                    <span style="color:${item.color}">${getItemName(item)}</span>
-                    <button class="btn ${hasComponent ? 'shop-btn' : 'shop-btn-disabled'}" 
-                            onclick="purifyRelic(${player.inventory.indexOf(item)})" 
-                            ${!hasComponent ? 'disabled' : ''}>Purify (1 Magic Component)</button>
-                </li>
-            `;
-        });
-    }
-};
-
-window.purifyRelic = function(invIdx) {
-    const item = player.inventory[invIdx];
-    const compIdx = player.inventory.findIndex(i => i.name === 'Magic Component');
-    
-    if (item && item.cursed && compIdx !== -1) {
-        player.inventory.splice(compIdx, 1);
-        item.cursed = false;
-        logMessage(`The Relic Altar hums... Your ${item.name} is purified!`, 'magic');
-        spawnParticle(player.x, player.y, "PURIFIED!", "#f1c40f");
-        openRelicAltar();
-    }
-};
-
-window.closeRelicAltar = function() {
-    gameState = 'PLAYING';
-    document.getElementById('relicAltarModal').classList.remove('active');
-    updateUI();
-};
-
 window.renderStashModal = function() {
     let stashItems = JSON.parse(localStorage.getItem('tomenet_stash') || '[]');
     
