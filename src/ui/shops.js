@@ -723,6 +723,71 @@ window.withdrawGold = function (amount) {
     }
 };
 
+
+// --- Lore Modal ---
+window.showLore = function(idx) {
+    const item = typeof idx === 'number' ? player.inventory[idx] : null;
+    if (!item) {
+        logMessage("This item has no hidden history.", "hint");
+        return;
+    }
+
+    // Generate mysterious lore text even for non-lore items
+    let loreText = item.lore;
+    if (!loreText) {
+        const mystics = [
+            "Forged in the fires of Mount Doom... perhaps.",
+            "Whispers say this belonged to a forgotten hero.",
+            "The runes on this item shift when you blink.",
+            "An ancient smith poured their soul into this.",
+            "This item hums with an otherworldly resonance.",
+            "Legends speak of its power, but few have wielded it.",
+            "The scars of battle mark its surface.",
+            "It feels warm to the touch, even in the cold.",
+            "You sense a faint connection to the Abyss.",
+            "The previous owner met a grim fate."
+        ];
+        loreText = mystics[Math.floor(Math.random() * mystics.length)];
+    }
+
+    document.getElementById('loreTitle').innerText = getItemName(item);
+    document.getElementById('loreText').innerText = loreText;
+
+    // Show identify button if not yet identified
+    const identifyBtn = document.getElementById('btnLoreIdentify');
+    if (identifyBtn) {
+        const isIdentified = item.identified || identifiedTypes[item.name];
+        identifyBtn.style.display = isIdentified ? 'none' : 'inline-block';
+        identifyBtn.dataset.index = idx;
+    }
+
+    document.getElementById('loreModal').classList.add('active');
+};
+
+window.closeLore = function() {
+    document.getElementById('loreModal').classList.remove('active');
+};
+
+window.loreIdentifyItem = function() {
+    const btn = document.getElementById('btnLoreIdentify');
+    const idx = parseInt(btn.dataset.index);
+    if (isNaN(idx)) return;
+    const item = player.inventory[idx];
+    if (!item) return;
+
+    if (['potion', 'scroll', 'wand'].includes(item.type)) {
+        identifiedTypes[item.name] = true;
+        logMessage("You identify the " + item.name + "!", "magic");
+    } else if (typeof attemptIdentify === 'function') {
+        attemptIdentify(idx);
+    } else {
+        item.identified = true;
+        logMessage("You identify " + getItemName(item) + "!", "magic");
+    }
+
+    showLore(idx);
+    updateUI();
+};
 window.closeBank = function () {
     gameState = 'PLAYING';
     document.getElementById('bankModal').classList.remove('active');
@@ -748,9 +813,7 @@ window.showLore = function(idx) {
     document.getElementById('loreModal').classList.add('active');
 };
 
-window.closeLore = function() {
-    document.getElementById('loreModal').classList.remove('active');
-};
+
 
 // #39 Relic Altar Modal
 window.openRelicAltar = function() {
@@ -1054,8 +1117,8 @@ window.closeInventory = function () {
 window.renderInventoryModal = function () {
     const elist = document.getElementById('equip-modal-list');
     elist.innerHTML = '';
-    const slots = ['weapon', 'offhand', 'armor', 'helm', 'ring', 'amulet'];
-    const slotLabels = { weapon: 'WEAPON', offhand: 'OFFHAND (Shield)', armor: 'ARMOR', helm: 'HELM', ring: 'RING', amulet: 'AMULET' };
+    const slots = ['weapon', 'offhand', 'armor', 'helm', 'ring', 'ring2', 'amulet', 'amulet2'];
+    const slotLabels = { weapon: 'WEAPON', offhand: 'OFFHAND (Shield)', armor: 'ARMOR', helm: 'HELM', ring: 'RING', ring2: 'RING 2', amulet: 'AMULET', amulet2: 'AMULET 2' };
     slots.forEach(slot => {
         const item = player.equipment[slot];
         let h = `<li style="display:flex; justify-content:space-between; margin-bottom: 5px; align-items: center;"><strong>${slotLabels[slot] || slot.toUpperCase()}:</strong> `;

@@ -183,8 +183,7 @@ function attemptAction(entity, action, energyCost = ENERGY_THRESHOLD) {
                     openWizard();
                     if (typeof handleQuestNPC === 'function') handleQuestNPC('wizard');
                 } else if (mapTile.type === 'bank') {
-                    if (timeOfDay === 'Day') openBank();
-                    else logMessage("The bank is closed until morning.", "hint");
+                    openBank();
                 } else if (mapTile.type === 'mayor') {
                     // Only bark if the player isn't in high-speed auto-explore mode
                     if (!isAutoExploring && !activePath) {
@@ -804,11 +803,91 @@ function executeMonsterRangedAttack(attacker) {
 }
 
 function handleMonsterDeath(defender) {
-    if (defender.name.includes("Balrog")) {
-        // Quest hook for Balrog kill
+    // === BALROG KILL — Champion Mode Activation ===
+    if (defender.name.includes("Balrog") && !defender.name.includes("Blood")) {
         if (typeof onMonsterKilled === 'function') onMonsterKilled(defender.name);
+        
+        logMessage('☠ THE BALROG IS SLAIN! The dungeon trembles!', 'kill');
+        logMessage('🏆 You are the CHAMPION OF THE REALM!', 'magic');
+        
+        // Mark as champion
+        player.isChampion = true;
+        player.abyssUnlocked = true;
+        player.balrogSlainFloor = currentFloor;
+        
+        // Drop Balrog's Heart artifact at death location
+        const balrogHeart = ITEM_DB.find(i => i.name === "Balrog's Heart");
+        if (balrogHeart) {
+            const heartDrop = { ...balrogHeart, x: defender.x, y: defender.y };
+            items.push(heartDrop);
+            logMessage("💎 The Balrog's still-burning Heart falls to the ground!", 'magic');
+        }
+        
+        // Record Victory Highscore
+        const victoryScore = player.gold + (player.xp || 0) + (currentFloor * 500) + (player.level * 200);
+        let scores = JSON.parse(localStorage.getItem('tomenet_highscores') || '[]');
+        scores.push({
+            score: victoryScore,
+            name: player.name || 'Unknown Hero',
+            class: player.class || 'Unknown',
+            level: player.level,
+            floor: currentFloor,
+            killer: '🏆 VICTORY — Balrog Slain'
+        });
+        scores.sort((a,b) => b.score - a.score);
+        scores = scores.slice(0, 10);
+        localStorage.setItem('tomenet_highscores', JSON.stringify(scores));
+        
+        // Show Victory Modal (with Continue option)
+        const modal = document.getElementById('victoryModal');
+        const scoreEl = document.getElementById('victory-score');
+        const levelEl = document.getElementById('victory-level');
+        const floorEl = document.getElementById('victory-floor');
+        if (scoreEl) scoreEl.innerText = victoryScore;
+        if (levelEl) levelEl.innerText = player.level;
+        if (floorEl) floorEl.innerText = currentFloor;
+        
         gameState = 'VICTORY';
-        document.getElementById('victoryModal').classList.add('active');
+        modal.classList.add('active');
+        
+        // Convert Balrog corpse to remains
+        defender.char = '%'; defender.color = '#c0392b'; defender.blocksMovement = false;
+        return;
+    }
+    
+    // === THE NAMELESS ONE KILL — Abyss Conquered ===
+    if (defender.name === 'The Nameless One') {
+        if (typeof onMonsterKilled === 'function') onMonsterKilled(defender.name);
+        
+        logMessage('☠☠☠ THE NAMELESS ONE IS DESTROYED! THE ABYSS COLLAPSES!', 'kill');
+        logMessage('👑 You are the SUPREME CHAMPION — Master of the Abyss!', 'magic');
+        
+        player.abyssConquered = true;
+        
+        // Drop Silmaril Shard
+        const silmaril = ITEM_DB.find(i => i.name === 'Silmaril Shard');
+        if (silmaril) {
+            items.push({ ...silmaril, x: defender.x, y: defender.y });
+            logMessage("✨ A shard of pure Silmaril light falls from the void!", 'magic');
+        }
+        
+        // Record Abyss Victory Highscore
+        const abyssScore = player.gold + (player.xp || 0) + (currentFloor * 1000) + (player.level * 500) + 50000;
+        let scores2 = JSON.parse(localStorage.getItem('tomenet_highscores') || '[]');
+        scores2.push({
+            score: abyssScore,
+            name: player.name || 'Unknown Hero',
+            class: player.class || 'Unknown',
+            level: player.level,
+            floor: currentFloor,
+            killer: '👑 SUPREME VICTORY — Nameless One Slain'
+        });
+        scores2.sort((a,b) => b.score - a.score);
+        scores2 = scores2.slice(0, 10);
+        localStorage.setItem('tomenet_highscores', JSON.stringify(scores2));
+        
+        defender.char = '%'; defender.color = '#ff0000'; defender.blocksMovement = false;
+        // Don't lock game state — player can continue exploring or recall
         return;
     }
 
@@ -963,11 +1042,20 @@ window.attemptIdentify = function(index) {
 function useItem(index) {
     const item = player.inventory[index];
     if (item.equip) {
-        let slot = item.effect;
-        if (slot === 'esp') slot = 'helm';
-        if (slot === 'resist_fire' || slot === 'protection' || slot === 'burden') slot = 'ring';
-        if (slot === 'strength' || slot === 'regeneration') slot = 'amulet';
-        if (slot === 'shield') slot = 'offhand'; // #13 shields go to offhand
+        // Use item.type for equipment slot (fixes bows/rings/amulets)
+        let slot = item.type;
+        if (slot === 'shield') slot = 'offhand';
+        // Allow dual rings and amulets
+        if (slot === 'ring') {
+            if (!player.equipment.ring) slot = 'ring';
+            else if (!player.equipment.ring2) slot = 'ring2';
+            else slot = 'ring';
+        }
+        if (slot === 'amulet') {
+            if (!player.equipment.amulet) slot = 'amulet';
+            else if (!player.equipment.amulet2) slot = 'amulet2';
+            else slot = 'amulet';
+        } // #13 shields go to offhand
 
         if (player.equipment[slot] === item) {
             unequipSlot(slot);

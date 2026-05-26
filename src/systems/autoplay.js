@@ -243,6 +243,8 @@ function autoplayFindNearestItem() {
 
         let d = Math.abs(item.x - player.x) + Math.abs(item.y - player.y);
         // Prioritize Dungeon Keys heavily
+        // Ignore Scrap Metal - inventory filler, not worth autoplay pickup
+        if (item.name === 'Scrap Metal') continue;
         if (item.name === 'Dungeon Key') d -= 100;
         if (d < bestDist) { bestDist = d; best = item; }
     }

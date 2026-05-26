@@ -179,7 +179,20 @@ const ITEM_DB = [
     // Round 9 — New Armor
     { type: 'armor', char: '[', color: '#e67e22', name: 'Dragonscale Mail', effect: 'armor', equip: true, defBonus: 7, minFloor: 8, cost: 700 },
     { type: 'armor', char: '[', color: '#aab7b8', name: 'Adamantine Plate', effect: 'armor', equip: true, defBonus: 10, speedPenalty: 2, minFloor: 10, cost: 1200 },
-    { type: 'armor', char: '[', color: '#2ecc71', name: 'Elven Cloak', effect: 'armor', equip: true, defBonus: 2, speedBonus: 2, minFloor: 4, cost: 180 }
+    { type: 'armor', char: '[', color: '#2ecc71', name: 'Elven Cloak', effect: 'armor', equip: true, defBonus: 2, speedBonus: 2, minFloor: 4, cost: 180 },
+
+    // ─── Abyss Legendary Artifacts (Post-Game) ───
+    { type: 'amulet', char: '"', color: '#ff4500', name: "Balrog's Heart", effect: 'balrog_heart', equip: true, atkBonus: 5, defBonus: 5, artifact: true, identified: true, minFloor: 10, cost: 25000, lore: "The still-burning heart of the Balrog. It radiates infernal power, granting its bearer fire immunity, life steal, and relentless regeneration." },
+    { type: 'helm', char: CHARS.HELM, color: '#00ffcc', name: 'Crown of the Abyss', effect: 'helm', equip: true, defBonus: 8, spellBoost: 5, artifact: true, identified: true, minFloor: 10, cost: 20000, lore: "Forged from the darkness beneath the world. The Mayor bestows it upon the Champion who slew the Balrog." },
+    { type: 'helm', char: CHARS.HELM, color: '#333333', name: "Morgoth's Iron Crown", effect: 'helm', equip: true, atkBonus: 30, maxHpPenalty: 50, cursed: true, artifact: true, identified: true, minFloor: 15, cost: 50000, lore: "Three empty sockets stare like dead eyes. The crown of the Dark Lord himself — absolute power at the cost of your soul." },
+    { type: 'ring', char: CHARS.RING, color: '#ffffff', name: 'Silmaril Shard', effect: 'silmaril', equip: true, atkBonus: 10, defBonus: 10, speedBonus: 5, artifact: true, identified: true, minFloor: 18, cost: 100000, lore: "A fragment of the holy light of Valinor. It burns any evil that draws near and shields its bearer from all elements." },
+    { type: 'ring', char: CHARS.RING, color: '#f1c40f', name: 'The One Ring', effect: 'one_ring', equip: true, atkBonus: 50, speedBonus: 10, cursed: true, artifact: true, identified: true, minFloor: 16, cost: 999999, lore: "One Ring to rule them all. Grants unimaginable power and permanent invisibility, but slowly devours your life force. 1 HP drain per turn." },
+
+    // ─── Abyss Weapons ───
+    { type: 'weapon', char: '|', color: '#ff0000', name: 'Gurthang, Iron of Death', effect: 'weapon', equip: true, atkBonus: 25, artifact: true, identified: true, minFloor: 14, cost: 30000, lore: "The black sword of Túrin Turambar. It speaks in whispers and thirsts for blood." },
+    { type: 'weapon', char: '/', color: '#00ffcc', name: 'Spear of the Void', effect: 'weapon', equip: true, atkBonus: 20, reach: 2, speedBonus: 3, artifact: true, identified: true, minFloor: 16, cost: 35000, lore: "Forged in the space between worlds. It strikes faster than thought." },
+    { type: 'armor', char: '[', color: '#4a0080', name: 'Voidweave Mantle', effect: 'armor', equip: true, defBonus: 15, speedBonus: 3, artifact: true, identified: true, minFloor: 17, cost: 40000, lore: "Woven from the fabric of the Abyss itself. Shadow wraps around the wearer like a second skin." },
+    { type: 'shield', char: ')', color: '#c0c0c0', name: 'Aegis of the Ancients', effect: 'shield', equip: true, defBonus: 12, artifact: true, identified: true, minFloor: 15, cost: 25000, lore: "The last shield forged by the Valar. It can block even dragonfire." }
 ];
 
 // --- Ego Item Logic (Batch 3) ---

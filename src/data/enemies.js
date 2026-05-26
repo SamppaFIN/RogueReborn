@@ -83,5 +83,15 @@ const ENEMY_TYPES = [
     // Phase VIII — Blood Moon Exclusives
     { char: 'w', name: 'Blood-Crazed Lycanthrope', color: '#c0392b', hp: 55, atk: 12, def: 4, speed: 18, element: 'none', baseXP: 150, elite: true, bloodMoonOnly: true, lifeSteal: true, personality: 'vengeful' },
     { char: 'V', name: 'Lunar Vampire', color: '#ff3b3b', hp: 85, atk: 15, def: 8, speed: 14, element: 'drain', drainMaxHp: true, baseXP: 250, elite: true, bloodMoonOnly: true, lifeSteal: true },
-    { char: 'N', name: 'Blood Cultist', color: '#e74c3c', hp: 40, atk: 10, def: 3, speed: 10, element: 'magic', baseXP: 100, summoner: true, elite: true, bloodMoonOnly: true, ranged: true, rangedType: 'magic' }
+    { char: 'N', name: 'Blood Cultist', color: '#e74c3c', hp: 40, atk: 10, def: 3, speed: 10, element: 'magic', baseXP: 100, summoner: true, elite: true, bloodMoonOnly: true, ranged: true, rangedType: 'magic' },
+
+    // Phase X — The Abyss (Floors 11-20) — Post-Game Champion Mode
+    { char: 'v', name: 'Void Stalker', color: '#1a001a', hp: 60, atk: 16, def: 5, speed: 18, element: 'drain', baseXP: 200, invisible: true, ambusher: true, xpDrain: true, personality: 'stealthy' },       // 51
+    { char: 'T', name: 'Abyssal Titan', color: '#4a0080', hp: 500, atk: 35, def: 20, speed: 4, element: 'none', baseXP: 800, bossPhases: true, miniBoss: true },                                             // 52
+    { char: 'C', name: 'Chaos Spawn', color: '#ff00ff', hp: 80, atk: 14, def: 6, speed: 13, element: 'magic', baseXP: 180, blinker: true, summoner: true },                                                   // 53
+    { char: 'S', name: 'Soul Devourer', color: '#660066', hp: 90, atk: 18, def: 8, speed: 11, element: 'drain', baseXP: 250, drainMaxHp: true, lifeSteal: true },                                             // 54
+    { char: 'L', name: 'Dread Lich', color: '#9933ff', hp: 200, atk: 20, def: 10, speed: 9, element: 'magic', baseXP: 400, summoner: true, ranged: true, rangedType: 'magic', lifeSteal: true, bossPhases: true }, // 55
+    { char: 'D', name: 'Elder Dragon', color: '#ff6600', hp: 400, atk: 28, def: 16, speed: 8, element: 'fire', baseXP: 600, breather: true, bossPhases: true, miniBoss: true },                               // 56
+    { char: 'W', name: 'Void Worm', color: '#330033', hp: 150, atk: 15, def: 12, speed: 10, element: 'none', baseXP: 180, personality: 'pack' },                                                              // 57
+    { char: '☠', name: 'The Nameless One', color: '#ff0000', hp: 600, atk: 40, def: 25, speed: 12, element: 'magic', baseXP: 2000, bossPhases: true, summoner: true, drainMaxHp: true, lifeSteal: true, breather: true }  // 58 — Floor 20 Final Boss
 ];
