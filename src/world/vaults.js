@@ -48,9 +48,7 @@ const VAULT_TEMPLATES = [
             "##########"
         ],
         minFloor: 3
-    }
-];
-
+    },
     {
         name: "The Library",
         w: 8, h: 8,
@@ -191,7 +189,10 @@ const VAULT_TEMPLATES = [
             "#........#",
             "#........#"
         ]
-    },function placeVault(room, dungeonMap, entitiesList, itemsList) {
+    }
+];
+
+function placeVault(room, dungeonMap, entitiesList, itemsList) {
     const template = VAULT_TEMPLATES[Math.floor(Math.random() * VAULT_TEMPLATES.length)];
     if (template.minFloor > (currentFloor || 1)) return false;
     if (room.w < template.w || room.h < template.h) return false;

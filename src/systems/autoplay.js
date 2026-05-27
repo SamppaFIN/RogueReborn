@@ -120,7 +120,7 @@ function autoUseConsumables() {
     if (player.hp < player.maxHp * 0.25 || player.inventory.length >= 29) {
         const recallIdx = player.inventory.findIndex(i => i.name === 'Word of Recall');
         if (recallIdx >= 0) {
-            console.log([Autoplay] Emergency Recall! HP: /, Inv: );
+            console.log('[Autoplay] Emergency Recall! HP: ' + player.hp + '/' + player.maxHp + ', Inv: ' + player.inventory.length);
             window.townTeleport();
             return true;
         }
@@ -131,7 +131,7 @@ function autoUseConsumables() {
     if (nearbyEnemies >= 2 && !player.runeProtectTimer) {
         const runeIdx = player.inventory.findIndex(i => i.effect === 'rune_protect');
         if (runeIdx >= 0) {
-            console.log([Autoplay] Activating Rune of Protection against  enemies.);
+            console.log('[Autoplay] Activating Rune of Protection against ' + nearbyEnemies + ' enemies.');
             window.useItem(runeIdx);
             return true;
         }
@@ -141,7 +141,7 @@ function autoUseConsumables() {
     if (nearbyEnemies >= 1 && !player.heroismTimer) {
         const heroIdx = player.inventory.findIndex(i => i.effect === 'heroism' || i.effect === 'bless');
         if (heroIdx >= 0) {
-            console.log([Autoplay] Using combat buff (heroism/bless).);
+            console.log('[Autoplay] Using combat buff (heroism/bless).');
             window.useItem(heroIdx);
             return true;
         }
@@ -151,7 +151,7 @@ function autoUseConsumables() {
     if (nearbyEnemies >= 1 && !player.hasteTimer) {
         const speedIdx = player.inventory.findIndex(i => i.effect === 'speed_boost');
         if (speedIdx >= 0) {
-            console.log([Autoplay] Using Speed boost.);
+            console.log('[Autoplay] Using Speed boost.');
             window.useItem(speedIdx);
             return true;
         }
@@ -162,7 +162,7 @@ function autoUseConsumables() {
     if (identifyIdx >= 0) {
         const unidIdx = player.inventory.findIndex(i => !i.identified && !identifiedTypes[i.name] && i.type !== 'gold');
         if (unidIdx >= 0 && unidIdx !== identifyIdx) {
-            console.log([Autoplay] Using identify/reveal scroll to learn about items.);
+            console.log('[Autoplay] Using identify/reveal scroll to learn about items.');
             window.useItem(identifyIdx);
             return true;
         }
@@ -172,7 +172,7 @@ function autoUseConsumables() {
     if (nearbyEnemies >= 3) {
         const fearIdx = player.inventory.findIndex(i => i.effect === 'fear');
         if (fearIdx >= 0) {
-            console.log([Autoplay] Scaring  enemies with Fear scroll.);
+            console.log('[Autoplay] Scaring ' + nearbyEnemies + ' enemies with Fear scroll.');
             window.useItem(fearIdx);
             return true;
         }
@@ -182,7 +182,7 @@ function autoUseConsumables() {
     if (nearbyEnemies >= 2) {
         const phaseIdx = player.inventory.findIndex(i => i.effect === 'phase_door');
         if (phaseIdx >= 0) {
-            console.log([Autoplay] Blinking away with Phase Door.);
+            console.log('[Autoplay] Blinking away with Phase Door.');
             window.useItem(phaseIdx);
             return true;
         }
@@ -192,7 +192,7 @@ function autoUseConsumables() {
     if (nearbyEnemies >= 2) {
         const darkIdx = player.inventory.findIndex(i => i.effect === 'darkness');
         if (darkIdx >= 0) {
-            console.log([Autoplay] Blinding enemies with Darkness scroll.);
+            console.log('[Autoplay] Blinding enemies with Darkness scroll.');
             window.useItem(darkIdx);
             return true;
         }
@@ -202,7 +202,7 @@ function autoUseConsumables() {
     if (player.poisonTimer > 0) {
         const cureIdx = player.inventory.findIndex(i => i.effect === 'cure_poison');
         if (cureIdx >= 0) {
-            console.log([Autoplay] Curing poison.);
+            console.log('[Autoplay] Curing poison.');
             window.useItem(cureIdx);
             return true;
         }
@@ -212,7 +212,7 @@ function autoUseConsumables() {
     if (player.hp < player.maxHp * 0.9) {
         const healIdx = player.inventory.findIndex(i => i.effect === 'heal' || i.effect === 'full_heal');
         if (healIdx >= 0) {
-            console.log([Autoplay] Using Potion early to free space.);
+            console.log('[Autoplay] Using Potion early to free space.');
             window.useItem(healIdx);
             return true;
         }
@@ -224,7 +224,7 @@ function autoUseConsumables() {
             (i.effect === 'wand_fire' || i.effect === 'wand_frost' || i.effect === 'wand_lightning') && 
             (i.charges || 0) > 0);
         if (wandIdx >= 0) {
-            console.log([Autoplay] Wand attack!);
+            console.log('[Autoplay] Wand attack!');
             window.useItem(wandIdx);
             return true;
         }
@@ -234,7 +234,7 @@ function autoUseConsumables() {
     if (player.lightTimer <= 0) {
         const lightIdx = player.inventory.findIndex(i => i.effect === 'magic_lamp');
         if (lightIdx >= 0) {
-            console.log([Autoplay] Illuminating with Light scroll.);
+            console.log('[Autoplay] Illuminating with Light scroll.');
             window.useItem(lightIdx);
             return true;
         }
@@ -244,7 +244,7 @@ function autoUseConsumables() {
     if (currentFloor > 0) {
         const trapIdx = player.inventory.findIndex(i => i.effect === 'trap_detect');
         if (trapIdx >= 0) {
-            console.log([Autoplay] Detecting traps.);
+            console.log('[Autoplay] Detecting traps.');
             window.useItem(trapIdx);
             return true;
         }
@@ -254,7 +254,7 @@ function autoUseConsumables() {
     if (nearbyEnemies >= 3) {
         const summonIdx = player.inventory.findIndex(i => i.effect === 'summon');
         if (summonIdx >= 0) {
-            console.log([Autoplay] Summoning monsters to create chaos.);
+            console.log('[Autoplay] Summoning monsters to create chaos.');
             window.useItem(summonIdx);
             return true;
         }
@@ -270,7 +270,7 @@ function autoUseConsumables() {
         if (nearDoor) {
             const destIdx = player.inventory.findIndex(i => i.effect === 'wand_destruction' && (i.charges || 0) > 0);
             if (destIdx >= 0) {
-                console.log([Autoplay] Destroying obstacles.);
+                console.log('[Autoplay] Destroying obstacles.');
                 window.useItem(destIdx);
                 return true;
             }
@@ -399,7 +399,7 @@ function processAutoPlay() {
 
     // --- STATE MACHINE RESOLUTION ---
     if (gameState === 'TARGETING' || gameState === 'RANGED_TARGETING') {
-        const { target } = getNearestVisibleMonster();
+        const target = getNearestMonster(player.x, player.y);
         if (target) {
             window.targetX = target.x;
             window.targetY = target.y; 
@@ -605,7 +605,7 @@ function processAutoPlay() {
         if (checkEquipment()) return;
     }
 
-    const { target: monster, dist: mDist } = getNearestVisibleMonster();
+    const monster = getNearestMonster(player.x, player.y); let mDist = monster ? Math.abs(monster.x - player.x) + Math.abs(monster.y - player.y) : 99;
 
     // Priority 3: Skill Usage
     if (player.skillCooldown <= 0 && player.energy >= 40) {

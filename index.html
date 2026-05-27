@@ -399,15 +399,15 @@
 
             <!-- Mobile Controls -->
             <div id="mobile-controls">
-                <div class="mobile-btn" id="btn-nw">â†–</div>
-                <div class="mobile-btn" id="btn-up">â†‘</div>
-                <div class="mobile-btn" id="btn-ne">â†—</div>
-                <div class="mobile-btn" id="btn-left">â†</div>
-                <div class="mobile-btn" id="btn-wait">âŒ›</div>
-                <div class="mobile-btn" id="btn-right">â†’</div>
-                <div class="mobile-btn" id="btn-sw">â†™</div>
-                <div class="mobile-btn" id="btn-down">â†“</div>
-                <div class="mobile-btn" id="btn-se">â†˜</div>
+                <div class="mobile-btn" id="btn-nw"><</div>
+                <div class="mobile-btn" id="btn-up">^</div>
+                <div class="mobile-btn" id="btn-ne">></div>
+                <div class="mobile-btn" id="btn-left"><</div>
+                <div class="mobile-btn" id="btn-wait">W</div>
+                <div class="mobile-btn" id="btn-right">></div>
+                <div class="mobile-btn" id="btn-sw"><</div>
+                <div class="mobile-btn" id="btn-down">v</div>
+                <div class="mobile-btn" id="btn-se">></div>
             </div>
 
             <div id="mobile-actions">
@@ -977,11 +977,9 @@
 
             if (window.mobileControlsVisible) {
                 controls.classList.remove('mobile-hidden');
-                actions.classList.remove('mobile-hidden');
                 btn.innerText = 'Hide Controls';
             } else {
                 controls.classList.add('mobile-hidden');
-                actions.classList.add('mobile-hidden');
                 btn.innerText = 'Show Controls';
             }
         }
