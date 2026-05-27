@@ -18,7 +18,7 @@ const ITEM_DB = [
     { type: 'potion', char: CHARS.POTION, color: '#e0c080', name: 'Potion of Paralysis', effect: 'paralyze_self', minFloor: 2, cost: 5 },
     // Round 6 — New Potions
     { type: 'potion', char: CHARS.POTION, color: '#e74c3c', name: 'Potion of Berserk Fury', effect: 'berserk', minFloor: 4, cost: 150 },
-    { type: 'potion', char: CHARS.POTION, color: '#7f8c8d', name: 'Potion of Invisibility', effect: 'invisibility', minFloor: 6, cost: 250 },
+    { type: 'potion', char: CHARS.POTION, color: '#7f8c8d', name: 'Potion of Shadow', effect: 'invisibility', minFloor: 6, cost: 250 },
     { type: 'potion', char: CHARS.POTION, color: '#27ae60', name: 'Potion of Antidote', effect: 'cure_poison', minFloor: 1, cost: 15 },
     { type: 'potion', char: CHARS.POTION, color: '#3498db', name: 'Potion of Mana', effect: 'restore_skill', minFloor: 3, cost: 120 },
     { type: 'potion', char: CHARS.POTION, color: '#f39c12', name: 'Potion of Fortitude', effect: 'temp_maxhp', value: 30, minFloor: 5, cost: 200 },
@@ -64,13 +64,13 @@ const ITEM_DB = [
 
     // ─── Wands ───
     { type: 'wand', char: '/', color: '#9b59b6', name: 'Wand of Magic Missile', effect: 'target_spell', spell: 'magic_missile', charges: 10, minFloor: 1, cost: 150 },
-    { type: 'wand', char: '/', color: '#3498db', name: 'Wand of Frost', effect: 'target_spell', spell: 'frost', charges: 8, minFloor: 2, cost: 200 },
-    { type: 'wand', char: '/', color: '#f1c40f', name: 'Wand of Lightning', effect: 'target_spell', spell: 'lightning', charges: 6, minFloor: 3, cost: 300 },
+    { type: 'wand', char: '/', color: '#3498db', name: 'Wand of Frost Bolts', effect: 'target_spell', spell: 'frost', charges: 8, minFloor: 2, cost: 200 },
+    { type: 'wand', char: '/', color: '#f1c40f', name: 'Wand of Lightning Bolts', effect: 'target_spell', spell: 'lightning', charges: 6, minFloor: 3, cost: 300 },
     { type: 'wand', char: '/', color: '#2ecc71', name: 'Wand of Slow', effect: 'target_spell', spell: 'slow_bolt', charges: 12, minFloor: 2, cost: 180 },
     { type: 'wand', char: '/', color: '#66fcf1', name: 'Wand of Haste', effect: 'haste_self', charges: 6, minFloor: 4, cost: 400 },
     { type: 'wand', char: '/', color: '#9b59b6', name: 'Wand of Teleportation', effect: 'teleport_self', charges: 5, minFloor: 3, cost: 350 },
     { type: 'wand', char: '/', color: '#e74c3c', name: 'Wand of Drain Life', effect: 'target_spell', spell: 'drain_life', charges: 6, minFloor: 5, cost: 500 },
-    { type: 'wand', char: '/', color: '#e67e22', name: 'Wand of Fire', effect: 'target_spell', spell: 'fire_bolt', charges: 8, minFloor: 4, cost: 380 },
+    { type: 'wand', char: '/', color: '#e67e22', name: 'Wand of Fire Bolts', effect: 'target_spell', spell: 'fire_bolt', charges: 8, minFloor: 4, cost: 380 },
     { type: 'wand', char: '/', color: '#f1c40f', name: 'Staff of Wizardry', effect: 'target_spell', spell: 'arcane_blast', charges: 15, minFloor: 7, cost: 1200 },
     // Round 8 — New Wands
     { type: 'wand', char: '/', color: '#1abc9c', name: 'Wand of Polymorph', effect: 'target_spell', spell: 'polymorph', charges: 5, minFloor: 5, cost: 450 },
@@ -192,8 +192,27 @@ const ITEM_DB = [
     { type: 'weapon', char: '|', color: '#ff0000', name: 'Gurthang, Iron of Death', effect: 'weapon', equip: true, atkBonus: 25, artifact: true, identified: true, minFloor: 14, cost: 30000, lore: "The black sword of Túrin Turambar. It speaks in whispers and thirsts for blood." },
     { type: 'weapon', char: '/', color: '#00ffcc', name: 'Spear of the Void', effect: 'weapon', equip: true, atkBonus: 20, reach: 2, speedBonus: 3, artifact: true, identified: true, minFloor: 16, cost: 35000, lore: "Forged in the space between worlds. It strikes faster than thought." },
     { type: 'armor', char: '[', color: '#4a0080', name: 'Voidweave Mantle', effect: 'armor', equip: true, defBonus: 15, speedBonus: 3, artifact: true, identified: true, minFloor: 17, cost: 40000, lore: "Woven from the fabric of the Abyss itself. Shadow wraps around the wearer like a second skin." },
-    { type: 'shield', char: ')', color: '#c0c0c0', name: 'Aegis of the Ancients', effect: 'shield', equip: true, defBonus: 12, artifact: true, identified: true, minFloor: 15, cost: 25000, lore: "The last shield forged by the Valar. It can block even dragonfire." }
-];
+    { type: 'shield', char: ')', color: '#c0c0c0', name: 'Aegis of the Ancients', effect: 'shield', equip: true, defBonus: 12, artifact: true, identified: true, minFloor: 15, cost: 25000, lore: "The last shield forged by the Valar. It can block even dragonfire." },
+
+    // --- Batch 5: New Status/Strategy Items (TomeNet-inspired) ---
+
+    { type: 'potion', char: '!', color: '#f1c40f', name: 'Potion of Speed', effect: 'speed_boost', minFloor: 2, cost: 40 },
+    { type: 'potion', char: '!', color: '#2c3e50', name: 'Potion of Invisibility', effect: 'invisibility', minFloor: 3, cost: 80 },
+    { type: 'potion', char: '!', color: '#e74c3c', name: 'Potion of Heroism', effect: 'heroism', minFloor: 4, cost: 120, value: 5 },
+    { type: 'potion', char: '!', color: '#2ecc71', name: 'Potion of Cure Poison', effect: 'cure_poison', minFloor: 1, cost: 30 },
+    { type: 'potion', char: '!', color: '#f39c12', name: 'Potion of Restore Life', effect: 'restore_life', minFloor: 8, cost: 2000, artifact: true, identified: true },
+    { type: 'scroll', char: '?', color: '#9b59b6', name: 'Scroll of Phase Door', effect: 'phase_door', minFloor: 2, cost: 50 },
+    { type: 'scroll', char: '?', color: '#e67e22', name: 'Scroll of Trap Detection', effect: 'trap_detect', minFloor: 2, cost: 45 },
+    { type: 'scroll', char: '?', color: '#f1c40f', name: 'Scroll of Light', effect: 'magic_lamp', minFloor: 1, cost: 35, value: 50 },
+    { type: 'scroll', char: '?', color: '#2c3e50', name: 'Scroll of Darkness', effect: 'darkness', minFloor: 3, cost: 60 },
+    { type: 'scroll', char: '?', color: '#3498db', name: 'Scroll of Reveal', effect: 'reveal', minFloor: 2, cost: 40 },
+    { type: 'scroll', char: '?', color: '#66fcf1', name: 'Scroll of Rune of Protection', effect: 'rune_protect', minFloor: 3, cost: 100, value: 15 },
+    { type: 'wand', char: '/', color: '#e74c3c', name: 'Wand of Fire', effect: 'wand_fire', charges: 8, minFloor: 3, cost: 150 },
+    { type: 'wand', char: '/', color: '#3498db', name: 'Wand of Frost', effect: 'wand_frost', charges: 8, minFloor: 3, cost: 150 },
+    { type: 'wand', char: '/', color: '#f1c40f', name: 'Wand of Lightning', effect: 'wand_lightning', charges: 6, minFloor: 4, cost: 200 },
+    { type: 'wand', char: '/', color: '#d35400', name: 'Wand of Destruction', effect: 'wand_destruction', charges: 3, minFloor: 3, cost: 120 },
+    { type: 'scroll', char: '?', color: '#95a5a6', name: 'Scroll of Fear', effect: 'fear', minFloor: 4, cost: 80 },
+    { type: 'scroll', char: '?', color: '#f39c12', name: 'Scroll of Bless', effect: 'bless', minFloor: 2, cost: 55 }];
 
 // --- Ego Item Logic (Batch 3) ---
 const EGO_PREFIXES = [

@@ -525,7 +525,22 @@ function gameLoop(timestamp) {
     const isAutoPlay = typeof window.isAutoPlayActive !== 'undefined' && window.isAutoPlayActive;
     const isModalState = gameState === 'LEVEL_UP' || gameState === 'SHOP' || gameState === 'INNKEEPER';
     if (gameState !== 'PLAYING' && !(isAutoPlay && isModalState)) {
-        requestAnimationFrame(gameLoop);
+        
+    // --- STATUS TIMER DECAY ---
+    if (player.hasteTimer > 0) { player.hasteTimer--; if (player.hasteTimer === 0) { player.speed = getBaseSpeed(); logMessage('Haste fades.', 'hint'); } }
+    if (player.invisibleTimer > 0) { player.invisibleTimer--; if (player.invisibleTimer === 0) logMessage('You become visible.', 'hint'); }
+    if (player.heroismTimer > 0) { player.heroismTimer--; if (player.heroismTimer === 0) logMessage('Heroism fades.', 'hint'); }
+    if (player.blessTimer > 0) { player.blessTimer--; if (player.blessTimer === 0) logMessage('Blessing fades.', 'hint'); }
+    if (player.runeProtectTimer > 0) { player.runeProtectTimer--; if (player.runeProtectTimer === 0) { player.runeProtectAmount = 0; logMessage('Rune of Protection fades.', 'hint'); } }
+    if (player.lightTimer > 0) { player.lightTimer--; if (player.lightTimer === 0) { computeFOV(); logMessage('Light fades.', 'hint'); } }
+    if (player.combatSurgeTimer > 0) { player.combatSurgeTimer--; }
+    if (player.poisonTimer > 0) { player.poisonTimer--; if (player.poisonTimer > 0 && player.hp > 1) { player.hp--; spawnParticle(player.x, player.y, '-1 POISON', '#2ecc71'); } }
+    if (player.confusedTimer > 0) { player.confusedTimer--; }
+    if (player.blindTimer > 0) { player.blindTimer--; }
+    if (player.paralyzedTimer > 0) { player.paralyzedTimer--; }
+    if (player.regenBoost > 0) { player.regenBoost--; }
+
+requestAnimationFrame(gameLoop);
         return;
     }
 

@@ -116,111 +116,169 @@ function autoDropJunk() {
 function autoUseConsumables() {
     if (player.inventory.length < 25) return false;
 
-    // 1. Identify scrolls if we have many
-    const identifyIdx = player.inventory.findIndex(i => i.effect === 'identify');
+    // 0. Emergency: use Word of Recall if HP critical (<25%) or inventory full (>=29)
+    if (player.hp < player.maxHp * 0.25 || player.inventory.length >= 29) {
+        const recallIdx = player.inventory.findIndex(i => i.name === 'Word of Recall');
+        if (recallIdx >= 0) {
+            console.log([Autoplay] Emergency Recall! HP: /, Inv: );
+            window.townTeleport();
+            return true;
+        }
+    }
+
+    // 1. Rune of Protection - use if many enemies visible nearby
+    const nearbyEnemies = entities.filter(e => !e.isPlayer && e.hp > 0 && map[e.x] && map[e.x][e.y] && map[e.x][e.y].visible && Math.abs(e.x-player.x)+Math.abs(e.y-player.y) <= 5).length;
+    if (nearbyEnemies >= 2 && !player.runeProtectTimer) {
+        const runeIdx = player.inventory.findIndex(i => i.effect === 'rune_protect');
+        if (runeIdx >= 0) {
+            console.log([Autoplay] Activating Rune of Protection against  enemies.);
+            window.useItem(runeIdx);
+            return true;
+        }
+    }
+
+    // 2. Heroism / Bless - use before combat
+    if (nearbyEnemies >= 1 && !player.heroismTimer) {
+        const heroIdx = player.inventory.findIndex(i => i.effect === 'heroism' || i.effect === 'bless');
+        if (heroIdx >= 0) {
+            console.log([Autoplay] Using combat buff (heroism/bless).);
+            window.useItem(heroIdx);
+            return true;
+        }
+    }
+
+    // 3. Speed boost - use if surrounded or need to escape
+    if (nearbyEnemies >= 1 && !player.hasteTimer) {
+        const speedIdx = player.inventory.findIndex(i => i.effect === 'speed_boost');
+        if (speedIdx >= 0) {
+            console.log([Autoplay] Using Speed boost.);
+            window.useItem(speedIdx);
+            return true;
+        }
+    }
+
+    // 4. Identify scrolls if we have unidentified items (to free space and learn)
+    const identifyIdx = player.inventory.findIndex(i => i.effect === 'identify' || i.effect === 'reveal');
     if (identifyIdx >= 0) {
-        const unidIdx = player.inventory.findIndex(i => !i.identified && !identifiedTypes[i.name]);
-        if (unidIdx >= 0) {
-            console.log(`[Autoplay] Using Identify scroll to free space and learn.`);
+        const unidIdx = player.inventory.findIndex(i => !i.identified && !identifiedTypes[i.name] && i.type !== 'gold');
+        if (unidIdx >= 0 && unidIdx !== identifyIdx) {
+            console.log([Autoplay] Using identify/reveal scroll to learn about items.);
             window.useItem(identifyIdx);
             return true;
         }
     }
 
-    // 2. Mapping or detect items scrolls (just to use them up)
-    const utilityIdx = player.inventory.findIndex(i => i.effect === 'mapping' || i.effect === 'detect_items');
-    if (utilityIdx >= 0) {
-        console.log(`[Autoplay] Using utility scroll to free space.`);
-        window.useItem(utilityIdx);
-        return true;
+    // 5. Fear - use if many enemies nearby
+    if (nearbyEnemies >= 3) {
+        const fearIdx = player.inventory.findIndex(i => i.effect === 'fear');
+        if (fearIdx >= 0) {
+            console.log([Autoplay] Scaring  enemies with Fear scroll.);
+            window.useItem(fearIdx);
+            return true;
+        }
     }
 
-    // 3. Potions if HP < 90%
+    // 6. Phase Door - use if surrounded and no other escape
+    if (nearbyEnemies >= 2) {
+        const phaseIdx = player.inventory.findIndex(i => i.effect === 'phase_door');
+        if (phaseIdx >= 0) {
+            console.log([Autoplay] Blinking away with Phase Door.);
+            window.useItem(phaseIdx);
+            return true;
+        }
+    }
+
+    // 7. Darkness - use to blind enemies
+    if (nearbyEnemies >= 2) {
+        const darkIdx = player.inventory.findIndex(i => i.effect === 'darkness');
+        if (darkIdx >= 0) {
+            console.log([Autoplay] Blinding enemies with Darkness scroll.);
+            window.useItem(darkIdx);
+            return true;
+        }
+    }
+
+    // 8. Cure Poison
+    if (player.poisonTimer > 0) {
+        const cureIdx = player.inventory.findIndex(i => i.effect === 'cure_poison');
+        if (cureIdx >= 0) {
+            console.log([Autoplay] Curing poison.);
+            window.useItem(cureIdx);
+            return true;
+        }
+    }
+
+    // 9. Potions if HP < 90% (early use to free space)
     if (player.hp < player.maxHp * 0.9) {
         const healIdx = player.inventory.findIndex(i => i.effect === 'heal' || i.effect === 'full_heal');
         if (healIdx >= 0) {
-            console.log(`[Autoplay] Using Potion early to free space.`);
+            console.log([Autoplay] Using Potion early to free space.);
             window.useItem(healIdx);
             return true;
         }
     }
 
-    return false;
-}
-
-function getNearestVisibleMonster() {
-    let bestDest = 999;
-    let bestM = null;
-    if (typeof entities === 'undefined') return { target: null, dist: null };
-    for (let e of entities) {
-        if (!e.isPlayer && e.hp > 0 && !e.isTownNPC && !e.isMerchant && map[e.x] && map[e.x][e.y] && map[e.x][e.y].visible) {
-            let d = Math.abs(e.x - player.x) + Math.abs(e.y - player.y);
-            if (d < bestDest) { bestDest = d; bestM = e; }
+    // 10. Wand attacks on visible enemies (if we have spare wands)
+    if (nearbyEnemies > 0) {
+        const wandIdx = player.inventory.findIndex(i => 
+            (i.effect === 'wand_fire' || i.effect === 'wand_frost' || i.effect === 'wand_lightning') && 
+            (i.charges || 0) > 0);
+        if (wandIdx >= 0) {
+            console.log([Autoplay] Wand attack!);
+            window.useItem(wandIdx);
+            return true;
         }
     }
-    return { target: bestM, dist: bestDest };
-}
 
-// --- Direct pathfinding exploration (bypasses auto-explore system) ---
-function autoplayFindExploreTarget() {
-    // Use BFS to find nearest unexplored walkable tile
-    const queue = [{ x: player.x, y: player.y, path: [] }];
-    const visited = new Set([`${player.x},${player.y}`]);
-    const dirs = [
-        { dx: 0, dy: -1 }, { dx: 0, dy: 1 }, { dx: -1, dy: 0 }, { dx: 1, dy: 0 },
-        { dx: -1, dy: -1 }, { dx: 1, dy: -1 }, { dx: -1, dy: 1 }, { dx: 1, dy: 1 }
-    ];
-
-    let stairsPath = null;
-    let iteration = 0;
-    
-    // Determine if we should allow hazard traversal (when stuck)
-    const allowHazards = window._autoplayStuckCounter > 50;
-
-    while (queue.length > 0 && iteration < 30000) {
-        iteration++;
-        const curr = queue.shift();
-        const cTile = map[curr.x][curr.y];
-
-        // Found unexplored tile!
-        if (!cTile.explored && cTile.type !== 'wall') {
-            return curr.path;
+    // 11. Scroll of Light / Magic Lamp - use if running low on visible area
+    if (player.lightTimer <= 0) {
+        const lightIdx = player.inventory.findIndex(i => i.effect === 'magic_lamp');
+        if (lightIdx >= 0) {
+            console.log([Autoplay] Illuminating with Light scroll.);
+            window.useItem(lightIdx);
+            return true;
         }
+    }
 
-        // Track stairs as fallback
-        if (!stairsPath && cTile.type === 'stairs_down') {
-            stairsPath = curr.path;
+    // 12. Trap Detection - use when in dungeon
+    if (currentFloor > 0) {
+        const trapIdx = player.inventory.findIndex(i => i.effect === 'trap_detect');
+        if (trapIdx >= 0) {
+            console.log([Autoplay] Detecting traps.);
+            window.useItem(trapIdx);
+            return true;
         }
+    }
 
-        for (let d of dirs) {
-            const nx = curr.x + d.dx;
-            const ny = curr.y + d.dy;
-            if (nx >= 0 && nx < MAP_WIDTH && ny >= 0 && ny < MAP_HEIGHT) {
-                const key = `${nx},${ny}`;
-                if (!visited.has(key)) {
-                    visited.add(key);
-                    const tile = map[nx][ny];
-                    const ent = getEntityAt(nx, ny);
-                    const hasKey = player.inventory.some(i => i.name === 'Dungeon Key');
-                    
-                    const blockingTypes = ['wall', 'locked_door', 'shop', 'healer', 'blacksmith', 'wizard', 'bank', 'well', 'mayor', 'gambler', 'shrine', 'water', 'tree'];
-                    if (!allowHazards) blockingTypes.push('lava', 'gas');
-                    
-                    const isPassable = !blockingTypes.includes(tile.type) || (tile.type === 'locked_door' && hasKey);
-                    
-                    if (((tile.explored && isPassable) || (!tile.explored && !blockingTypes.includes(tile.type))) && (!ent || !ent.isTownNPC || !ent.blocksMovement)) {
-                        queue.push({ x: nx, y: ny, path: [...curr.path, { x: nx, y: ny }] });
-                    }
-                }
+    // 13. Scroll of Summon Monster - use only when needed to escape/kill
+    if (nearbyEnemies >= 3) {
+        const summonIdx = player.inventory.findIndex(i => i.effect === 'summon');
+        if (summonIdx >= 0) {
+            console.log([Autoplay] Summoning monsters to create chaos.);
+            window.useItem(summonIdx);
+            return true;
+        }
+    }
+
+    // 14. Wand of Destruction - use nearby doors if stuck
+    if (typeof map !== 'undefined') {
+        const nearDoor = [-1,0,1].some(dx => [-1,0,1].some(dy => {
+            const nx = player.x+dx, ny = player.y+dy;
+            return nx>=0 && nx<MAP_WIDTH && ny>=0 && ny<MAP_HEIGHT && 
+                (map[nx][ny].type === 'locked_door' || map[nx][ny].type === 'trap');
+        }));
+        if (nearDoor) {
+            const destIdx = player.inventory.findIndex(i => i.effect === 'wand_destruction' && (i.charges || 0) > 0);
+            if (destIdx >= 0) {
+                console.log([Autoplay] Destroying obstacles.);
+                window.useItem(destIdx);
+                return true;
             }
         }
     }
 
-    return stairsPath; // Fallback to stairs if no unexplored tiles
-}
-
-// Find a walkable item on the ground nearby
-function autoplayFindNearestItem() {
+    return false;
+}function autoplayFindNearestItem() {
     if (typeof items === 'undefined') return null;
     let best = null;
     let bestDist = Infinity;
@@ -588,7 +646,19 @@ function processAutoPlay() {
                 if (clear) {
                     window.targetX = monster.x;
                     window.targetY = monster.y;
-                    if (typeof window.executeRangedAttack === 'function') {
+                        // --- WAND ATTACKS (if no ranged weapon, try wands) ---
+    if (!wep || !(wep.effect === 'bow' || wep.effect === 'crossbow')) {
+        const wandItem = player.inventory.findIndex(i => 
+            (i.effect === 'wand_fire' || i.effect === 'wand_frost' || i.effect === 'wand_lightning') && 
+            (i.charges || 0) > 0);
+        if (wandItem >= 0 && nearest && nearestDist <= 6) {
+            window.targetX = nearest.x;
+            window.targetY = nearest.y;
+            window.useItem(wandItem);
+            return;
+        }
+    }
+    if (typeof window.executeRangedAttack === 'function') {
                         window.executeRangedAttack();
                         return;
                     }

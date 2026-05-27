@@ -482,6 +482,10 @@ function getEffectiveAtk() {
 
 function getEffectiveDef() {
     let base = player.def;
+    // Status buffs
+    if (player.heroismTimer > 0) base += (player.heroismDef || 0);
+    if (player.blessTimer > 0) base += (player.blessDef || 0);
+    // Rune of Protection (added separately in damage calc)
     const eq = player.equipment;
     if (eq.armor && (eq.armor.durability === undefined || eq.armor.durability > 0)) {
         base += (eq.armor.defBonus || 0);
@@ -1086,7 +1090,302 @@ function useItem(index) {
         return;
     }
 
-    // Consumables
+    
+
+    // === BATCH 5: New Status/Strategy Items ===
+
+    // Speed boost temp
+    if (item.effect === 'speed_boost') {
+        player.speed = Math.min(25, player.speed + 6);
+        player.hasteTimer = (player.hasteTimer || 0) + 20;
+        spawnParticle(player.x, player.y, 'SPEED!', '#f1c40f');
+        logMessage("You drink " + getItemName(item) + ". You feel lightning fast!", 'magic');
+        player.inventory.splice(index, 1);
+        updateUI(); return;
+    }
+
+    // Invisibility
+    if (item.effect === 'invisibility') {
+        player.invisibleTimer = (player.invisibleTimer || 0) + 20;
+        spawnParticle(player.x, player.y, 'SHADOW!', '#2c3e50');
+        logMessage("You drink " + getItemName(item) + ". You fade from sight!", 'magic');
+        player.inventory.splice(index, 1);
+        updateUI(); return;
+    }
+
+    // Heroism: +ATK +DEF 15 ticks
+    if (item.effect === 'heroism') {
+        player.heroismTimer = (player.heroismTimer || 0) + 15;
+        player.heroismAtk = (item.value || 5);
+        player.heroismDef = (item.value || 5);
+        spawnParticle(player.x, player.y, 'HERO!', '#e74c3c');
+        logMessage("You drink " + getItemName(item) + ". You feel unstoppable!", 'magic');
+        player.inventory.splice(index, 1);
+        updateUI(); return;
+    }
+
+    // Cure Poison
+    if (item.effect === 'cure_poison') {
+        player.poisonTimer = 0;
+        spawnParticle(player.x, player.y, 'CURED!', '#2ecc71');
+        logMessage("You drink " + getItemName(item) + ". The poison leaves your veins.", 'magic');
+        player.inventory.splice(index, 1);
+        updateUI(); return;
+    }
+
+    // Restore Life - only works if player is dead (handled elsewhere), otherwise buff
+    if (item.effect === 'restore_life') {
+        player.hp = player.maxHp;
+        Object.values(player.equipment).forEach(eq => { if (eq && eq.cursed) eq.cursed = false; });
+        spawnParticle(player.x, player.y, 'RESTORED!', '#f39c12');
+        logMessage("You drink " + getItemName(item) + ". Life itself flows through you!", 'magic');
+        player.inventory.splice(index, 1);
+        updateUI(); return;
+    }
+
+    // Phase Door - teleport within LOS
+    if (item.effect === 'phase_door') {
+        let rx, ry, tries = 0;
+        do {
+            rx = player.x + Math.floor(Math.random() * 9) - 4;
+            ry = player.y + Math.floor(Math.random() * 9) - 4;
+            tries++;
+        } while (tries < 80 && (rx < 0 || rx >= MAP_WIDTH || ry < 0 || ry >= MAP_HEIGHT || 
+                 map[rx][ry].type !== 'floor' || getEntityAt(rx, ry)));
+        if (tries < 80) {
+            player.x = rx; player.y = ry;
+            computeFOV();
+            spawnParticle(player.x, player.y, 'POOF!', '#9b59b6');
+            logMessage("You blink across the room!", 'magic');
+        } else {
+            logMessage("The scroll fizzles. No safe spot found.", 'damage');
+        }
+        player.inventory.splice(index, 1);
+        updateUI(); return;
+    }
+
+    // Trap Detection - reveal all traps on floor
+    if (item.effect === 'trap_detect') {
+        let found = 0;
+        for (let x = 0; x < MAP_WIDTH; x++) {
+            for (let y = 0; y < MAP_HEIGHT; y++) {
+                if (map[x][y].type === 'trap' || map[x][y].type === 'trapdoor') {
+                    map[x][y].visible = true;
+                    found++;
+                }
+            }
+        }
+        logMessage("You read " + getItemName(item) + ". " + found + " traps revealed!", found > 0 ? 'magic' : 'hint');
+        spawnParticle(player.x, player.y, 'TRAPS!', '#e67e22');
+        player.inventory.splice(index, 1);
+        if (typeof render === 'function') render();
+        updateUI(); return;
+    }
+
+    // Scroll of Light - light up floor
+    if (item.effect === 'magic_lamp') {
+        const duration = item.value || 50;
+        player.lightTimer = (player.lightTimer || 0) + duration;
+        for (let x = 0; x < MAP_WIDTH; x++) {
+            for (let y = 0; y < MAP_HEIGHT; y++) {
+                if (map[x][y].type !== 'wall') map[x][y].visible = true;
+            }
+        }
+        logMessage("You read " + getItemName(item) + ". The dungeon is illuminated!", 'magic');
+        spawnParticle(player.x, player.y, 'LIGHT!', '#f1c40f');
+        player.inventory.splice(index, 1);
+        computeFOV();
+        if (typeof render === 'function') render();
+        updateUI(); return;
+    }
+
+    // Scroll of Darkness - darken enemies
+    if (item.effect === 'darkness') {
+        let blinded = 0;
+        for (let e of entities) {
+            if (!e.isPlayer && e.hp > 0 && map[e.x] && map[e.x][e.y] && map[e.x][e.y].visible) {
+                e.blindTimer = (e.blindTimer || 0) + 15;
+                blinded++;
+            }
+        }
+        logMessage("You read " + getItemName(item) + "! " + blinded + " enemies are blinded.", 'magic');
+        spawnParticle(player.x, player.y, 'DARK!', '#2c3e50');
+        player.inventory.splice(index, 1);
+        updateUI(); return;
+    }
+
+    // Scroll of Reveal - identify single item (pick from inventory or equipped)
+    if (item.effect === 'reveal') {
+        // Find first unidentified item
+        let found = false;
+        for (let i = 0; i < player.inventory.length; i++) {
+            const inv = player.inventory[i];
+            if (!inv.identified && !identifiedTypes[inv.name] && 
+                ['weapon', 'armor', 'helm', 'ring', 'amulet', 'shield'].includes(inv.type)) {
+                inv.identified = true;
+                logMessage("You identify " + getItemName(inv) + "!", 'magic');
+                found = true; break;
+            }
+        }
+        if (!found) {
+            // Check equipment
+            for (let slot in player.equipment) {
+                const eq = player.equipment[slot];
+                if (eq && !eq.identified && !identifiedTypes[eq.name]) {
+                    eq.identified = true;
+                    logMessage("You identify " + getItemName(eq) + "!", 'magic');
+                    found = true; break;
+                }
+            }
+        }
+        if (!found) {
+            logMessage("Nothing to identify.", 'hint');
+            return; // Don't consume
+        }
+        spawnParticle(player.x, player.y, 'IDENTIFIED!', '#3498db');
+        player.inventory.splice(index, 1);
+        updateUI(); return;
+    }
+
+    // Rune of Protection - damage shield
+    if (item.effect === 'rune_protect') {
+        player.runeProtectTimer = (player.runeProtectTimer || 0) + 30;
+        player.runeProtectAmount = (player.runeProtectAmount || 0) + (item.value || 15);
+        spawnParticle(player.x, player.y, 'RUNE!', '#66fcf1');
+        logMessage("You read " + getItemName(item) + ". Protective runes surround you!", 'magic');
+        player.inventory.splice(index, 1);
+        updateUI(); return;
+    }
+
+    // Wand of Fire - ranged fire attack
+    if (item.effect === 'wand_fire') {
+        item.charges = (item.charges || 1) - 1;
+        const nearest = getNearestMonster(player.x, player.y);
+        if (nearest) {
+            targetX = nearest.x; targetY = nearest.y;
+            const line = getLine(player.x, player.y, targetX, targetY);
+            let blocked = false;
+            for (let i = 1; i < line.length - 1; i++) {
+                if (map[line[i].x][line[i].y].type === 'wall') { blocked = true; break; }
+            }
+            if (!blocked) {
+                const dmg = 12 + Math.floor(Math.random() * 8);
+                spawnParticle(targetX, targetY, '-' + dmg + ' FIRE', '#e74c3c');
+                nearest.hp -= dmg;
+                logMessage("You zap " + getItemName(item) + "! Fire engulfs " + nearest.name + "!", 'magic');
+                if (nearest.hp <= 0) handleMonsterDeath(nearest);
+            } else {
+                logMessage("The fire hits a wall!", 'damage');
+            }
+        } else {
+            logMessage("No target in sight.", 'hint');
+            item.charges++; return; // Don't consume charge
+        }
+        if (item.charges <= 0) { logMessage(item.name + " crumbles.", 'damage'); player.inventory.splice(index, 1); }
+        updateUI(); return;
+    }
+
+    // Wand of Frost - ranged ice attack + slow
+    if (item.effect === 'wand_frost') {
+        item.charges = (item.charges || 1) - 1;
+        const nearest = getNearestMonster(player.x, player.y);
+        if (nearest) {
+            targetX = nearest.x; targetY = nearest.y;
+            const line = getLine(player.x, player.y, targetX, targetY);
+            let blocked = false;
+            for (let i = 1; i < line.length - 1; i++) {
+                if (map[line[i].x][line[i].y].type === 'wall') { blocked = true; break; }
+            }
+            if (!blocked) {
+                const dmg = 8 + Math.floor(Math.random() * 6);
+                spawnParticle(targetX, targetY, '-' + dmg + ' ICE', '#3498db');
+                nearest.hp -= dmg;
+                nearest.speed = Math.max(2, nearest.speed - 3);
+                logMessage("You zap " + getItemName(item) + "! Ice shatters on " + nearest.name + "!", 'magic');
+                if (nearest.hp <= 0) handleMonsterDeath(nearest);
+            } else {
+                logMessage("The frost hits a wall!", 'damage');
+            }
+        } else {
+            logMessage("No target in sight.", 'hint');
+            item.charges++; return;
+        }
+        if (item.charges <= 0) { logMessage(item.name + " crumbles.", 'damage'); player.inventory.splice(index, 1); }
+        updateUI(); return;
+    }
+
+    // Wand of Lightning - ranged lightning (multi-hit?)
+    if (item.effect === 'wand_lightning') {
+        item.charges = (item.charges || 1) - 1;
+        const nearest = getNearestMonster(player.x, player.y);
+        if (nearest) {
+            targetX = nearest.x; targetY = nearest.y;
+            const dmg = 15 + Math.floor(Math.random() * 10);
+            spawnParticle(targetX, targetY, '-' + dmg + ' ZAP', '#f1c40f');
+            nearest.hp -= dmg;
+            logMessage("Lightning arcs from " + getItemName(item) + " to " + nearest.name + "!", 'magic');
+            if (nearest.hp <= 0) handleMonsterDeath(nearest);
+        } else {
+            logMessage("No target in sight.", 'hint');
+            item.charges++; return;
+        }
+        if (item.charges <= 0) { logMessage(item.name + " crumbles.", 'damage'); player.inventory.splice(index, 1); }
+        updateUI(); return;
+    }
+
+    // Wand of Destruction - destroy door/trap/vines
+    if (item.effect === 'wand_destruction') {
+        item.charges = (item.charges || 1) - 1;
+        const dirs = [{dx:0,dy:-1},{dx:0,dy:1},{dx:-1,dy:0},{dx:1,dy:0}];
+        let destroyed = 0;
+        for (let d of dirs) {
+            const nx = player.x + d.dx;
+            const ny = player.y + d.dy;
+            if (nx >= 0 && nx < MAP_WIDTH && ny >= 0 && ny < MAP_HEIGHT) {
+                const tile = map[nx][ny];
+                if (tile.type === 'locked_door' || tile.type === 'trap' || tile.type === 'trapdoor' || tile.type === 'vines') {
+                    tile.type = 'floor';
+                    destroyed++;
+                }
+            }
+        }
+        if (destroyed > 0) {
+            logMessage("You zap " + getItemName(item) + "! " + destroyed + " obstacles destroyed!", 'magic');
+            spawnParticle(player.x, player.y, 'DESTROY!', '#d35400');
+        } else {
+            logMessage("Nothing to destroy nearby.", 'hint');
+            item.charges++; return;
+        }
+        if (item.charges <= 0) { logMessage(item.name + " crumbles.", 'damage'); player.inventory.splice(index, 1); }
+        updateUI(); return;
+    }
+
+    // Scroll of Fear - scare all visible enemies
+    if (item.effect === 'fear') {
+        let scared = 0;
+        for (let e of entities) {
+            if (!e.isPlayer && e.hp > 0 && map[e.x] && map[e.x][e.y] && map[e.x][e.y].visible) {
+                e.fearTimer = (e.fearTimer || 0) + 12;
+                scared++;
+            }
+        }
+        logMessage("You read " + getItemName(item) + "! " + scared + " enemies flee in terror!", 'magic');
+        spawnParticle(player.x, player.y, 'FEAR!', '#95a5a6');
+        player.inventory.splice(index, 1);
+        updateUI(); return;
+    }
+
+    // Scroll of Bless - +2 ATK, +2 DEF 20 ticks
+    if (item.effect === 'bless') {
+        player.blessTimer = (player.blessTimer || 0) + 20;
+        player.blessAtk = 2;
+        player.blessDef = 2;
+        spawnParticle(player.x, player.y, 'BLESS!', '#f39c12');
+        logMessage("You read " + getItemName(item) + ". A golden light surrounds you!", 'magic');
+        player.inventory.splice(index, 1);
+        updateUI(); return;
+    }
+// Consumables
     
     // Scrap Metal: 25% chance to upgrade armor +1 DEF
     if (item.name === 'Scrap Metal') {
