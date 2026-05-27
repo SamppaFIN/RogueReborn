@@ -67,6 +67,19 @@ function attemptAction(entity, action, energyCost = ENERGY_THRESHOLD) {
             return;
         }
 
+        // Ice slip: on ice tiles, player slides one extra step
+        if (entity === player && !action.isSliding && map[tx] && map[tx][ty] && map[tx][ty].type === 'ice') {
+            // Player slides one more step in same direction
+            const slideX = tx + action.dx;
+            const slideY = ty + action.dy;
+            if (slideX >= 0 && slideX < MAP_WIDTH && slideY >= 0 && slideY < MAP_HEIGHT &&
+                map[slideX][slideY].type !== 'wall' && !getEntityAt(slideX, slideY)) {
+                setTimeout(() => {
+                    attemptAction(entity, { type: 'move', dx: action.dx, dy: action.dy, isSliding: true }, 0);
+                }, 30);
+            }
+        }
+
         const targetEntity = getEntityAt(tx, ty);
         if (targetEntity) {
             // Interact with NPCs

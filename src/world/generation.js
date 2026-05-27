@@ -239,8 +239,8 @@ function generateDungeon() {
             window.floorHazard = null;
         }
 
-        // After many failed attempts, skip vault generation to ensure connectivity
-        const allowVaults = (tries < 20);
+        // Vault generation - always try but limit to avoid infinite loops
+        const allowVaults = true;
 
         const rooms = [];
         const MAX_ROOMS = 20;
@@ -418,7 +418,19 @@ function generateDungeon() {
     }
 }
 
-function generateHazards(rooms) {
+function generateHazards(rooms) {    
+    // Scatter some traps in older rooms
+    for (let r of rooms) {
+        if (!r.isVault && Math.random() < 0.25 && currentFloor >= 2) {
+            const tx = r.x + Math.floor(Math.random() * r.w);
+            const ty = r.y + Math.floor(Math.random() * r.h);
+            if (tx >= 0 && tx < MAP_WIDTH && ty >= 0 && ty < MAP_HEIGHT && map[tx][ty].type === 'floor') {
+                map[tx][ty].type = 'trap';
+                map[tx][ty].char = '^';
+                map[tx][ty].color = '#e74c3c';
+            }
+        }
+    }
     for (const room of rooms) {
         // 20% chance of a hazard per room
         if (Math.random() > 0.2) continue;

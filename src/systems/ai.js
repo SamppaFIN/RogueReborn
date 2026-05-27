@@ -731,6 +731,10 @@ function computeFOV() {
     updateVisibleMonsters();
 }
 
+
+    // Reveal traps only if player has detect ability (Scroll of Trap Detection or similar)
+    // Traps stay hidden until stepped on or detected
+    // (no auto-reveal unless player.trapDetectTimer > 0)
 function updateVisibleMonsters() {
     let nowVisible = new Set();
     let newMonsterSpotted = false;
