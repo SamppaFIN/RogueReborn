@@ -69,8 +69,8 @@ function checkEquipment() {
     return false;
 }
 
-function autoDropJunk() {
-    if (player.inventory.length < 28) return false;
+function autoDropJunk(aggressive = false) {
+    if (player.inventory.length < (aggressive ? 27 : 28)) return false;
 
     let lowestScore = 9999;
     let worstIndex = -1;
@@ -88,6 +88,10 @@ function autoDropJunk() {
         if (item.name === 'Word of Recall') score += 1000;
         if (item.type === 'scroll' || item.type === 'potion' || item.type === 'wand') score += 100;
         
+        // Phase XI: Materials and lore notes are ALWAYS junk — score 0, drop first
+        if (item.type === 'material' || item.effect === 'lore_note') score = 0;
+        if (item.name === 'Scrap Metal' || item.name === 'Magic Component') score = 0;
+        
         // Unidentified items might be good
         if (!item.identified && !identifiedTypes[item.name]) score += 40;
 
@@ -103,9 +107,10 @@ function autoDropJunk() {
     }
 
     // If inventory is critical (30), drop the worst item regardless of score, 
-    // but try to keep equipment and keys.
+    // but try to keep equipment and keys. Aggressive mode lowers threshold.
+    const threshold = aggressive ? 800 : 500;
     const critical = player.inventory.length >= 30;
-    if (worstIndex >= 0 && (lowestScore < 500 || critical)) {
+    if (worstIndex >= 0 && (lowestScore < threshold || critical)) {
         console.log(`[Autoplay] Dropping junk to free space: ${player.inventory[worstIndex].name} (Score: ${lowestScore})`);
         window.dropItem(worstIndex, null, true); // true for silent/simulated drop
         return true;
@@ -300,9 +305,9 @@ function autoUseConsumables() {
         }
 
         let d = Math.abs(item.x - player.x) + Math.abs(item.y - player.y);
-        // Prioritize Dungeon Keys heavily
-        // Ignore Scrap Metal - inventory filler, not worth autoplay pickup
-        if (item.name === 'Scrap Metal') continue;
+        // Phase XI: Skip junk materials — autoplay should never pick these up
+        if (item.name === 'Scrap Metal' || item.name === 'Magic Component') continue;
+        if (item.type === 'material' || item.effect === 'lore_note') continue; // Skip all materials and lore notes
         if (item.name === 'Dungeon Key') d -= 100;
         if (d < bestDist) { bestDist = d; best = item; }
     }
@@ -310,11 +315,17 @@ function autoUseConsumables() {
 }
 
 function processAutoPlay() {
-    // Close any open modal/NPC dialog immediately
-    if (gameState !== 'PLAYING' && gameState !== 'PLAYER_DEAD' && gameState !== 'VICTORY' && gameState !== 'LEVEL_UP' && gameState !== 'TARGETING' && gameState !== 'RANGED_TARGETING' && gameState !== 'SHOP' && gameState !== 'INNKEEPER') {
+    // Close any open modal/NPC dialog immediately — but NOT player inventory/use/drop modals!
+    const playerModalStates = ['SHOP', 'INNKEEPER'];
+    if (gameState !== 'PLAYING' && gameState !== 'PLAYER_DEAD' && gameState !== 'VICTORY' && gameState !== 'LEVEL_UP' && gameState !== 'TARGETING' && gameState !== 'RANGED_TARGETING' && gameState !== 'USE_MENU' && gameState !== 'DROP_MENU' && gameState !== 'INVENTORY' && gameState !== 'ITEM_MODAL' && gameState !== 'BESTIARY' && !playerModalStates.includes(gameState)) {
         if (window.closeAllModals) window.closeAllModals();
-        gameState = 'PLAYING'; // Force back to playing
+        gameState = 'PLAYING';
         return;
+    }
+
+    // If player is manually managing inventory, pause autoplay processing
+    if (gameState === 'USE_MENU' || gameState === 'DROP_MENU' || gameState === 'INVENTORY' || gameState === 'ITEM_MODAL' || gameState === 'BESTIARY') {
+        return; // Let the player manage their items
     }
 
     if (gameState === 'PLAYER_DEAD' || gameState === 'VICTORY') {
@@ -500,6 +511,29 @@ function processAutoPlay() {
                 window.useItem(recallIdx);
                 return;
             }
+            // No Recall — aggressive inventory clearing to avoid stuck loop
+            if (player.inventory.length >= 29) {
+                // Force-use any consumable to free space
+                for (let i = 0; i < player.inventory.length; i++) {
+                    const itm = player.inventory[i];
+                    if (itm.type === 'potion' || itm.type === 'scroll' || itm.type === 'food') {
+                        console.log(`[Autoplay] Force-using ${itm.name} to free inventory space`);
+                        window.useItem(i);
+                        return;
+                    }
+                }
+                // Force-drop lowest-value non-equipped, non-key item
+                if (autoDropJunk(true)) return; // aggressive mode
+                // Last resort: drop anything
+                for (let i = 0; i < player.inventory.length; i++) {
+                    const itm = player.inventory[i];
+                    if (!Object.values(player.equipment).includes(itm) && itm.name !== 'Dungeon Key' && !itm.artifact) {
+                        console.log(`[Autoplay] Desperate drop of ${itm.name}`);
+                        window.dropItem(i, null, true);
+                        return;
+                    }
+                }
+            }
         }
     }
 
@@ -607,8 +641,10 @@ function processAutoPlay() {
 
     const monster = getNearestMonster(player.x, player.y); let mDist = monster ? Math.abs(monster.x - player.x) + Math.abs(monster.y - player.y) : 99;
 
-    // Priority 3: Skill Usage
-    if (player.skillCooldown <= 0 && player.energy >= 40) {
+    // Priority 3: Skill Usage — only if safe to engage
+    const isDangerousForMelee = monster && (monster.miniBoss || monster.bossPhases || (monster.w || 1) > 1 ||
+        (monster.atk || 0) >= player.atk + 3);
+    if (player.skillCooldown <= 0 && player.energy >= 40 && !isDangerousForMelee) {
         if (player.class === 'Warrior' && monster && mDist <= 2) {
             if (typeof window.useClassSkill === 'function') {
                 console.log("[Autoplay] Warrior casts Class Skill!");
@@ -630,38 +666,80 @@ function processAutoPlay() {
         }
     }
 
-    // Priority 3.5: Ranged Combat (Rogue and Mage shoot back)
-    if (monster && mDist > 1 && mDist <= 6 && (player.class === 'Rogue' || player.class === 'Mage')) {
-        const wepEffect = player.equipment.weapon?.effect;
-        if ((wepEffect === 'bow' || wepEffect === 'crossbow') && player.ammo > 0) {
-            if (typeof window.getLine === 'function') {
-                const line = window.getLine(player.x, player.y, monster.x, monster.y);
-                let clear = true;
-                for (let i = 1; i < line.length - 1; i++) {
-                    if (map[line[i].x][line[i].y].type === 'wall' || map[line[i].x][line[i].y].type === 'locked_door') {
-                        clear = false;
-                        break;
-                    }
-                }
-                if (clear) {
+    // Priority 3.5: Ranged Combat — use ranged weapon/spell/wand BEFORE closing to melee
+    if (monster && mDist >= 2 && (player.class === 'Rogue' || player.class === 'Mage' || player.class === 'Warrior')) {
+        // Evaluate: can we hurt the monster from range?
+        const rangedWep = player.equipment.ranged;
+        const hasBow = rangedWep && (rangedWep.effect === 'bow' || rangedWep.effect === 'crossbow') && player.ammo > 0;
+        const hasWand = player.inventory.findIndex(i =>
+            (i.effect === 'wand_fire' || i.effect === 'wand_frost' || i.effect === 'wand_lightning' || i.effect === 'target_spell') &&
+            (i.charges || 0) > 0) >= 0;
+        const hasOffensiveScroll = player.inventory.findIndex(i =>
+            (i.effect === 'fireball_aoe' || i.effect === 'frost_nova' || i.effect === 'confuse_monster') &&
+            i.type === 'scroll') >= 0;
+
+        // Danger assessment: large/boss monsters → prefer ranged
+        const isDangerous = monster && (monster.miniBoss || monster.bossPhases || (monster.w || 1) > 1 ||
+            (monster.atk || 0) >= player.atk + 3 || (monster.hp || 0) >= player.hp * 0.8);
+
+        // Check line of sight
+        let losClear = false;
+        if (typeof window.getLine === 'function') {
+            const line = window.getLine(player.x, player.y, monster.x, monster.y);
+            losClear = true;
+            for (let i = 1; i < line.length - 1; i++) {
+                const t = map[line[i].x] && map[line[i].x][line[i].y];
+                if (t && (t.type === 'wall' || t.type === 'locked_door')) { losClear = false; break; }
+            }
+        }
+
+        if (losClear && mDist <= 8) {
+            // 1. Bow/crossbow — always use if available (for all classes now)
+            if (hasBow) {
+                console.log(`[Autoplay] Ranged attack with bow at ${monster.name} (dist=${mDist})`);
+                window.targetX = monster.x;
+                window.targetY = monster.y;
+                window.executeRangedAttack();
+                return;
+            }
+
+            // 2. Wand attacks — use on dangerous enemies or when low HP
+            if (hasWand && (isDangerous || player.hp < player.maxHp * 0.6 || mDist >= 3)) {
+                const wandIdx = player.inventory.findIndex(i =>
+                    (i.effect === 'wand_fire' || i.effect === 'wand_frost' || i.effect === 'wand_lightning' || i.effect === 'target_spell') &&
+                    (i.charges || 0) > 0);
+                if (wandIdx >= 0) {
+                    console.log(`[Autoplay] Wand attack on ${monster.name} (dist=${mDist})`);
                     window.targetX = monster.x;
                     window.targetY = monster.y;
-                        // --- WAND ATTACKS (if no ranged weapon, try wands) ---
-    if (!wep || !(wep.effect === 'bow' || wep.effect === 'crossbow')) {
-        const wandItem = player.inventory.findIndex(i => 
-            (i.effect === 'wand_fire' || i.effect === 'wand_frost' || i.effect === 'wand_lightning') && 
-            (i.charges || 0) > 0);
-        if (wandItem >= 0 && nearest && nearestDist <= 6) {
-            window.targetX = nearest.x;
-            window.targetY = nearest.y;
-            window.useItem(wandItem);
-            return;
-        }
-    }
-    if (typeof window.executeRangedAttack === 'function') {
-                        window.executeRangedAttack();
-                        return;
-                    }
+                    window.useItem(wandIdx);
+                    return;
+                }
+            }
+
+            // 3. Offensive scrolls — Fireball/Frost Nova on groups or dangerous
+            if (hasOffensiveScroll && (isDangerous || mDist >= 4)) {
+                const scrollIdx = player.inventory.findIndex(i =>
+                    (i.effect === 'fireball_aoe' || i.effect === 'frost_nova' || i.effect === 'confuse_monster') &&
+                    i.type === 'scroll');
+                if (scrollIdx >= 0) {
+                    console.log(`[Autoplay] Offensive scroll on ${monster.name}`);
+                    window.useItem(scrollIdx);
+                    return;
+                }
+            }
+
+            // 4. If dangerous monster and we have no ranged options, don't chase — avoid
+            if (isDangerous && !hasBow && !hasWand) {
+                console.log(`[Autoplay] Avoiding dangerous ${monster.name} — no ranged options`);
+                // Move away from monster
+                let adx = Math.sign(player.x - monster.x), ady = Math.sign(player.y - monster.y);
+                if (adx === 0 && ady === 0) adx = 1;
+                const nx = player.x + adx, ny = player.y + ady;
+                if (nx >= 0 && nx < MAP_WIDTH && ny >= 0 && ny < MAP_HEIGHT &&
+                    map[nx][ny].type !== 'wall' && !getEntityAt(nx, ny)) {
+                    window.attemptAction(player, { type: 'move', dx: adx, dy: ady });
+                    return;
                 }
             }
         }

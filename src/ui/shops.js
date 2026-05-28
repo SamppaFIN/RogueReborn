@@ -1135,20 +1135,51 @@ window.openItemModal = function (indexOrSlot) {
     // Flavor text & Stats
     let flavor = "A mundane object.";
     let stats = "";
+    let makerText = "";
+    let materialText = "";
+    let historyText = "";
 
     if (item.identified || identifiedTypes[item.name]) {
-        if (item.type === 'weapon') flavor = `A deadly ${item.name}.`;
-        if (item.type === 'armor') flavor = `Sturdy protective gear.`;
-        if (item.type === 'potion') flavor = `A magical concoction. Effect: ${(item.effect || '').replace('_', ' ')}.`;
-        if (item.type === 'scroll') flavor = `Ancestral magic inscribed on parchment. Effect: ${item.effect}.`;
-        if (item.type === 'wand') flavor = `A channel completely focused on a specific spell.`;
+        if (item.type === 'weapon') {
+            flavor = `A finely crafted ${item.material || 'weapon'} made by ${item.maker || 'unknown hands'}.`;
+            if (item.purpose) flavor += ` Designed for ${item.purpose}.`;
+        }
+        if (item.type === 'armor' || item.type === 'helm' || item.type === 'shield') {
+            flavor = `${item.material ? item.material.charAt(0).toUpperCase() + item.material.slice(1) : 'Armor'} forged by ${item.maker || 'unknown smiths'}.`;
+            if (item.purpose) flavor += ` Built for ${item.purpose}.`;
+        }
+        if (item.type === 'potion') flavor = `A magical concoction brewed by ${item.maker || 'an alchemist'}. Effect: ${(item.effect || '').replace(/_/g, ' ')}.`;
+        if (item.type === 'scroll') flavor = `Inscribed parchment by ${item.maker || 'a wizard'}. Incantation: ${(item.effect || '').replace(/_/g, ' ')}.`;
+        if (item.type === 'wand') flavor = `A ${item.material || 'wooden'} wand crafted by ${item.maker || 'an enchanter'}.`;
+        if (item.type === 'ring' || item.type === 'amulet') flavor = `${item.material ? item.material.charAt(0).toUpperCase() + item.material.slice(1) : 'Jewelry'} crafted by ${item.maker || 'a jeweler'}. ${item.purpose ? 'Worn for ' + item.purpose + '.' : ''}`;
+
+        // Maker & Material
+        if (item.maker && (item.type === 'weapon' || item.type === 'armor' || item.type === 'helm' || item.type === 'shield')) {
+            makerText = `🏭 Maker: ${item.maker}`;
+            materialText = `🔧 Material: ${item.material || 'unknown'}`;
+        }
         
-        if (item.atkBonus) stats += `ATK ${item.atkBonus > 0 ? '+' : ''}${item.atkBonus} `;
-        if (item.defBonus) stats += `DEF ${item.defBonus > 0 ? '+' : ''}${item.defBonus} `;
-        if (item.speedBonus) stats += `SPD ${item.speedBonus > 0 ? '+' : ''}${item.speedBonus} `;
-        if (item.speedPenalty) stats += `SPD -${item.speedPenalty} `;
-        if (item.charges !== undefined) stats += `Charges: ${item.charges} `;
-        if (item.range) stats += `Range: ${item.range} `;
+        if (item.atkBonus) stats += `⚔️ ATK ${item.atkBonus > 0 ? '+' : ''}${item.atkBonus} `;
+        if (item.plusAtk) stats += `(+${item.plusAtk} ench.) `;
+        if (item.defBonus) stats += `🛡️ DEF ${item.defBonus > 0 ? '+' : ''}${item.defBonus} `;
+        if (item.plusDef) stats += `(+${item.plusDef} ench.) `;
+        if (item.speedBonus) stats += `💨 SPD ${item.speedBonus > 0 ? '+' : ''}${item.speedBonus} `;
+        if (item.speedPenalty) stats += `💨 SPD -${item.speedPenalty} `;
+        if (item.charges !== undefined) stats += `⚡ Charges: ${item.charges} `;
+        if (item.spellBoost) stats += `✨ SpellBoost +${item.spellBoost} `;
+        if (item.element) stats += `🔥 ${item.element} `;
+        if (item.reach) stats += `📏 Reach: ${item.reach} `;
+
+        // Damage/block history
+        if ((item.totalDamageDealt || 0) > 0) {
+            historyText += `⚔️ Damage dealt: ${item.totalDamageDealt} | `;
+        }
+        if ((item.totalDamageBlocked || 0) > 0) {
+            historyText += `🛡️ Damage blocked: ${item.totalDamageBlocked} | `;
+        }
+        if (item.durability !== undefined) {
+            historyText += `🔨 Durability: ${item.durability}/${item.maxDurability}`;
+        }
     } else {
         if (['weapon', 'armor', 'helm', 'ring', 'amulet', 'shield'].includes(item.type)) {
             flavor = `An unidentified piece of equipment. You must equip it or use a Scroll of Identify to reveal its properties.`;
@@ -1160,6 +1191,18 @@ window.openItemModal = function (indexOrSlot) {
 
     document.getElementById('itemModalFlavor').innerText = flavor;
     document.getElementById('itemModalStats').innerText = stats || "No additional stats.";
+    
+    const makerEl = document.getElementById('itemModalMaker');
+    makerEl.innerText = makerText;
+    makerEl.style.display = makerText ? 'block' : 'none';
+    
+    const matEl = document.getElementById('itemModalMaterial');
+    matEl.innerText = materialText;
+    matEl.style.display = materialText ? 'block' : 'none';
+
+    const histEl = document.getElementById('itemModalHistory');
+    histEl.innerText = historyText;
+    histEl.style.display = historyText ? 'block' : 'none';
 
     // Gut feeling
     const feelingEl = document.getElementById('itemModalFeeling');
@@ -1284,4 +1327,46 @@ window.closeLevelUpModal = function() {
     if (modal) modal.classList.remove('active');
     gameState = 'PLAYING';
     updateUI();
+};
+
+// --- Bestiary Modal ---
+window.openBestiary = function() {
+    const modal = document.getElementById('bestiaryModal');
+    if (!modal) return;
+    
+    gameState = 'BESTIARY';
+    modal.classList.add('active');
+    
+    document.getElementById('bestiaryTotal').innerText = player.killCount || 0;
+    
+    const list = document.getElementById('bestiaryList');
+    list.innerHTML = '';
+    
+    const kills = player.killsByType || {};
+    const entries = Object.entries(kills).sort((a, b) => b[1] - a[1]);
+    
+    if (entries.length === 0) {
+        list.innerHTML = '<li style="color:#888; font-style:italic;">No monsters slain yet. Venture into the dungeon!</li>';
+    } else {
+        entries.forEach(([name, count]) => {
+            // Find template for color/char
+            const tmpl = typeof ENEMY_TYPES !== 'undefined' ? ENEMY_TYPES.find(t => t.name === name) : null;
+            const color = tmpl ? tmpl.color : '#c5c6c7';
+            const icon = tmpl ? tmpl.char : '?';
+            const barW = Math.min(100, count * 3);
+            list.innerHTML += `<li style="display:flex; align-items:center; margin-bottom:3px; gap:8px;">
+                <span style="color:${color}; font-weight:bold; min-width:18px;">${icon}</span>
+                <span style="min-width:130px;">${name}</span>
+                <span style="color:#f1c40f; min-width:30px;">×${count}</span>
+                <span style="flex-grow:1; height:6px; background:#1f2833; border-radius:3px; overflow:hidden;">
+                    <span style="display:block; height:100%; background:${color}; width:${barW}%; border-radius:3px;"></span>
+                </span>
+            </li>`;
+        });
+    }
+};
+
+window.closeBestiary = function() {
+    document.getElementById('bestiaryModal').classList.remove('active');
+    gameState = 'PLAYING';
 };

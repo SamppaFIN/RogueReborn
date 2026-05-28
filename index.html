@@ -507,6 +507,7 @@
             </div>
             
             <button class="btn" id="btn-autoplay" onclick="toggleAutoPlay()" style="margin-top: 10px; font-size: 0.9em; padding: 10px; border-color: #f1c40f; color: #f1c40f;">AUTOPLAY: OFF</button>
+            <button class="btn" id="btn-bestiary" onclick="openBestiary()" style="margin-top: 5px; font-size: 0.9em; padding: 10px; border-color: #e74c3c; color: #e74c3c; display: block; width: 100%;">📖 BESTIARY [B]</button>
         </div>
     </div>
 
@@ -781,15 +782,18 @@
 
     <!-- Item Info Modal -->
     <div id="itemModal" class="modal">
-        <div class="modal-content" style="width: 450px; position: relative;">
+        <div class="modal-content" style="width: 480px; position: relative;">
             <button onclick="closeItemModal()"
                 style="position: absolute; top: 10px; right: 10px; background: transparent; border: none; color: #66fcf1; font-size: 1.5rem; cursor: pointer;">&times;</button>
             <h2 id="itemModalName" style="color: #bd93f9; text-shadow: 0 0 20px rgba(189, 147, 249, 0.5); font-size: 2rem;">Item Name</h2>
             
             <div style="border: 1px solid #1f2833; padding: 15px; margin: 20px 0; background: #0b0c10; text-align: left;">
                 <p id="itemModalFlavor" style="color: #c5c6c7; font-style: italic; margin-bottom: 10px;">"A strange object..."</p>
+                <p id="itemModalMaker" style="color: #f39c12; margin-bottom: 5px; display: none;"></p>
+                <p id="itemModalMaterial" style="color: #85c1e9; margin-bottom: 5px; display: none;"></p>
                 <p id="itemModalFeeling" style="color: #e67e22; font-weight: bold; margin-bottom: 10px; display: none;">You get a strange feeling about this...</p>
                 <p id="itemModalStats" style="color: #2ecc71; margin-bottom: 0;">Stats go here.</p>
+                <p id="itemModalHistory" style="color: #7f8c8d; font-size: 0.85em; margin-top: 8px; display: none;"></p>
             </div>
 
             <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;" id="itemModalActions">
@@ -800,6 +804,21 @@
             </div>
 
             <button class="btn" style="margin-top: 20px; width: 100%; border-color: #1f2833; color: #888;" onclick="closeItemModal()">Close [Esc]</button>
+        </div>
+    </div>
+
+    <!-- Bestiary Modal -->
+    <div id="bestiaryModal" class="modal">
+        <div class="modal-content" style="width: 550px; position: relative; border-color: #e74c3c;">
+            <button onclick="closeBestiary()"
+                style="position: absolute; top: 10px; right: 10px; background: transparent; border: none; color: #e74c3c; font-size: 1.5rem; cursor: pointer;">&times;</button>
+            <h2 style="color: #e74c3c; text-shadow: 0 0 20px rgba(231, 76, 60, 0.5);">BESTIARY</h2>
+            <p style="color:#c5c6c7">Monsters slain: <span id="bestiaryTotal" style="color:#f1c40f; font-weight:bold;">0</span></p>
+            <div style="border: 1px solid #1f2833; padding: 10px; margin: 10px 0; background: #0b0c10; max-height: 400px; overflow-y: auto;">
+                <ul id="bestiaryList" style="list-style:none; padding:0; margin:0; line-height:1.6; font-size:0.85em;">
+                </ul>
+            </div>
+            <button class="btn" onclick="closeBestiary()">Close</button>
         </div>
     </div>
 

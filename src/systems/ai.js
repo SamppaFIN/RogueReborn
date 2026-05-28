@@ -490,6 +490,18 @@ function processMonsterAI(e) {
             if (dist < 8) {
                 logMessage(`${e.name} wakes up!`, 'damage');
                 spawnParticle(e.x, e.y, '!', '#e74c3c');
+                // Phase XI: Awakening volley — ranged monsters fire immediately
+                if (e.ranged && visible && dist >= 2 && dist <= 6 && Math.random() < 0.6) {
+                    executeMonsterRangedAttack(e);
+                    e.energy -= ENERGY_THRESHOLD;
+                    return;
+                }
+                // Spellcasters hurl a spell on wake
+                if (!e.ranged && (e.summoner || e.rangedDebuff || e.element === 'magic') && visible && dist >= 2 && Math.random() < 0.35) {
+                    executeMonsterRangedAttack(e);
+                    e.energy -= ENERGY_THRESHOLD;
+                    return;
+                }
             }
         } else {
             attemptAction(e, { type: 'wait' });

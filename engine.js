@@ -38,10 +38,10 @@ var currentFloor = 0; // 0 = Town, 1+ = Dungeon
 var gameState = 'START';
 
 // Phase XI: Tile-based graphics toggle (Ctrl+G)
-window.renderMode = localStorage.getItem('rogueRenderMode') || 'ascii'; // 'ascii' | 'tiles'
+window.renderMode = (function() { try { return localStorage.getItem('rogueRenderMode') || 'ascii'; } catch(e) { return 'ascii'; } })(); // 'ascii' | 'tiles'
 window.toggleRenderMode = function() {
     window.renderMode = window.renderMode === 'ascii' ? 'tiles' : 'ascii';
-    localStorage.setItem('rogueRenderMode', window.renderMode);
+    try { localStorage.setItem('rogueRenderMode', window.renderMode); } catch(e) {}
     logMessage(`Graphics: ${window.renderMode === 'tiles' ? 'TILE MODE' : 'ASCII MODE'}`, 'magic');
     if (typeof render === 'function') render();
     updateUI();
@@ -115,11 +115,22 @@ function spawnMonsters(room) {
     for (let i = 0; i < num; i++) {
         let x = Math.floor(Math.random() * (room.w - 2)) + room.x + 1;
         let y = Math.floor(Math.random() * (room.h - 2)) + room.y + 1;
-        spawnMonsterAt(x, y);
+        let spawned = spawnMonsterAt(x, y);
+        // Phase XI: Pack spawn — if a pack monster spawned, add 2-4 more nearby
+        if (spawned && spawned.personality === 'pack' && Math.random() < 0.7) {
+            let packSize = 2 + Math.floor(Math.random() * 3);
+            for (let p = 0; p < packSize; p++) {
+                let px = x + Math.floor(Math.random() * 5) - 2;
+                let py = y + Math.floor(Math.random() * 5) - 2;
+                if (px > room.x && px < room.x + room.w - 1 && py > room.y && py < room.y + room.h - 1) {
+                    spawnMonsterAt(px, py, true); // packMember flag
+                }
+            }
+        }
     }
 }
 
-function spawnMonsterAt(x, y) {
+function spawnMonsterAt(x, y, packMember = false) {
     if (!getEntityAt(x, y)) {
         // #IX Phase IX — mini-bosses spawned once per floor
         if (currentFloor === 8 && !entities.some(e => e.name === 'Arch-Lich')) {
@@ -208,7 +219,9 @@ function spawnMonsterAt(x, y) {
         }
 
         entities.push(e);
+        return e; // Phase XI: return entity for pack spawning
     }
+    return null;
 }
 
 function spawnItem(x, y, template) {

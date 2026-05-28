@@ -380,7 +380,7 @@ function generateDungeon() {
         }
 
         // Phase V — Lore Altars (environmental storytelling)
-        if (Math.random() < 0.15 && rooms.length > 2 && typeof RANDOM_LORE_POOL !== 'undefined') {
+        if (Math.random() < 0.30 && rooms.length > 2 && typeof RANDOM_LORE_POOL !== 'undefined') {
             let loreRoom = rooms[1 + Math.floor(Math.random() * (rooms.length - 2))];
             let lc = loreRoom.center();
             if (map[lc.x] && map[lc.x][lc.y] && map[lc.x][lc.y].type === 'floor') {

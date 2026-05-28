@@ -283,6 +283,8 @@ function drawTileBuilding(ox, oy, char, color, w, h) {
 function isTileMode() { return window.renderMode === 'tiles'; }
 
 function render() {
+    if (!player || !map || !map.length) return;
+
     ctx.fillStyle = '#0b0c10';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 

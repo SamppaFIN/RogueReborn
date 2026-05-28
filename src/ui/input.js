@@ -227,6 +227,16 @@ if (!window.inputHandlersInitialized) {
         return;
     }
 
+    // Phase XI: Bestiary (B)
+    if (e.key === 'b' || e.key === 'B') {
+        if (gameState === 'PLAYING') {
+            if (typeof openBestiary === 'function') openBestiary();
+        } else if (gameState === 'BESTIARY') {
+            if (typeof closeBestiary === 'function') closeBestiary();
+        }
+        return;
+    }
+
     if (gameState === 'TARGETING') {
         let dx = 0, dy = 0;
         if (e.key === 'ArrowUp' || e.key === 'w' || e.key === '8') dy = -1;

@@ -103,6 +103,53 @@ const LORE_FRAGMENTS = {
         title: "The Wyrm Prophecy",
         text: "And in the deepest dark, the Ancient Wyrm sleeps. Older than the Balrog. Older than the mountains. When it wakes, fire and shadow will be as children before it.",
         color: '#f39c12'
+    },
+
+    // Phase XI — New lore fragments
+    lore_mimic_warning: {
+        title: "Hunter's Survival Guide",
+        text: "RULE ONE: Not all that glitters is gold. If a pile of coins breathes, RUN. If a potion has teeth, it's already too late. Mimics learn. Mimics adapt. Mimics HUNT.",
+        color: '#d35400'
+    },
+    lore_pack_tactics: {
+        title: "Mercenary Field Report",
+        text: "Wolves don't fight alone. If you see one, three more are circling behind you. Goblins signal with a specific shriek — kill the shaman first or face endless reinforcements. Orcs rage when their kin fall.",
+        color: '#27ae60'
+    },
+    lore_ranger_journal: {
+        title: "Ranger's Last Entry",
+        text: "Day 12: Ran out of arrows. The crossbow string snapped. Now I'm down to my dagger and a half-empty wand. If you read this, take my bow. It's blessed. Just... bring more ammunition than you think you need.",
+        color: '#2ecc71'
+    },
+    lore_abyss_watcher: {
+        title: "The Watcher's Oath",
+        text: "We are the ones who watch the dark. Not to fight it — no mortal can. But to WARN. When the ground shakes and the air smells of brimstone, when the shadows move against the light... descend no further.",
+        color: '#4a0080'
+    },
+    lore_cursed_ring: {
+        title: "Cursed Ring Inscription",
+        text: "To whomever finds this ring: DO NOT PUT IT ON. I did. Now I see things — the true faces of my companions, the worms crawling beneath their skin. The ring shows truth. Truth is poison.",
+        color: '#9b59b6'
+    },
+    lore_dwarf_brew: {
+        title: "Dwarven Brew Recipe",
+        text: "Mushroom cap (dried) ×3, Troll fat (rendered) ×1, Fire essence ×1 drop. Ferment 3 months in an oak cask. WARNING: Non-dwarves who drink this have been known to breathe fire for six hours. We are NOT liable.",
+        color: '#e67e22'
+    },
+    lore_shadow_cult: {
+        title: "Shadow Cult Ledger",
+        text: "Monthly tithe: 50 gold to the Veiled One. Sacrifices this cycle: 12 goblins, 3 orcs, 1 adventurer (female, level 7, decent gear — resell value 800g). The Sleeper demands more. Always more.",
+        color: '#2c3e50'
+    },
+    lore_treasure_map: {
+        title: "Faded Treasure Map",
+        text: "From the great staircase, go south until you find the lava. Cross it — there's a hidden passage in the eastern wall. My Ring of Fire Resistance is buried there. I never made it back to retrieve it.",
+        color: '#f1c40f'
+    },
+    lore_archlich_diary: {
+        title: "Arch-Lich's Research Notes",
+        text: "Experiment #247: Soul transference successful. The subject retained 83% of their former intelligence. Unacceptable. I require a vessel of higher quality. Perhaps the next adventurer who reaches Floor 8...",
+        color: '#ff00ff'
     }
 };
 
@@ -111,5 +158,8 @@ const RANDOM_LORE_POOL = [
     'lore_miners', 'lore_wizard_warning', 'lore_old_hero', 'lore_orc_tribes',
     'lore_ancient_map', 'lore_balrog_origin', 'lore_town_history', 'lore_alchemy_notes',
     'lore_frost_wolves', 'lore_golem_makers', 'lore_hydra_lair', 'lore_wyvern_riders',
-    'lore_demon_gate', 'lore_wyrm_prophecy'
+    'lore_demon_gate', 'lore_wyrm_prophecy',
+    'lore_mimic_warning', 'lore_pack_tactics', 'lore_ranger_journal', 'lore_abyss_watcher',
+    'lore_cursed_ring', 'lore_dwarf_brew', 'lore_shadow_cult', 'lore_treasure_map',
+    'lore_archlich_diary'
 ];

@@ -212,7 +212,11 @@ const ITEM_DB = [
     { type: 'wand', char: '/', color: '#f1c40f', name: 'Wand of Lightning', effect: 'wand_lightning', charges: 6, minFloor: 4, cost: 200 },
     { type: 'wand', char: '/', color: '#d35400', name: 'Wand of Destruction', effect: 'wand_destruction', charges: 3, minFloor: 3, cost: 120 },
     { type: 'scroll', char: '?', color: '#95a5a6', name: 'Scroll of Fear', effect: 'fear', minFloor: 4, cost: 80 },
-    { type: 'scroll', char: '?', color: '#f39c12', name: 'Scroll of Bless', effect: 'bless', minFloor: 2, cost: 55 }];
+    { type: 'scroll', char: '?', color: '#f39c12', name: 'Scroll of Bless', effect: 'bless', minFloor: 2, cost: 55 },
+
+    // Phase XI — Scattered Notes (lore pickups)
+    { type: 'lore_note', char: '¶', color: '#bd93f9', name: 'Scattered Note', effect: 'lore_note', minFloor: 1, cost: 0 }
+];
 
 // --- Ego Item Logic (Batch 3) ---
 const EGO_PREFIXES = [
@@ -280,6 +284,38 @@ function applyEgo(item) {
             item.ego = true;
         }
     }
+    // Phase XI: Rich item properties — revealed on identification
+    if (['weapon', 'armor', 'helm', 'shield', 'ring', 'amulet'].includes(item.type)) {
+        if (!item.maker) item.maker = MAKERS[Math.floor(Math.random() * MAKERS.length)];
+        if (!item.material) item.material = MATERIALS[Math.floor(Math.random() * MATERIALS.length)];
+        if (!item.purpose) item.purpose = PURPOSES[Math.floor(Math.random() * PURPOSES.length)];
+        // Damage/block tracking
+        if (!item.totalDamageDealt) item.totalDamageDealt = 0;
+        if (!item.totalDamageBlocked) item.totalDamageBlocked = 0;
+    }
     
     return item;
 }
+
+// Phase XI: Rich item lore — makers, materials, purposes
+const MAKERS = [
+    "Dwarven Smiths of Khazad-Dum", "Elven Artificers of Eregion",
+    "Gnomish Tinkerers", "The Forge-Masters of Old", "Unknown Enchanters",
+    "A Nameless Hermit", "The Guild of Iron", "Hobbit Craftsmen",
+    "Dark-Elf Bladesingers", "The Runemasters of the North",
+    "Human Kingdom Smiths", "A Forgotten Warlock"
+];
+
+const MATERIALS = [
+    "forged steel", "tempered iron", "mithril alloy", "Elven silver",
+    "blackened adamant", "enchanted obsidian", "star-forged metal",
+    "dragonbone", "shadow-tempered steel", "ancient bronze",
+    "cold iron", "crystal-infused alloy"
+];
+
+const PURPOSES = [
+    "slaying the undead", "piercing dragonhide", "deflecting dark magic",
+    "hunting shadow-beasts", "guarding ancient vaults", "blessing its wielder",
+    "breaking enemy shields", "channeling elemental fury", "protecting wanderers",
+    "ambushing in darkness", "withstanding sieges", "swift assassination"
+];

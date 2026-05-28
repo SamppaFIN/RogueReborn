@@ -466,6 +466,18 @@ function collectItems(x, y) {
         if (item.type === 'gold') {
             player.gold += item.amount;
             logMessage(`You pick up ${item.amount} gold.`, 'pickup');
+        } else if (item.effect === 'lore_note') {
+            // Phase XI: Scattered Notes — give a random lore fragment
+            if (typeof RANDOM_LORE_POOL !== 'undefined' && RANDOM_LORE_POOL.length > 0) {
+                const key = RANDOM_LORE_POOL[Math.floor(Math.random() * RANDOM_LORE_POOL.length)];
+                const frag = LORE_FRAGMENTS[key];
+                if (frag) {
+                    logMessage(`📜 ${frag.title}: "${frag.text}"`, 'magic');
+                    if (!player.discoveredLore) player.discoveredLore = [];
+                    if (!player.discoveredLore.includes(key)) player.discoveredLore.push(key);
+                }
+            }
+            logMessage(`You pick up a scattered note and read it.`, 'pickup');
         } else {
             if (player.inventory.length < 30) {
                 player.inventory.push(item);
@@ -740,6 +752,17 @@ function combat(attacker, defender) {
     if (isCrit) logMessage(`${attacker.name} lands a CRITICAL HIT on ${defender.name} for ${dmg}!`, 'magic');
     else logMessage(`${attacker.name} hits ${defender.name} for ${dmg}.`, msgClass);
 
+    // Phase XI: Track weapon damage & armor block stats
+    if (attacker.isPlayer && player.equipment.weapon) {
+        player.equipment.weapon.totalDamageDealt = (player.equipment.weapon.totalDamageDealt || 0) + dmg;
+    }
+    if (defender.isPlayer) {
+        ['armor', 'helm', 'shield'].forEach(slot => {
+            const itm = player.equipment[slot];
+            if (itm) itm.totalDamageBlocked = (itm.totalDamageBlocked || 0) + Math.min(dmg, (itm.defBonus || 0) + (itm.plusDef || 0));
+        });
+    }
+
     // #14 Dual Wielding: If player has weapon in offhand, 50% chance for second strike
     if (attacker.isPlayer && attacker.equipment.offhand && attacker.equipment.offhand.type === 'weapon' && defender.hp > 0) {
         if (Math.random() < 0.5) {
@@ -861,6 +884,10 @@ function executeMonsterRangedAttack(attacker) {
 }
 
 function handleMonsterDeath(defender) {
+    // Phase XI: Track kills by type for bestiary
+    if (!player.killsByType) player.killsByType = {};
+    player.killCount = (player.killCount || 0) + 1;
+
     // === BALROG KILL — Champion Mode Activation ===
     if (defender.name.includes("Balrog") && !defender.name.includes("Blood")) {
         if (typeof onMonsterKilled === 'function') onMonsterKilled(defender.name);
