@@ -489,7 +489,6 @@ function processAutoPlay() {
             activePath = null;
             isAutoExploring = false;
             isAutoRunning = false;
-            player._fleeingFrom = null;
         }
     }
 
@@ -502,12 +501,6 @@ function processAutoPlay() {
         if (window._autoplayStuckCounter > 0) window._autoplayStuckCounter--;
     }
     window._autoplayLastPos = posKey;
-
-    // Decay fleeing marker
-    if (player._fleeingFrom) {
-        player._fleeingFrom.ttl--;
-        if (player._fleeingFrom.ttl <= 0) player._fleeingFrom = null;
-    }
 
     // Decay target commitment
     if (window._autoplayCommitTTL > 0) window._autoplayCommitTTL--;
@@ -668,10 +661,8 @@ function processAutoPlay() {
 
     const monster = getNearestMonster(player.x, player.y); let mDist = monster ? Math.abs(monster.x - player.x) + Math.abs(monster.y - player.y) : 99;
 
-    // Priority 3: Skill Usage — only if safe to engage (truly dangerous monsters excluded)
-    const isDangerousForMelee = monster && (monster.miniBoss || monster.bossPhases || (monster.w || 1) > 1 || (monster.h || 1) > 1 ||
-        (monster.atk || 0) > player.atk + 5);
-    if (player.skillCooldown <= 0 && player.energy >= 40 && !isDangerousForMelee) {
+    // Priority 3: Skill Usage
+    if (player.skillCooldown <= 0 && player.energy >= 40) {
         if (player.class === 'Warrior' && monster && mDist <= 2) {
             if (typeof window.useClassSkill === 'function') {
                 console.log("[Autoplay] Warrior casts Class Skill!");
@@ -705,10 +696,6 @@ function processAutoPlay() {
             (i.effect === 'fireball_aoe' || i.effect === 'frost_nova' || i.effect === 'confuse_monster') &&
             i.type === 'scroll') >= 0;
 
-        // Danger assessment: large/tall/boss monsters OR significantly stronger (ATK > player + 5)
-        const isDangerous = monster && (monster.miniBoss || monster.bossPhases || (monster.w || 1) > 1 || (monster.h || 1) > 1 ||
-            (monster.atk || 0) > player.atk + 5 || (monster.atk || 0) > player.atk * 1.6);
-
         // Check line of sight
         let losClear = false;
         if (typeof window.getLine === 'function') {
@@ -730,8 +717,8 @@ function processAutoPlay() {
                 return;
             }
 
-            // 2. Wand attacks — use on dangerous enemies or when low HP
-            if (hasWand && (isDangerous || player.hp < player.maxHp * 0.6 || mDist >= 3)) {
+            // 2. Wand attacks — use when low HP or at range
+            if (hasWand && (player.hp < player.maxHp * 0.6 || mDist >= 3)) {
                 const wandIdx = player.inventory.findIndex(i =>
                     (i.effect === 'wand_fire' || i.effect === 'wand_frost' || i.effect === 'wand_lightning' || i.effect === 'target_spell') &&
                     (i.charges || 0) > 0);
@@ -744,8 +731,8 @@ function processAutoPlay() {
                 }
             }
 
-            // 3. Offensive scrolls — Fireball/Frost Nova on groups or dangerous
-            if (hasOffensiveScroll && (isDangerous || mDist >= 4)) {
+            // 3. Offensive scrolls — Fireball/Frost Nova on groups
+            if (hasOffensiveScroll && mDist >= 4) {
                 const scrollIdx = player.inventory.findIndex(i =>
                     (i.effect === 'fireball_aoe' || i.effect === 'frost_nova' || i.effect === 'confuse_monster') &&
                     i.type === 'scroll');
@@ -755,23 +742,7 @@ function processAutoPlay() {
                     return;
                 }
             }
-
-            // 4. If dangerous monster and we have no ranged options, don't chase — flee and mark target
-            if (isDangerous && !hasBow && !hasWand) {
-                console.log(`[Autoplay] Avoiding dangerous ${monster.name} — no ranged options`);
-                player._fleeingFrom = { x: monster.x, y: monster.y, name: monster.name, ttl: 10 };
-                // Move away from monster
-                let adx = Math.sign(player.x - monster.x), ady = Math.sign(player.y - monster.y);
-                if (adx === 0 && ady === 0) adx = 1;
-                const nx = player.x + adx, ny = player.y + ady;
-                if (nx >= 0 && nx < MAP_WIDTH && ny >= 0 && ny < MAP_HEIGHT &&
-                    map[nx][ny].type !== 'wall' && !getEntityAt(nx, ny)) {
-                    window.attemptAction(player, { type: 'move', dx: adx, dy: ady });
-                    return;
-                }
-                // Can't flee — fight anyway
-                player._fleeingFrom = null;
-            }
+            // No ranged options? Close to melee — always engage, never flee.
         }
     }
 
@@ -785,8 +756,8 @@ function processAutoPlay() {
         return;
     }
     
-    // Priority 5: Chase visible monsters directly (skip if fleeing)
-    if (monster && !player._fleeingFrom) {
+    // Priority 5: Chase visible monsters directly
+    if (monster) {
         isAutoExploring = false;
         window._autoplayCachedPath = null; // Invalidate explore cache
         let path = window.findPath(player.x, player.y, monster.x, monster.y);

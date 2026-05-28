@@ -707,6 +707,34 @@ function combat(attacker, defender) {
                 spawnParticle(player.x, player.y, 'DISSOLVED!', '#2ecc71');
             }
         }
+        // Phase XII: Confusion attack — Beholder, Mind Flayer
+        if (attacker.confuser && Math.random() < 0.25) {
+            player.confusedTimer = (player.confusedTimer || 0) + 8;
+            logMessage(`${attacker.name} scrambles your mind! You are confused!`, 'damage');
+            spawnParticle(defender.x, defender.y, 'CONFUSED!', '#9b59b6');
+        }
+        // Phase XII: Fear aura — Demon Lord, Wraith, Balrog
+        if (attacker.fearAura && Math.random() < 0.2) {
+            player.paralyzedTimer = (player.paralyzedTimer || 0) + 3;
+            logMessage(`${attacker.name} terrifies you! You freeze in fear!`, 'damage');
+            spawnParticle(defender.x, defender.y, 'FEAR!', '#8e44ad');
+        }
+        // Phase XII: Stat drain — Phantom, Wraith, Mind Flayer, Shadow Assassin
+        if (attacker.statDrain && Math.random() < 0.15) {
+            const stats = ['str', 'int', 'dex'];
+            const stat = stats[Math.floor(Math.random() * stats.length)];
+            if (player.stats[stat] > 3) {
+                player.stats[stat]--;
+                logMessage(`${attacker.name} drains your ${stat.toUpperCase()}! (-1)`, 'damage');
+                spawnParticle(defender.x, defender.y, `-1 ${stat.toUpperCase()}`, '#8e44ad');
+            }
+        }
+        // Phase XII: Web/Paralyze — Giant Spider
+        if (attacker.webber && Math.random() < 0.3) {
+            player.paralyzedTimer = (player.paralyzedTimer || 0) + 4;
+            logMessage(`${attacker.name} entangles you in webs!`, 'damage');
+            spawnParticle(defender.x, defender.y, 'WEBBED!', '#bdc3c7');
+        }
     }
 
     if (attacker.lifeSteal && !attacker.isPlayer) {
@@ -887,6 +915,9 @@ function handleMonsterDeath(defender) {
     // Phase XI: Track kills by type for bestiary
     if (!player.killsByType) player.killsByType = {};
     player.killCount = (player.killCount || 0) + 1;
+
+    // Phase XII: Monster death speech
+    if (typeof monsterSpeak === 'function') monsterSpeak(defender, 'death');
 
     // === BALROG KILL — Champion Mode Activation ===
     if (defender.name.includes("Balrog") && !defender.name.includes("Blood")) {

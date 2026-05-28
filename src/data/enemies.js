@@ -9,13 +9,13 @@ const ENEMY_TYPES = [
     { char: 'g', name: 'Goblin', color: COLORS.GOBLIN, hp: 10, atk: 3, def: 1, speed: 10, element: 'none', baseXP: 10, personality: 'cowardly' },
     { char: 'k', name: 'Kobold', color: '#c0392b', hp: 12, atk: 4, def: 2, speed: 11, element: 'none', baseXP: 15, personality: 'cowardly' },
     { char: 'h', name: 'Fire Hound', color: COLORS.FIRE_HOUND, hp: 15, atk: 5, def: 2, speed: 14, element: 'fire', baseXP: 25, personality: 'pack' },
-    { char: 's', name: 'Giant Spider', color: '#2ecc71', hp: 14, atk: 4, def: 1, speed: 13, element: 'poison', baseXP: 20 },
+    { char: 's', name: 'Giant Spider', color: '#2ecc71', hp: 14, atk: 4, def: 1, speed: 13, element: 'poison', baseXP: 20, webber: true },
     { char: 'R', name: 'Giant Rat', color: '#a04000', hp: 18, atk: 4, def: 1, speed: 14, element: 'poison', baseXP: 18, personality: 'pack' },
 
     // Mid-tier Monsters (Floors 3-6)
     { char: 'o', name: 'Orc', color: '#27ae60', hp: 20, atk: 5, def: 2, speed: 8, element: 'none', baseXP: 30, personality: 'vengeful' },
     { char: 'e', name: 'Dark Elf', color: '#8e44ad', hp: 18, atk: 7, def: 3, speed: 12, element: 'magic', baseXP: 45, personality: 'stealthy' },
-    { char: 'T', name: 'Cave Troll', color: COLORS.TROLL, hp: 35, atk: 9, def: 5, speed: 6, element: 'none', baseXP: 60, personality: 'vengeful' },
+    { char: 'T', name: 'Cave Troll', color: COLORS.TROLL, hp: 35, atk: 9, def: 5, speed: 6, element: 'none', baseXP: 60, personality: 'vengeful', regenerator: true },
     { char: 'Z', name: 'Skeleton', color: '#ecf0f1', hp: 14, atk: 4, def: 2, speed: 8, element: 'none', baseXP: 35 },
     { char: 'n', name: 'Blink Dog', color: '#3498db', hp: 12, atk: 5, def: 2, speed: 15, element: 'none', blinker: true, baseXP: 45, personality: 'pack' },
     { char: 'X', name: 'Rust Monster', color: '#d35400', hp: 16, atk: 3, def: 0, speed: 10, element: 'rust', baseXP: 50 },
@@ -31,11 +31,11 @@ const ENEMY_TYPES = [
     { char: 'J', name: 'Iron Golem', color: '#aab7b8', hp: 60, atk: 11, def: 10, speed: 4, element: 'none', baseXP: 90 },
 
     // Deep Monsters (Floors 6-10)
-    { char: 'W', name: 'Wraith', color: '#95a5a6', hp: 25, atk: 8, def: 2, speed: 10, element: 'drain', baseXP: 80, personality: 'stealthy' },
+    { char: 'W', name: 'Wraith', color: '#95a5a6', hp: 25, atk: 8, def: 2, speed: 10, element: 'drain', baseXP: 80, personality: 'stealthy', statDrain: true, fearAura: true },
     { char: 'V', name: 'Vampire', color: '#8e44ad', hp: 32, atk: 9, def: 4, speed: 11, element: 'drain', drainMaxHp: true, lifeSteal: true, baseXP: 110 },
     { char: 'N', name: 'Necromancer', color: '#9b59b6', hp: 20, atk: 7, def: 1, speed: 9, element: 'magic', summoner: true, baseXP: 70 },
-    { char: 'I', name: 'Beholder', color: '#e74c3c', hp: 22, atk: 9, def: 2, speed: 8, element: 'magic', rangedDebuff: true, baseXP: 85 },
-    { char: 'M', name: 'Mind Flayer', color: '#8e44ad', hp: 24, atk: 7, def: 3, speed: 10, element: 'magic', xpDrain: true, baseXP: 100 },
+    { char: 'I', name: 'Beholder', color: '#e74c3c', hp: 22, atk: 9, def: 2, speed: 8, element: 'magic', rangedDebuff: true, baseXP: 85, confuser: true },
+    { char: 'M', name: 'Mind Flayer', color: '#8e44ad', hp: 24, atk: 7, def: 3, speed: 10, element: 'magic', xpDrain: true, baseXP: 100, confuser: true, statDrain: true },
     { char: 'D', name: 'Dragon', color: '#e67e22', hp: 60, atk: 14, def: 8, speed: 9, element: 'fire', breather: true, baseXP: 180 },
     { char: 'd', name: 'Frost Dragon', color: '#3498db', hp: 65, atk: 13, def: 9, speed: 8, element: 'ice', breather: true, baseXP: 185 },
 
@@ -45,15 +45,18 @@ const ENEMY_TYPES = [
     { char: 'E', name: 'Ice Elemental', color: '#3498db', hp: 35, atk: 9, def: 6, speed: 8, element: 'ice', baseXP: 95 },
 
     // Phase VI — Round 4: Undead elites
-    { char: 'P', name: 'Phantom', color: '#d5d8dc', hp: 30, atk: 7, def: 0, speed: 12, element: 'drain', invisible: true, baseXP: 75, personality: 'stealthy' },
+    { char: 'P', name: 'Phantom', color: '#d5d8dc', hp: 30, atk: 7, def: 0, speed: 12, element: 'drain', invisible: true, baseXP: 75, personality: 'stealthy', statDrain: true },
     { char: 'S', name: 'Skeletal Knight', color: '#f0f3f4', hp: 38, atk: 9, def: 6, speed: 7, element: 'none', baseXP: 70 },
+
+    // Phase XII — New ability monsters
+    { char: 'z', name: 'Zombie', color: '#7d8b2e', hp: 22, atk: 6, def: 3, speed: 5, element: 'none', baseXP: 30, regenerator: true },
 
     // Boss tier
     { char: 'B', name: 'Balrog', color: '#c0392b', hp: 150, atk: 18, def: 12, speed: 10, element: 'fire', baseXP: 500, bossPhases: true },
 
     // Phase VI — Round 5: Hydra & Demon Lord
-    { char: 'H', name: 'Hydra', color: '#1abc9c', hp: 100, atk: 14, def: 6, speed: 7, element: 'poison', baseXP: 250, miniBoss: true, bossPhases: true },
-    { char: 'U', name: 'Demon Lord', color: '#e74c3c', hp: 130, atk: 17, def: 11, speed: 9, element: 'fire', summoner: true, baseXP: 400, miniBoss: true, bossPhases: true },
+    { char: 'H', name: 'Hydra', color: '#1abc9c', hp: 100, atk: 14, def: 6, speed: 7, element: 'poison', baseXP: 250, miniBoss: true, bossPhases: true, regenerator: true },
+    { char: 'U', name: 'Demon Lord', color: '#e74c3c', hp: 130, atk: 17, def: 11, speed: 9, element: 'fire', summoner: true, baseXP: 400, miniBoss: true, bossPhases: true, fearAura: true },
     { char: 'A', name: 'Ancient Wyrm', color: '#f39c12', hp: 250, atk: 22, def: 15, speed: 9, element: 'fire', drainMaxHp: true, breather: true, miniBoss: true, baseXP: 800, bossPhases: true },
     { char: 'K', name: 'Dragon King', color: '#e74c3c', hp: 300, atk: 25, def: 18, speed: 10, element: 'fire', drainMaxHp: true, breather: true, miniBoss: true, baseXP: 1000, bossPhases: true },
 

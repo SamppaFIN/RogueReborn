@@ -213,6 +213,13 @@ function spawnMonsterAt(x, y, packMember = false) {
         if (t.bossPhases)   e.bossPhases    = true;
         if (t.miniBoss)     e.miniBoss      = true;
 
+        // Phase XII: New special ability flags
+        if (t.confuser)     e.confuser      = true;
+        if (t.fearAura)     e.fearAura      = true;
+        if (t.statDrain)    e.statDrain     = true;
+        if (t.regenerator)  e.regenerator   = true;
+        if (t.webber)       e.webber        = true;
+
         // Phase XI: Large monster sizes — bosses AND common big creatures
         // 2×2: truly massive
         if (t.name === 'Balrog' || t.name === 'Dragon King' || t.name === 'Ancient Wyrm' ||
@@ -620,7 +627,7 @@ function gameLoop(timestamp) {
     if (gameState !== 'PLAYING' && !(isAutoPlay && isModalState)) {
         
     // --- STATUS TIMER DECAY ---
-    if (player.hasteTimer > 0) { player.hasteTimer--; if (player.hasteTimer === 0) { player.speed = getBaseSpeed(); logMessage('Haste fades.', 'hint'); } }
+    if (player.hasteTimer > 0) { player.hasteTimer--; if (player.hasteTimer === 0) { player.speed = Math.max(1, (player.speed || 10) - 6); logMessage('Haste fades.', 'hint'); } }
     if (player.invisibleTimer > 0) { player.invisibleTimer--; if (player.invisibleTimer === 0) logMessage('You become visible.', 'hint'); }
     if (player.heroismTimer > 0) { player.heroismTimer--; if (player.heroismTimer === 0) logMessage('Heroism fades.', 'hint'); }
     if (player.blessTimer > 0) { player.blessTimer--; if (player.blessTimer === 0) logMessage('Blessing fades.', 'hint'); }

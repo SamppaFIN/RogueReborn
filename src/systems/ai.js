@@ -105,6 +105,55 @@ function findNearestUnexplored(sx, sy) {
 // Batch 9: AI Helper Functions
 // ============================================================
 
+// Phase XII: Monster speech — taunts, battle cries, death screams
+const MONSTER_SPEECH = {
+    taunt: [
+        "Fresh meat!", "You dare enter my lair?!", "Die, intruder!",
+        "Your bones will join the others...", "I smell blood!", "MINE!",
+        "No one escapes!", "The darkness hungers!", "Foolish mortal!",
+        "You'll make a fine trophy!", "Join the dead below!"
+    ],
+    battle: [
+        "RAAARGH!", "CRUSH YOU!", "Taste steel!", "Bleed for me!",
+        "Suffer!", "RIP AND TEAR!", "No mercy!", "DIE DIE DIE!",
+        "Your soul is MINE!", "Feel my wrath!"
+    ],
+    pain: [
+        "Aargh!", "You'll pay for that!", "Is that all?!",
+        "Impudent whelp!", "You wound me!", "That stings!"
+    ],
+    caster: [
+        "Flames consume you!", "Darkness take you!", "By the abyss!",
+        "Feel the arcane!", "Your mind is WEAK!", "I call the void!"
+    ],
+    death: [
+        "No... impossible...", "The darkness... calls...", "You... win...",
+        "Finally... peace...", "I'll be back...", "Curse you!",
+        "But... how...", "My treasure..."
+    ],
+    coward: [
+        "Run away!", "Too strong!", "Not worth it!", "NOPE!",
+        "Save yourselves!", "I'm out of here!", "Find someone else!"
+    ]
+};
+
+function monsterSpeak(e, category) {
+    const phrases = MONSTER_SPEECH[category];
+    if (!phrases || Math.random() > 0.5) return;
+    const text = phrases[Math.floor(Math.random() * phrases.length)];
+    // Spawn as a speech bubble particle (longer life, larger, white bg)
+    const bubble = new Particle(e.x, e.y, text, '#f1c40f');
+    bubble.vy = -0.08;
+    bubble.vx = (Math.random() - 0.5) * 0.03;
+    bubble.maxLife = 2.5;
+    bubble.life = 2.5;
+    bubble.isSpeech = true;
+    particles.push(bubble);
+}
+
+// Modified particle class extension handled inline
+
+
 // #41 Pack Mentality — Enhanced Alert System
 function handlePackAlert(e, dist, visible) {
     let baseName = e.name.replace('Elite ', '').replace('Mini-Boss ', '');
@@ -476,6 +525,13 @@ function processMonsterAI(e) {
         }
     }
 
+    // Phase XII: Regeneration — Trolls, Hydras, Zombies heal each turn
+    if (e.regenerator && e.hp > 0 && e.hp < e.maxHp && Math.random() < 0.3) {
+        const heal = Math.max(1, Math.floor(e.maxHp * 0.05));
+        e.hp = Math.min(e.maxHp, e.hp + heal);
+        if (Math.random() < 0.1) spawnParticle(e.x, e.y, `+${heal}`, '#2ecc71');
+    }
+
     // Ambush bonus ATK removal after first combat
     if (e.ambushBonusAtk && e.ambushed && e.hp < e.maxHp) {
         e.atk -= e.ambushBonusAtk;
@@ -490,14 +546,17 @@ function processMonsterAI(e) {
             if (dist < 8) {
                 logMessage(`${e.name} wakes up!`, 'damage');
                 spawnParticle(e.x, e.y, '!', '#e74c3c');
+                monsterSpeak(e, 'taunt'); // Phase XII: monster taunts on waking
                 // Phase XI: Awakening volley — ranged monsters fire immediately
                 if (e.ranged && visible && dist >= 2 && dist <= 6 && Math.random() < 0.6) {
+                    monsterSpeak(e, 'caster');
                     executeMonsterRangedAttack(e);
                     e.energy -= ENERGY_THRESHOLD;
                     return;
                 }
                 // Spellcasters hurl a spell on wake
                 if (!e.ranged && (e.summoner || e.rangedDebuff || e.element === 'magic') && visible && dist >= 2 && Math.random() < 0.35) {
+                    monsterSpeak(e, 'caster');
                     executeMonsterRangedAttack(e);
                     e.energy -= ENERGY_THRESHOLD;
                     return;
@@ -512,7 +571,9 @@ function processMonsterAI(e) {
     // Phase XII: First-sight ranged attack — awake ranged/caster monsters fire when player first spotted
     if (!e.sleeping && !e._firstSightFired && visible && dist >= 2 && dist <= 8) {
         e._firstSightFired = true;
+        monsterSpeak(e, 'taunt');
         if (e.ranged && Math.random() < 0.5) {
+            monsterSpeak(e, 'caster');
             executeMonsterRangedAttack(e);
             e.energy -= ENERGY_THRESHOLD;
             return;
@@ -526,7 +587,7 @@ function processMonsterAI(e) {
 
     // Phase XII: Cowardly flee on sight — run away when seeing player (not just when hurt)
     if (!e.sleeping && (e.personality === 'cowardly' || e._willFlee) && visible && dist <= 8 && dist > 1) {
-        if (!e._fleeingSince) e._fleeingSince = true;
+        if (!e._fleeingSince) { e._fleeingSince = true; monsterSpeak(e, 'coward'); }
         // Move away from player
         let mdx = Math.sign(e.x - player.x);
         let mdy = Math.sign(e.y - player.y);

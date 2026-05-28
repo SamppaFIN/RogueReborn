@@ -548,13 +548,39 @@ function render() {
         ctx.stroke();
     }
 
-    // Draw Particles
-    ctx.textAlign = 'center';
-    ctx.font = `bold ${TILE_SIZE * 0.7}px "Fira Code", monospace`;
+    // Draw Particles & Speech Bubbles
     particles.forEach(p => {
-        ctx.globalAlpha = Math.max(0, p.life / p.maxLife);
-        ctx.fillStyle = p.color;
-        ctx.fillText(p.text, offsetX + p.x * TILE_SIZE + TILE_SIZE / 2, offsetY + p.y * TILE_SIZE);
+        const alpha = Math.max(0, p.life / p.maxLife);
+        const px = offsetX + p.x * TILE_SIZE + TILE_SIZE / 2;
+        const py = offsetY + p.y * TILE_SIZE;
+        ctx.globalAlpha = alpha;
+
+        if (p.isSpeech) {
+            // Speech bubble: dark background, yellow border, white text
+            ctx.font = `bold ${TILE_SIZE * 0.55}px "Fira Code", monospace`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'bottom';
+            const metrics = ctx.measureText(p.text);
+            const bw = metrics.width + 10, bh = TILE_SIZE * 0.8;
+            const bx = px - bw / 2, by = py - bh - 4;
+            // Bubble background
+            ctx.fillStyle = 'rgba(0,0,0,0.85)';
+            ctx.fillRect(bx, by, bw, bh);
+            ctx.strokeStyle = `rgba(241,196,15,${alpha})`;
+            ctx.lineWidth = 1;
+            ctx.strokeRect(bx, by, bw, bh);
+            // Text
+            ctx.fillStyle = '#f1c40f';
+            ctx.fillText(p.text, px, by + bh - 6);
+            ctx.lineWidth = 1;
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'top';
+        } else {
+            ctx.font = `bold ${TILE_SIZE * 0.7}px "Fira Code", monospace`;
+            ctx.textAlign = 'center';
+            ctx.fillStyle = p.color;
+            ctx.fillText(p.text, px, py);
+        }
     });
     ctx.globalAlpha = 1.0;
     ctx.textAlign = 'left';
@@ -650,6 +676,12 @@ function render() {
                             if (ent.lifeSteal) traits.push("Life Steal");
                             if (ent.dissolver) traits.push("Acidic");
                             if (ent.drainMaxHp) traits.push("Drains Max HP");
+                            if (ent.xpDrain) traits.push("XP Drain");
+                            if (ent.confuser) traits.push("Confuses");
+                            if (ent.fearAura) traits.push("Fear Aura");
+                            if (ent.statDrain) traits.push("Stat Drain");
+                            if (ent.regenerator) traits.push("Regenerates");
+                            if (ent.webber) traits.push("Webber");
                             if (traits.length > 0) tooltipLines.push(`Traits: ${traits.join(', ')}`);
                             else tooltipLines.push("Traits: None");
                         }

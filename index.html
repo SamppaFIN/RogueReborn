@@ -988,38 +988,7 @@
     <script>
         window.mobileControlsVisible = true; // Global state for persistence
 
-        function toggleMobileControls(e) {
-            if (e) {
-                e.preventDefault();
-                e.stopPropagation();
-            }
-
-            const controls = document.getElementById('mobile-controls');
-            const actions = document.getElementById('mobile-actions');
-            const btn = document.getElementById('btn-toggle-controls');
-            
-            window.mobileControlsVisible = !window.mobileControlsVisible;
-            
-            console.log("Toggle Mobile Controls: visible =", window.mobileControlsVisible);
-
-            if (window.mobileControlsVisible) {
-                controls.classList.remove('mobile-hidden');
-                btn.innerText = 'Hide Controls';
-            } else {
-                controls.classList.add('mobile-hidden');
-                btn.innerText = 'Show Controls';
-            }
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            const toggleBtn = document.getElementById('btn-toggle-controls');
-            if (toggleBtn) {
-                // Unified event handling to prevent double-firing
-                ['click', 'touchstart'].forEach(evtType => {
-                    toggleBtn.addEventListener(evtType, toggleMobileControls, { passive: false });
-                });
-            }
-        });
+        // Phase XII: Mobile d-pad toggle handled via inline onclick + toggleMobileDPad in engine.js
     </script>
 </body>
 
