@@ -395,7 +395,7 @@
             <canvas id="gameCanvas"></canvas>
             
             <!-- Mobile Toggle -->
-            <button id="btn-toggle-controls" style="position: absolute; top: 10px; right: 10px; z-index: 50; background: rgba(0,0,0,0.7); color: #f1c40f; border: 1px solid #f1c40f; border-radius: 4px; padding: 8px 12px; cursor: pointer; display: none; font-family: inherit;">Hide Controls</button>
+            <button id="btn-toggle-controls" onclick="if(window.toggleMobileDPad)window.toggleMobileDPad()" style="position: absolute; top: 10px; right: 10px; z-index: 50; background: rgba(0,0,0,0.7); color: #f1c40f; border: 1px solid #f1c40f; border-radius: 4px; padding: 8px 12px; cursor: pointer; display: none; font-family: inherit;">Hide D-Pad</button>
 
             <!-- Mobile Controls -->
             <div id="mobile-controls">
@@ -429,7 +429,7 @@
                 </div>
                 <div class="stat-row">
                     <span class="stat-label">Graphics</span>
-                    <span class="stat-value" id="ui-gfx" style="cursor:pointer" title="Ctrl+G to toggle" onclick="if(window.toggleRenderMode)window.toggleRenderMode()">⌨ ASCII</span>
+                    <span class="stat-value" id="ui-gfx" style="cursor:pointer" title="Ctrl+G to toggle" onclick="if(window.toggleRenderMode)window.toggleRenderMode()">🎨 Tiles</span>
                 </div>
                 <div class="stat-row">
                     <span class="stat-label">Time</span>

@@ -38,13 +38,26 @@ var currentFloor = 0; // 0 = Town, 1+ = Dungeon
 var gameState = 'START';
 
 // Phase XI: Tile-based graphics toggle (Ctrl+G)
-window.renderMode = (function() { try { return localStorage.getItem('rogueRenderMode') || 'ascii'; } catch(e) { return 'ascii'; } })(); // 'ascii' | 'tiles'
+window.renderMode = (function() { try { return localStorage.getItem('rogueRenderMode') || 'tiles'; } catch(e) { return 'tiles'; } })(); // 'ascii' | 'tiles'
 window.toggleRenderMode = function() {
     window.renderMode = window.renderMode === 'ascii' ? 'tiles' : 'ascii';
     try { localStorage.setItem('rogueRenderMode', window.renderMode); } catch(e) {}
     logMessage(`Graphics: ${window.renderMode === 'tiles' ? 'TILE MODE' : 'ASCII MODE'}`, 'magic');
     if (typeof render === 'function') render();
     updateUI();
+};
+
+// Phase XII: Mobile d-pad toggle — actions stay visible, d-pad hides
+window.mobileDPadVisible = true; // default: d-pad visible
+window.toggleMobileDPad = function() {
+    window.mobileDPadVisible = !window.mobileDPadVisible;
+    const dPad = document.getElementById('mobile-controls');
+    const btn = document.getElementById('btn-toggle-controls');
+    if (dPad) {
+        if (window.mobileDPadVisible) dPad.classList.remove('mobile-hidden');
+        else dPad.classList.add('mobile-hidden');
+    }
+    if (btn) btn.innerText = window.mobileDPadVisible ? 'Hide D-Pad' : 'Show D-Pad';
 };
 
 let lastTime = 0;
@@ -200,13 +213,23 @@ function spawnMonsterAt(x, y, packMember = false) {
         if (t.bossPhases)   e.bossPhases    = true;
         if (t.miniBoss)     e.miniBoss      = true;
 
-        // Phase XI: Large monster sizes for bosses
-        if (t.name === 'Balrog' || t.name === 'Dragon King' || t.name === 'Ancient Wyrm') {
+        // Phase XI: Large monster sizes — bosses AND common big creatures
+        // 2×2: truly massive
+        if (t.name === 'Balrog' || t.name === 'Dragon King' || t.name === 'Ancient Wyrm' ||
+            t.name === 'Hydra' || t.name === 'Demon Lord' || t.name === 'Abyssal Titan' ||
+            t.name === 'Elder Dragon' || t.name === 'The Nameless One' ||
+            t.name === 'The Butcher' || t.name === 'Shadow Queen') {
             e.w = 2; e.h = 2;
-        } else if (t.name === 'Hydra' || t.name === 'Demon Lord' || t.name === 'Abyssal Titan' || t.name === 'Elder Dragon' || t.name === 'The Nameless One') {
-            e.w = 2; e.h = 2;
-        } else if (t.name === 'Dragon' || t.name === 'Frost Dragon' || t.name === 'Dread Lich') {
+        // 2×1: large creatures
+        } else if (t.name === 'Dragon' || t.name === 'Frost Dragon' || t.name === 'Dread Lich' ||
+                   t.name === 'Cave Troll' || t.name === 'Iron Golem' || t.name === 'Champion Orc' ||
+                   t.name === 'Cave Champion' || t.name === 'Wyvern' || t.name === 'Vault Guardian' ||
+                   t.name === 'Vault Overseer' || t.name === 'Void Worm') {
             e.w = 2; e.h = 1;
+        // 1×2: tall creatures  
+        } else if (t.name === 'Beholder' || t.name === 'Necromancer' || t.name === 'Dark Channeler' ||
+                   t.name === 'Gargoyle') {
+            e.w = 1; e.h = 2;
         }
 
         // #81-82 Elite variant – 10% chance (not for support units or ambushers)
@@ -216,6 +239,23 @@ function spawnMonsterAt(x, y, packMember = false) {
             e.color = '#f1c40f';
             e.baseXP *= 2;
             e.isElite = true;
+        }
+
+        // Phase XII: Pre-awakened monsters — some start awake and alert
+        if (t.miniBoss || t.bossPhases || t.vaultSentry || t.elite) {
+            e.sleeping = false; // Bosses & guards always awake
+        } else if (t.ranged || t.summoner || t.rangedDebuff) {
+            e.sleeping = Math.random() < 0.5; // Ranged/casters: 50% awake
+        } else if (t.personality === 'cowardly') {
+            e.sleeping = false; // Cowards are alert — ready to flee
+            e._willFlee = true; // Mark for flee-on-sight
+        } else if (t.personality === 'pack') {
+            e.sleeping = Math.random() < 0.3; // Pack hunters: 30% patrolling
+        } else if (t.ambusher) {
+            e.sleeping = false; // Ambushers are always watching
+        } else {
+            e.sleeping = Math.random() < 0.15 + currentFloor * 0.02; // 15-35% awake by depth
+            e.sleeping = Math.min(e.sleeping, 0.6);
         }
 
         entities.push(e);

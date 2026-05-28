@@ -465,22 +465,49 @@ function processAutoPlay() {
     
     if (gameState !== 'PLAYING') return;
 
-    // --- STUCK DETECTION (Enhanced) ---
+    // --- STUCK DETECTION (Enhanced: detects A↔B ping-pong) ---
     const posKey = `${player.x},${player.y}`;
     window._autoplayPosHistory = window._autoplayPosHistory || [];
     window._autoplayPosHistory.push(posKey);
-    if (window._autoplayPosHistory.length > 20) window._autoplayPosHistory.shift();
+    if (window._autoplayPosHistory.length > 24) window._autoplayPosHistory.shift();
 
-    // Detect loops: if we've been in the same position too many times in the last 20 turns
+    // Detect 2-tile ping-pong: if last 8 positions alternate between only 2 tiles
+    const recent = window._autoplayPosHistory.slice(-8);
+    const uniquePositions = new Set(recent);
+    if (uniquePositions.size === 2 && recent.length >= 8) {
+        // Check alternation pattern A→B→A→B...
+        let pingPong = true;
+        for (let i = 2; i < recent.length; i++) {
+            if (recent[i] !== recent[i-2]) { pingPong = false; break; }
+        }
+        if (pingPong) {
+            window._autoplayStuckCounter += 3; // Heavy penalty for ping-pong
+            if (window._autoplayStuckCounter % 10 === 0) console.log(`[Autoplay] Ping-pong stuck! Breaking pattern.`);
+            // Force-clear path and target to break the loop
+            window._autoplayCommittedTarget = null;
+            window._autoplayCachedPath = null;
+            activePath = null;
+            isAutoExploring = false;
+            isAutoRunning = false;
+            player._fleeingFrom = null;
+        }
+    }
+
+    // Standard stuck: same position too many times
     const occurrences = window._autoplayPosHistory.filter(p => p === posKey).length;
     if (occurrences > 5) {
         window._autoplayStuckCounter++;
         if (window._autoplayStuckCounter % 10 === 0) console.log(`[Autoplay] Stuck detected! Counter: ${window._autoplayStuckCounter}`);
     } else {
-        // Decrease counter slowly if we are moving
         if (window._autoplayStuckCounter > 0) window._autoplayStuckCounter--;
     }
     window._autoplayLastPos = posKey;
+
+    // Decay fleeing marker
+    if (player._fleeingFrom) {
+        player._fleeingFrom.ttl--;
+        if (player._fleeingFrom.ttl <= 0) player._fleeingFrom = null;
+    }
 
     // Decay target commitment
     if (window._autoplayCommitTTL > 0) window._autoplayCommitTTL--;
@@ -641,9 +668,9 @@ function processAutoPlay() {
 
     const monster = getNearestMonster(player.x, player.y); let mDist = monster ? Math.abs(monster.x - player.x) + Math.abs(monster.y - player.y) : 99;
 
-    // Priority 3: Skill Usage — only if safe to engage
-    const isDangerousForMelee = monster && (monster.miniBoss || monster.bossPhases || (monster.w || 1) > 1 ||
-        (monster.atk || 0) >= player.atk + 3);
+    // Priority 3: Skill Usage — only if safe to engage (truly dangerous monsters excluded)
+    const isDangerousForMelee = monster && (monster.miniBoss || monster.bossPhases || (monster.w || 1) > 1 || (monster.h || 1) > 1 ||
+        (monster.atk || 0) > player.atk + 5);
     if (player.skillCooldown <= 0 && player.energy >= 40 && !isDangerousForMelee) {
         if (player.class === 'Warrior' && monster && mDist <= 2) {
             if (typeof window.useClassSkill === 'function') {
@@ -678,9 +705,9 @@ function processAutoPlay() {
             (i.effect === 'fireball_aoe' || i.effect === 'frost_nova' || i.effect === 'confuse_monster') &&
             i.type === 'scroll') >= 0;
 
-        // Danger assessment: large/boss monsters → prefer ranged
-        const isDangerous = monster && (monster.miniBoss || monster.bossPhases || (monster.w || 1) > 1 ||
-            (monster.atk || 0) >= player.atk + 3 || (monster.hp || 0) >= player.hp * 0.8);
+        // Danger assessment: large/tall/boss monsters OR significantly stronger (ATK > player + 5)
+        const isDangerous = monster && (monster.miniBoss || monster.bossPhases || (monster.w || 1) > 1 || (monster.h || 1) > 1 ||
+            (monster.atk || 0) > player.atk + 5 || (monster.atk || 0) > player.atk * 1.6);
 
         // Check line of sight
         let losClear = false;
@@ -729,9 +756,10 @@ function processAutoPlay() {
                 }
             }
 
-            // 4. If dangerous monster and we have no ranged options, don't chase — avoid
+            // 4. If dangerous monster and we have no ranged options, don't chase — flee and mark target
             if (isDangerous && !hasBow && !hasWand) {
                 console.log(`[Autoplay] Avoiding dangerous ${monster.name} — no ranged options`);
+                player._fleeingFrom = { x: monster.x, y: monster.y, name: monster.name, ttl: 10 };
                 // Move away from monster
                 let adx = Math.sign(player.x - monster.x), ady = Math.sign(player.y - monster.y);
                 if (adx === 0 && ady === 0) adx = 1;
@@ -741,6 +769,8 @@ function processAutoPlay() {
                     window.attemptAction(player, { type: 'move', dx: adx, dy: ady });
                     return;
                 }
+                // Can't flee — fight anyway
+                player._fleeingFrom = null;
             }
         }
     }
@@ -755,8 +785,8 @@ function processAutoPlay() {
         return;
     }
     
-    // Priority 5: Chase visible monsters directly
-    if (monster) {
+    // Priority 5: Chase visible monsters directly (skip if fleeing)
+    if (monster && !player._fleeingFrom) {
         isAutoExploring = false;
         window._autoplayCachedPath = null; // Invalidate explore cache
         let path = window.findPath(player.x, player.y, monster.x, monster.y);

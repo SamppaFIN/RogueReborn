@@ -509,6 +509,45 @@ function processMonsterAI(e) {
         }
     }
 
+    // Phase XII: First-sight ranged attack — awake ranged/caster monsters fire when player first spotted
+    if (!e.sleeping && !e._firstSightFired && visible && dist >= 2 && dist <= 8) {
+        e._firstSightFired = true;
+        if (e.ranged && Math.random() < 0.5) {
+            executeMonsterRangedAttack(e);
+            e.energy -= ENERGY_THRESHOLD;
+            return;
+        }
+        if ((e.summoner || e.rangedDebuff || e.element === 'magic') && Math.random() < 0.3) {
+            executeMonsterRangedAttack(e);
+            e.energy -= ENERGY_THRESHOLD;
+            return;
+        }
+    }
+
+    // Phase XII: Cowardly flee on sight — run away when seeing player (not just when hurt)
+    if (!e.sleeping && (e.personality === 'cowardly' || e._willFlee) && visible && dist <= 8 && dist > 1) {
+        if (!e._fleeingSince) e._fleeingSince = true;
+        // Move away from player
+        let mdx = Math.sign(e.x - player.x);
+        let mdy = Math.sign(e.y - player.y);
+        if (mdx === 0 && mdy === 0) { mdx = 1; mdy = 0; }
+        const nx = e.x + mdx, ny = e.y + mdy;
+        if (nx >= 0 && nx < MAP_WIDTH && ny >= 0 && ny < MAP_HEIGHT &&
+            map[nx][ny].type !== 'wall' && !getEntityAt(nx, ny)) {
+            attemptAction(e, { type: 'move', dx: mdx, dy: mdy });
+            return;
+        }
+        // Try diagonal if straight fails
+        for (const [ddx, ddy] of [[-1,-1],[1,-1],[-1,1],[1,1]]) {
+            const dnx = e.x + ddx, dny = e.y + ddy;
+            if (dnx >= 0 && dnx < MAP_WIDTH && dny >= 0 && dny < MAP_HEIGHT &&
+                map[dnx][dny].type !== 'wall' && !getEntityAt(dnx, dny)) {
+                attemptAction(e, { type: 'move', dx: ddx, dy: ddy });
+                return;
+            }
+        }
+    }
+
     // #43 Ambusher AI — check before anything else
     if (e.ambusher && handleAmbush(e, dist, visible)) return;
 

@@ -174,16 +174,21 @@ function updateUI() {
         }
     }
 
-    // Mobile Controls visibility
+    // Mobile Controls visibility — actions ALWAYS visible, d-pad toggleable
     const mobileControls = document.getElementById('mobile-controls');
     const mobileActions = document.getElementById('mobile-actions');
-    if (mobileControls && mobileActions) {
-        if (gameState === 'PLAYING' && window.mobileControlsVisible !== false) {
-            mobileControls.classList.remove('mobile-hidden');
+    if (mobileActions) {
+        if (gameState === 'PLAYING') {
             mobileActions.classList.remove('mobile-hidden');
         } else {
-            mobileControls.classList.add('mobile-hidden');
             mobileActions.classList.add('mobile-hidden');
+        }
+    }
+    if (mobileControls) {
+        if (gameState === 'PLAYING' && window.mobileDPadVisible !== false) {
+            mobileControls.classList.remove('mobile-hidden');
+        } else {
+            mobileControls.classList.add('mobile-hidden');
         }
     }
 }
@@ -213,15 +218,29 @@ function drawTileWall(ox, oy, color, w, h) {
 }
 
 function drawTileChar(ox, oy, char, color, w, h) {
-    ctx.fillStyle = '#000';
+    // Monster: colored circle avatar on dark bg — bigger char for readability
+    ctx.fillStyle = '#0b0c10';
     ctx.fillRect(ox + TILE_PAD, oy + TILE_PAD, w - TILE_PAD * 2, h - TILE_PAD * 2);
+    const cx = ox + w / 2, cy = oy + h / 2, r = (w - TILE_PAD * 2) / 2.2;
     ctx.fillStyle = color;
-    ctx.font = `bold ${TILE_SIZE * 0.65}px "Fira Code", monospace`;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,0.4)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    // Monster char with dark outline — readable on any background color
+    ctx.font = `bold ${TILE_SIZE * 0.7}px "Fira Code", monospace`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(char, ox + w / 2, oy + h / 2);
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = 'rgba(0,0,0,0.7)';
+    ctx.strokeText(char, cx, cy - 1);
+    ctx.fillStyle = '#fff';
+    ctx.fillText(char, cx, cy - 1);
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
+    ctx.lineWidth = 1;
 }
 
 function drawTilePlayer(ox, oy, color, w, h) {
@@ -418,21 +437,34 @@ function render() {
         const ox = offsetX + e.x * TILE_SIZE, oy = offsetY + e.y * TILE_SIZE;
         const ew = e.w || 1, eh = e.h || 1;
         if (isVisible) {
-            // Phase XI: Large monster rendering (2x1, 2x2)
+            // Phase XI: Large monster rendering (2x1, 1x2, 2x2)
             if (ew > 1 || eh > 1) {
                 if (!e.isPlayer && !map[e.x][e.y].visible && player.hasESP) ctx.globalAlpha = 0.5;
-                ctx.fillStyle = '#000';
-                ctx.fillRect(ox + TILE_PAD, oy + TILE_PAD, TILE_SIZE * ew - TILE_PAD * 2, TILE_SIZE * eh - TILE_PAD * 2);
+                // Large colored block with border
+                const totalW = TILE_SIZE * ew - TILE_PAD * 2;
+                const totalH = TILE_SIZE * eh - TILE_PAD * 2;
+                ctx.fillStyle = 'rgba(0,0,0,0.85)';
+                ctx.fillRect(ox + TILE_PAD, oy + TILE_PAD, totalW, totalH);
                 ctx.fillStyle = e.color;
-                ctx.fillRect(ox + TILE_PAD + 1, oy + TILE_PAD + 1, TILE_SIZE * ew - TILE_PAD * 2 - 2, TILE_SIZE * eh - TILE_PAD * 2 - 2);
+                ctx.fillRect(ox + TILE_PAD + 2, oy + TILE_PAD + 2, totalW - 4, totalH - 4);
+                ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(ox + TILE_PAD + 2, oy + TILE_PAD + 2, totalW - 4, totalH - 4);
+                ctx.lineWidth = 1;
+                // Monster char + name
                 ctx.fillStyle = '#fff';
-                ctx.font = `bold ${TILE_SIZE * 0.55}px "Fira Code", monospace`;
+                ctx.font = `bold ${TILE_SIZE * 0.6}px "Fira Code", monospace`;
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
-                ctx.fillText(e.char, ox + (TILE_SIZE * ew) / 2, oy + (TILE_SIZE * eh) / 2 - TILE_SIZE * 0.1);
-                const barW = TILE_SIZE * ew - 8, barH = 3, barX = ox + 4, barY = oy + TILE_SIZE * eh - 6;
+                const labelY = oy + totalH / 2 - (eh > 1 ? TILE_SIZE * 0.3 : 0);
+                ctx.fillText(e.char, ox + totalW / 2, labelY);
+                // Small name label below char
+                ctx.font = `${TILE_SIZE * 0.28}px "Fira Code", monospace`;
+                ctx.fillText(e.name.length > 14 ? e.name.slice(0,12)+'..' : e.name, ox + totalW / 2, labelY + TILE_SIZE * 0.4);
+                // HP bar
+                const barW = totalW - 8, barH = 4, barX = ox + TILE_PAD + 4, barY = oy + totalH - barH - 4;
                 const pct = Math.max(0, e.hp / e.maxHp);
-                ctx.fillStyle = '#333';
+                ctx.fillStyle = '#111';
                 ctx.fillRect(barX, barY, barW, barH);
                 ctx.fillStyle = pct > 0.5 ? '#2ecc71' : pct > 0.25 ? '#f39c12' : '#e74c3c';
                 ctx.fillRect(barX, barY, Math.floor(barW * pct), barH);
