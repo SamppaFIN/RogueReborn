@@ -65,6 +65,13 @@ window.closeHistory = function() {
 function updateUI() {
     if (!player) return;
     document.getElementById('ui-location').innerText = currentFloor === 0 ? 'Town' : currentFloor > 10 ? `Abyss Lvl ${currentFloor}` : `Dungeon Lvl ${currentFloor}`;
+    document.getElementById('ui-location').title = 'Ctrl+G: Toggle tile graphics';
+    // Show render mode indicator
+    const gfxEl = document.getElementById('ui-gfx');
+    if (gfxEl) {
+        gfxEl.innerText = isTileMode() ? '🎨 Tiles' : '⌨ ASCII';
+        gfxEl.style.color = isTileMode() ? '#2ecc71' : '#7f8c8d';
+    }
     
     const timeEl = document.getElementById('ui-time');
     if (timeEl) {
@@ -74,6 +81,13 @@ function updateUI() {
     }
 
     document.getElementById('ui-speed').innerText = getEffectiveSpeed();
+
+    // Ammo display
+    const ammoEl = document.getElementById('ui-ammo');
+    if (ammoEl) {
+        const rangedEq = player.equipment.ranged;
+        ammoEl.innerText = rangedEq ? `${player.ammo || 0} 🏹 (${getItemName(rangedEq)})` : `${player.ammo || 0} 🏹`;
+    }
 
     // Status HUD indicators
     const statusEl = document.getElementById('ui-status');
@@ -182,6 +196,92 @@ function resizeCanvas() {
 }
 
 // --- Main Render ---
+
+// Phase XI: Tile drawing helpers
+const TILE_PAD = 1; // padding inside each tile cell
+
+function drawTileRect(ox, oy, color, w, h) {
+    ctx.fillStyle = color;
+    ctx.fillRect(ox + TILE_PAD, oy + TILE_PAD, w - TILE_PAD * 2, h - TILE_PAD * 2);
+}
+
+function drawTileWall(ox, oy, color, w, h) {
+    drawTileRect(ox, oy, color, w, h);
+    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+    ctx.lineWidth = 0.5;
+    ctx.strokeRect(ox + TILE_PAD, oy + TILE_PAD, w - TILE_PAD * 2, h - TILE_PAD * 2);
+}
+
+function drawTileChar(ox, oy, char, color, w, h) {
+    ctx.fillStyle = '#000';
+    ctx.fillRect(ox + TILE_PAD, oy + TILE_PAD, w - TILE_PAD * 2, h - TILE_PAD * 2);
+    ctx.fillStyle = color;
+    ctx.font = `bold ${TILE_SIZE * 0.65}px "Fira Code", monospace`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(char, ox + w / 2, oy + h / 2);
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+}
+
+function drawTilePlayer(ox, oy, color, w, h) {
+    // Player: bright circle on dark bg
+    ctx.fillStyle = '#000';
+    ctx.fillRect(ox + TILE_PAD, oy + TILE_PAD, w - TILE_PAD * 2, h - TILE_PAD * 2);
+    const cx = ox + w / 2, cy = oy + h / 2, r = (w - TILE_PAD * 2) / 2.3;
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.font = `bold ${TILE_SIZE * 0.5}px "Fira Code", monospace`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('@', cx, cy);
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+}
+
+function drawTileItem(ox, oy, char, color, w, h) {
+    ctx.fillStyle = color;
+    const s = (w - TILE_PAD * 2) * 0.35;
+    ctx.fillRect(ox + w / 2 - s / 2, oy + h / 2 - s / 2, s, s);
+    ctx.fillStyle = '#fff';
+    ctx.font = `${TILE_SIZE * 0.4}px "Fira Code", monospace`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(char, ox + w / 2, oy + h / 2);
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+}
+
+function drawTileStairs(ox, oy, color, w, h) {
+    ctx.fillStyle = '#000';
+    ctx.fillRect(ox + TILE_PAD, oy + TILE_PAD, w - TILE_PAD * 2, h - TILE_PAD * 2);
+    // Stairs: chevron-like pattern
+    ctx.fillStyle = color;
+    ctx.font = `bold ${TILE_SIZE * 0.7}px "Fira Code", monospace`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('>', ox + w / 2, oy + h / 2);
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+}
+
+function drawTileBuilding(ox, oy, char, color, w, h) {
+    // Building: warm glow rectangle
+    drawTileRect(ox, oy, '#2a1a0a', w, h);
+    ctx.fillStyle = color;
+    ctx.font = `bold ${TILE_SIZE * 0.7}px "Fira Code", monospace`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(char, ox + w / 2, oy + h / 2);
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+}
+
+function isTileMode() { return window.renderMode === 'tiles'; }
+
 function render() {
     ctx.fillStyle = '#0b0c10';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -215,7 +315,6 @@ function render() {
                     : (tile.type === 'wall' ? COLORS.DARK_WALL : COLORS.DARK_FLOOR);
                 
                 if (tile.color) {
-                    // Use custom color if it's not just a generic floor/wall, or if it's town floor/wall but we want that specific color
                     if (tile.type !== 'floor' && tile.type !== 'wall') color = tile.color;
                     else if (tile.isTown && tile.visible) color = tile.color;
                 } else if (tile.isTown && tile.visible) {
@@ -224,13 +323,56 @@ function render() {
 
                 if (tile.type === 'stairs_up' || tile.type === 'stairs_down') color = tile.visible ? COLORS.STAIRS : '#666';
                 if (tile.type === 'shop' || tile.type === 'healer' || tile.type === 'blacksmith' || tile.type === 'wizard' || tile.type === 'alchemist' || tile.type === 'trainer' || tile.type === 'bank' || tile.type === 'cartographer' || tile.type === 'altar' || tile.type === 'stash') {
-                    if (timeOfDay === 'Night' && tile.visible) color = '#f1c40f'; // Glow yellow at night
+                    if (timeOfDay === 'Night' && tile.visible) color = '#f1c40f';
                     else if (tile.type === 'healer') color = tile.visible ? '#e74c3c' : '#666';
                     else if (tile.type === 'shop') color = tile.visible ? COLORS.GOLD : '#666';
                 }
 
-                ctx.fillStyle = color;
-                ctx.fillText(tile.char, offsetX + x * TILE_SIZE, offsetY + y * TILE_SIZE);
+                const ox = offsetX + x * TILE_SIZE, oy = offsetY + y * TILE_SIZE;
+
+                if (isTileMode()) {
+                    // --- TILE MODE ---
+                    const t = tile.type;
+                    if (t === 'wall' || t === 'locked_door' || t === 'secret_wall') {
+                        drawTileWall(ox, oy, tile.visible ? color : '#1a1a2e', TILE_SIZE, TILE_SIZE);
+                    } else if (t === 'stairs_down' || t === 'stairs_up') {
+                        drawTileStairs(ox, oy, color, TILE_SIZE, TILE_SIZE);
+                    } else if (['shop','healer','blacksmith','wizard','alchemist','trainer','bank','cartographer','altar','stash','mayor','gambler','shrine','guildhall'].includes(t)) {
+                        drawTileBuilding(ox, oy, tile.char, color, TILE_SIZE, TILE_SIZE);
+                    } else if (t === 'lava') {
+                        ctx.fillStyle = '#3a1500';
+                        ctx.fillRect(ox + TILE_PAD, oy + TILE_PAD, TILE_SIZE - TILE_PAD*2, TILE_SIZE - TILE_PAD*2);
+                        ctx.fillStyle = color;
+                        ctx.font = `bold ${TILE_SIZE*0.5}px "Fira Code", monospace`;
+                        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                        ctx.fillText('~', ox+TILE_SIZE/2, oy+TILE_SIZE/2);
+                        ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+                    } else if (t === 'ice') {
+                        drawTileRect(ox, oy, tile.visible ? '#0a2030' : '#0a0a15', TILE_SIZE, TILE_SIZE);
+                    } else if (t === 'gas') {
+                        drawTileRect(ox, oy, tile.visible ? '#0a1a0a' : '#0a0a15', TILE_SIZE, TILE_SIZE);
+                    } else if (t === 'water') {
+                        drawTileRect(ox, oy, tile.visible ? '#0a1030' : '#0a0a15', TILE_SIZE, TILE_SIZE);
+                    } else if (t === 'trap' || t === 'trapdoor') {
+                        drawTileRect(ox, oy, tile.visible ? '#1a0a0a' : '#0a0a15', TILE_SIZE, TILE_SIZE);
+                        if (tile.visible) {
+                            ctx.fillStyle = color;
+                            ctx.font = `${TILE_SIZE*0.5}px "Fira Code", monospace`;
+                            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                            ctx.fillText(tile.char, ox+TILE_SIZE/2, oy+TILE_SIZE/2);
+                            ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+                        }
+                    } else if (t === 'lore_altar') {
+                        drawTileBuilding(ox, oy, '&', color, TILE_SIZE, TILE_SIZE);
+                    } else {
+                        // Floor / default
+                        drawTileRect(ox, oy, tile.visible ? color : COLORS.DARK_FLOOR, TILE_SIZE, TILE_SIZE);
+                    }
+                } else {
+                    // --- ASCII MODE ---
+                    ctx.fillStyle = color;
+                    ctx.fillText(tile.char, ox, oy);
+                }
             }
         }
     }
@@ -238,16 +380,28 @@ function render() {
     // Draw Items
     items.forEach(i => {
         if (map[i.x][i.y].visible) {
-            ctx.fillStyle = i.color;
-            ctx.fillText(i.char, offsetX + i.x * TILE_SIZE, offsetY + i.y * TILE_SIZE);
+            const ox = offsetX + i.x * TILE_SIZE, oy = offsetY + i.y * TILE_SIZE;
+            if (isTileMode()) {
+                drawTileItem(ox, oy, i.char, i.color, TILE_SIZE, TILE_SIZE);
+            } else {
+                ctx.fillStyle = i.color;
+                ctx.fillText(i.char, ox, oy);
+            }
         }
     });
 
     // Draw Corpses
     entities.filter(e => e.hp <= 0).forEach(e => {
         if (map[e.x][e.y].visible) {
-            ctx.fillStyle = e.color;
-            ctx.fillText(e.char, offsetX + e.x * TILE_SIZE, offsetY + e.y * TILE_SIZE);
+            const ox = offsetX + e.x * TILE_SIZE, oy = offsetY + e.y * TILE_SIZE;
+            if (isTileMode()) {
+                ctx.globalAlpha = 0.3;
+                drawTileChar(ox, oy, e.char, e.color, TILE_SIZE, TILE_SIZE);
+                ctx.globalAlpha = 1.0;
+            } else {
+                ctx.fillStyle = e.color;
+                ctx.fillText(e.char, ox, oy);
+            }
         }
     });
 
@@ -259,22 +413,63 @@ function render() {
             const adjDist = Math.abs(e.x - player.x) + Math.abs(e.y - player.y);
             if (adjDist > 1 && !player.hasESP) return; // skip rendering
         }
+        const ox = offsetX + e.x * TILE_SIZE, oy = offsetY + e.y * TILE_SIZE;
+        const ew = e.w || 1, eh = e.h || 1;
         if (isVisible) {
-            if (e.isPlayer) {
+            // Phase XI: Large monster rendering (2x1, 2x2)
+            if (ew > 1 || eh > 1) {
+                if (!e.isPlayer && !map[e.x][e.y].visible && player.hasESP) ctx.globalAlpha = 0.5;
+                ctx.fillStyle = '#000';
+                ctx.fillRect(ox + TILE_PAD, oy + TILE_PAD, TILE_SIZE * ew - TILE_PAD * 2, TILE_SIZE * eh - TILE_PAD * 2);
+                ctx.fillStyle = e.color;
+                ctx.fillRect(ox + TILE_PAD + 1, oy + TILE_PAD + 1, TILE_SIZE * ew - TILE_PAD * 2 - 2, TILE_SIZE * eh - TILE_PAD * 2 - 2);
+                ctx.fillStyle = '#fff';
+                ctx.font = `bold ${TILE_SIZE * 0.55}px "Fira Code", monospace`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(e.char, ox + (TILE_SIZE * ew) / 2, oy + (TILE_SIZE * eh) / 2 - TILE_SIZE * 0.1);
+                const barW = TILE_SIZE * ew - 8, barH = 3, barX = ox + 4, barY = oy + TILE_SIZE * eh - 6;
+                const pct = Math.max(0, e.hp / e.maxHp);
+                ctx.fillStyle = '#333';
+                ctx.fillRect(barX, barY, barW, barH);
+                ctx.fillStyle = pct > 0.5 ? '#2ecc71' : pct > 0.25 ? '#f39c12' : '#e74c3c';
+                ctx.fillRect(barX, barY, Math.floor(barW * pct), barH);
+                ctx.textAlign = 'left';
+                ctx.textBaseline = 'top';
+                ctx.globalAlpha = 1.0;
+            } else if (e.isPlayer) {
                 ctx.shadowBlur = player.hasESP ? 20 : 10;
                 ctx.shadowColor = e.color;
+                if (isTileMode()) {
+                    ctx.shadowBlur = 0;
+                    drawTilePlayer(ox, oy, e.color, TILE_SIZE, TILE_SIZE);
+                } else {
+                    ctx.fillStyle = e.color;
+                    ctx.fillText(e.char, ox, oy);
+                }
             } else if (!map[e.x][e.y].visible && player.hasESP) {
                 ctx.globalAlpha = 0.5;
+                if (isTileMode()) {
+                    drawTileChar(ox, oy, e.char, e.color, TILE_SIZE, TILE_SIZE);
+                } else {
+                    ctx.fillStyle = e.color;
+                    ctx.fillText(e.char, ox, oy);
+                }
             } else {
                 ctx.shadowBlur = 0;
+                if (isTileMode()) {
+                    // Monster tile: colored rectangle with monster char
+                    drawTileChar(ox, oy, e.char, e.color, TILE_SIZE, TILE_SIZE);
+                } else {
+                    ctx.fillStyle = e.color;
+                    ctx.fillText(e.char, ox, oy);
+                }
             }
-            ctx.fillStyle = e.color;
-            ctx.fillText(e.char, offsetX + e.x * TILE_SIZE, offsetY + e.y * TILE_SIZE);
             ctx.globalAlpha = 1.0;
             ctx.shadowBlur = 0;
 
-            // #62 Monster HP bars drawn below glyph
-            if (!e.isPlayer && e.maxHp) {
+            // #62 Monster HP bars drawn below glyph (skip large monsters — already drawn)
+            if (!e.isPlayer && e.maxHp && (e.w || 1) <= 1 && (e.h || 1) <= 1) {
                 const barW = TILE_SIZE;
                 const barH = 3;
                 const barX = offsetX + e.x * TILE_SIZE;

@@ -37,6 +37,16 @@ var player = null;
 var currentFloor = 0; // 0 = Town, 1+ = Dungeon
 var gameState = 'START';
 
+// Phase XI: Tile-based graphics toggle (Ctrl+G)
+window.renderMode = localStorage.getItem('rogueRenderMode') || 'ascii'; // 'ascii' | 'tiles'
+window.toggleRenderMode = function() {
+    window.renderMode = window.renderMode === 'ascii' ? 'tiles' : 'ascii';
+    localStorage.setItem('rogueRenderMode', window.renderMode);
+    logMessage(`Graphics: ${window.renderMode === 'tiles' ? 'TILE MODE' : 'ASCII MODE'}`, 'magic');
+    if (typeof render === 'function') render();
+    updateUI();
+};
+
 let lastTime = 0;
 
 // Auto-run state
@@ -119,6 +129,7 @@ function spawnMonsterAt(x, y) {
                 lichE.element = lt.element; lichE.baseXP = lt.baseXP;
                 lichE.xpDrain = true; lichE.summoner = true; lichE.miniBoss = true;
                 lichE.maxHp = lt.hp;
+                lichE.w = 2; lichE.h = 2; // Large monster
                 entities.push(lichE);
                 logMessage('** The Arch-Lich rises from shadow! **', 'damage');
                 return;
@@ -132,6 +143,7 @@ function spawnMonsterAt(x, y) {
                 dkE.drainMaxHp = true; dkE.rangedDebuff = true; dkE.miniBoss = true;
                 dkE.bossPhases = true;
                 dkE.maxHp = dkt.hp;
+                dkE.w = 2; dkE.h = 2; // Large monster
                 entities.push(dkE);
                 logMessage('** The Dragon King awakens! FLEE or FIGHT! **', 'damage');
                 return;
@@ -176,6 +188,15 @@ function spawnMonsterAt(x, y) {
         if (t.support)      e.support       = t.support;
         if (t.bossPhases)   e.bossPhases    = true;
         if (t.miniBoss)     e.miniBoss      = true;
+
+        // Phase XI: Large monster sizes for bosses
+        if (t.name === 'Balrog' || t.name === 'Dragon King' || t.name === 'Ancient Wyrm') {
+            e.w = 2; e.h = 2;
+        } else if (t.name === 'Hydra' || t.name === 'Demon Lord' || t.name === 'Abyssal Titan' || t.name === 'Elder Dragon' || t.name === 'The Nameless One') {
+            e.w = 2; e.h = 2;
+        } else if (t.name === 'Dragon' || t.name === 'Frost Dragon' || t.name === 'Dread Lich') {
+            e.w = 2; e.h = 1;
+        }
 
         // #81-82 Elite variant – 10% chance (not for support units or ambushers)
         if (Math.random() < 0.10 && !t.miniBoss && !t.support && !t.ambusher) {
@@ -239,6 +260,7 @@ function spawnRandomItemAt(x, y) {
                 }
             }
             if ((currentFloor || 0) >= 3 && Math.random() < 0.02) instance.isMimic = true;
+            applyEgo(instance);  // Phase XI: apply random ego prefix/suffix
             spawnItem(x, y, instance);
         }
     }
@@ -491,15 +513,33 @@ function processPlayerTimedEffects() {
 function processItemFeelings() {
     for (let i = 0; i < player.inventory.length; i++) {
         let itm = player.inventory[i];
-        if (!itm.identified) {
+        if (!itm.identified && !itm.artifact) { // artifacts are always identified
             itm.carryTurns = (itm.carryTurns || 0) + 1;
-            if (itm.carryTurns === 50 && !itm.gutFeeling) {
-                if (itm.cursed) itm.gutFeeling = "You feel a sinister, cold aura from this...";
-                else if (itm.blessed) itm.gutFeeling = "This item exudes an aura of safety and warmth.";
-                else if (itm.artifact) itm.gutFeeling = "This object throbs with ancient power.";
-                else if (itm.type === 'potion' || itm.type === 'scroll') itm.gutFeeling = "You sense latent magic within.";
-                else itm.gutFeeling = "It feels completely mundane.";
-                logMessage(`You get a feeling about the ${itm.name}...`, 'hint');
+
+            // Equipped items identify faster (worn in combat)
+            if (Object.values(player.equipment).includes(itm)) {
+                itm.carryTurns += 2; // +2 extra per tick when equipped
+            }
+
+            // Phase XI: Gradual pseudo-ID at milestones
+            if (itm.carryTurns >= 20 && !itm.gutFeeling) {
+                // First impression
+                if (itm.cursed) itm.gutFeeling = "sinister, cold aura";
+                else if (itm.blessed) itm.gutFeeling = "safety and warmth";
+                else if (itm.ego) itm.gutFeeling = "exceptional quality";
+                else if (['weapon','armor','helm','ring','amulet','shield'].includes(itm.type))
+                    itm.gutFeeling = "mundane";
+                else itm.gutFeeling = "latent magic";
+
+                let nameHint = itm.flavor || itm.name;
+                logMessage(`You sense ${itm.gutFeeling} from the ${nameHint}...`, 'hint');
+            }
+
+            // Full identification after enough use
+            if (itm.carryTurns >= 120 && !itm._pseudoIdentified) {
+                itm.identified = true;
+                itm._pseudoIdentified = true;
+                logMessage(`You have fully identified the ${getItemName(itm)} through use.`, 'magic');
             }
         }
     }
@@ -629,7 +669,8 @@ function saveGame() {
                 hasESP: player.hasESP, spellMastery: player.spellMastery, backstab: player.backstab,
                 killCount: player.killCount || 0, combatSurgeTimer: 0,
                 inventory: player.inventory.map(i => ({ ...i })),
-                equipment: { ...player.equipment }
+                equipment: { ...player.equipment },
+                ammo: player.ammo || 0
             },
             currentFloor,
             identifiedTypes: { ...identifiedTypes }
@@ -657,7 +698,8 @@ function loadGame() {
         player.spellMastery = pd.spellMastery; player.backstab = pd.backstab;
         player.killCount = pd.killCount || 0; player.combatSurgeTimer = 0;
         player.inventory = (pd.inventory || []).map(i => ({ ...i }));
-        player.equipment = pd.equipment || { weapon: null, armor: null, helm: null, ring: null, amulet: null, offhand: null };
+        player.equipment = pd.equipment || { weapon: null, ranged: null, armor: null, helm: null, ring: null, amulet: null, offhand: null };
+        player.ammo = pd.ammo || 0;
         if (pd.hasESP) player.hasESP = true;
         if (currentFloor === 0) generateTown();
         else generateDungeon();

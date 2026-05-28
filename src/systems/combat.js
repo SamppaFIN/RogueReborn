@@ -16,6 +16,10 @@ class Entity {
         this.isPlayer = false;
         this.blocksMovement = true;
 
+        // Phase XI: Large monster support
+        this.w = 1; // width in tiles (1 = normal)
+        this.h = 1; // height in tiles
+
         // Awareness & AI State
         this.sleeping = true;
         this.vigilance = 0;
@@ -44,7 +48,11 @@ function getNearestMonster(mx, my) {
 }
 
 function getEntityAt(x, y) {
-    return entities.find(e => e.x === x && e.y === y && e.blocksMovement && e.hp > 0);
+    // Phase XI: Support multi-tile (large) monsters
+    return entities.find(e => {
+        if (!e.blocksMovement || e.hp <= 0) return false;
+        return x >= e.x && x < e.x + (e.w || 1) && y >= e.y && y < e.y + (e.h || 1);
+    });
 }
 
 function getItemAt(x, y) {
@@ -583,6 +591,37 @@ function combat(attacker, defender) {
 
     // Final Damage Calculation
     let dmg = Math.max(1, atkPower - defPower + (Math.floor(Math.random() * 3) - 1));
+
+    // Phase XI: Critical Hit system (DEX-based, + weapon/scimitar bonuses)
+    let critMultiplier = 1.0;
+    let isCrit = false;
+    if (attacker.isPlayer) {
+        let critChance = 0.05; // base 5%
+        critChance += (player.stats.dex - 10) * 0.01; // +1% per DEX above 10
+        const wep = attacker.equipment?.weapon;
+        if (wep) {
+            if (wep.name && wep.name.includes('Scimitar')) critChance += 0.05; // Scimitar bonus
+            if (wep.name && wep.name.includes('Vorpal')) critChance += 0.08; // Vorpal bonus
+            if (wep.name && wep.name.includes('Dagger')) critChance += 0.03; // Daggers are precise
+            if (wep.sentient && wep.itemLvl) critChance += wep.itemLvl * 0.01; // Sentient scaling
+        }
+        if (player.combatSurgeTimer > 0) critChance += 0.05;
+        critChance = Math.min(0.50, Math.max(0.05, critChance)); // cap 5%-50%
+
+        if (Math.random() < critChance) {
+            critMultiplier = 1.5 + Math.random() * 1.0; // 1.5x – 2.5x
+            if (player.stats.dex >= 16) critMultiplier += 0.25;
+            if (player.stats.dex >= 20) critMultiplier += 0.25; // max 3.0x
+            critMultiplier = Math.min(3.0, critMultiplier);
+            dmg = Math.floor(dmg * critMultiplier);
+            isCrit = true;
+        }
+    }
+    // Monster crits (rare, 3%)
+    if (!attacker.isPlayer && Math.random() < 0.03) {
+        dmg = Math.floor(dmg * 1.5);
+    }
+
     defender.hp -= dmg;
 
     // #36 Cursed Life Steal (Bloodied Shard)
@@ -674,7 +713,8 @@ function combat(attacker, defender) {
             spawnParticle(defender.x, defender.y, 'BACKSTAB!', '#e67e22');
             logMessage(`Backstab! Double damage!`, 'magic');
         }
-        if (dmg > atkPower + 5) spawnParticle(defender.x, defender.y, `CRIT ${dmg}`, '#f1c40f');
+        if (isCrit) spawnParticle(defender.x, defender.y, `CRIT x${critMultiplier.toFixed(1)} ${dmg}`, '#f1c40f');
+        else if (dmg > atkPower + 5) spawnParticle(defender.x, defender.y, `CRIT ${dmg}`, '#f1c40f');
         else spawnParticle(defender.x, defender.y, `-${dmg}`, '#ff3b3b');
 
         // #16 Whip: disarm on hit
@@ -697,7 +737,8 @@ function combat(attacker, defender) {
     }
 
     let msgClass = attacker.isPlayer ? 'magic' : 'damage';
-    logMessage(`${attacker.name} hits ${defender.name} for ${dmg}.`, msgClass);
+    if (isCrit) logMessage(`${attacker.name} lands a CRITICAL HIT on ${defender.name} for ${dmg}!`, 'magic');
+    else logMessage(`${attacker.name} hits ${defender.name} for ${dmg}.`, msgClass);
 
     // #14 Dual Wielding: If player has weapon in offhand, 50% chance for second strike
     if (attacker.isPlayer && attacker.equipment.offhand && attacker.equipment.offhand.type === 'weapon' && defender.hp > 0) {
@@ -1062,6 +1103,8 @@ function useItem(index) {
         // Use item.type for equipment slot (fixes bows/rings/amulets)
         let slot = item.type;
         if (slot === 'shield') slot = 'offhand';
+        // Phase XI: Bows/crossbows/throwing weapons → ranged slot
+        if (item.effect === 'bow' || item.effect === 'crossbow') slot = 'ranged';
         // Allow dual rings and amulets
         if (slot === 'ring') {
             if (!player.equipment.ring) slot = 'ring';

@@ -75,7 +75,8 @@ window.startGame = function (className) {
         player.killsByType = {};  // Phase IV: track kills per species for AI reputation
         player.combatSurgeTimer = 0; // Warrior perk
         player.inventory = [];    // FIX: Clear inventory on start to avoid duplication
-        player.equipment = { weapon: null, armor: null, helm: null, ring: null, amulet: null, offhand: null };
+        player.equipment = { weapon: null, ranged: null, armor: null, helm: null, ring: null, amulet: null, offhand: null };
+        player.ammo = 0;
         currentFloor = 0;         // FIX: Ensure we start in town
     } else {
         console.error("Critical: Player object still null after emergency initialization.");
@@ -1055,8 +1056,8 @@ window.closeInventory = function () {
 window.renderInventoryModal = function () {
     const elist = document.getElementById('equip-modal-list');
     elist.innerHTML = '';
-    const slots = ['weapon', 'offhand', 'armor', 'helm', 'ring', 'ring2', 'amulet', 'amulet2'];
-    const slotLabels = { weapon: 'WEAPON', offhand: 'OFFHAND (Shield)', armor: 'ARMOR', helm: 'HELM', ring: 'RING', ring2: 'RING 2', amulet: 'AMULET', amulet2: 'AMULET 2' };
+    const slots = ['weapon', 'ranged', 'offhand', 'armor', 'helm', 'ring', 'ring2', 'amulet', 'amulet2'];
+    const slotLabels = { weapon: 'WEAPON', ranged: 'RANGED (Bow)', offhand: 'OFFHAND', armor: 'ARMOR', helm: 'HELM', ring: 'RING', ring2: 'RING 2', amulet: 'AMULET', amulet2: 'AMULET 2' };
     slots.forEach(slot => {
         const item = player.equipment[slot];
         let h = `<li style="display:flex; justify-content:space-between; margin-bottom: 5px; align-items: center;"><strong>${slotLabels[slot] || slot.toUpperCase()}:</strong> `;

@@ -428,12 +428,20 @@
                     <span class="stat-value" id="ui-location">Town</span>
                 </div>
                 <div class="stat-row">
+                    <span class="stat-label">Graphics</span>
+                    <span class="stat-value" id="ui-gfx" style="cursor:pointer" title="Ctrl+G to toggle" onclick="if(window.toggleRenderMode)window.toggleRenderMode()">⌨ ASCII</span>
+                </div>
+                <div class="stat-row">
                     <span class="stat-label">Time</span>
                     <span class="stat-value" id="ui-time">Day 1 (New Moon)</span>
                 </div>
                 <div class="stat-row">
                     <span class="stat-label">Speed</span>
                     <span class="stat-value" id="ui-speed">10</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Ammo</span>
+                    <span class="stat-value" id="ui-ammo" style="color:#bdc3c7">0 🏹</span>
                 </div>
                 <!-- Phase VII Status HUD -->
                 <div id="ui-status" style="font-size:0.75em; min-height:1.2em; padding:3px 0;"></div>

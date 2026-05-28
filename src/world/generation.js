@@ -46,7 +46,7 @@ function generateTown() {
         player.isPlayer = true;
         player.gold = 0;
         player.inventory = [];
-        player.equipment = { weapon: null, armor: null, helm: null, ring: null, amulet: null, offhand: null }; // #13 added offhand
+        player.equipment = { weapon: null, ranged: null, armor: null, helm: null, ring: null, amulet: null, offhand: null }; // #13 added offhand
         player.hasESP = false;
         player.level = 1;
         player.xp = 0;
@@ -416,6 +416,9 @@ function generateDungeon() {
             connected = true; // No stairs_down (shouldn't happen)
         }
     }
+
+    // Phase XI: Level Feeling — convey danger/specialness of this floor
+    if (connected) emitLevelFeeling();
 }
 
 function generateHazards(rooms) {    
@@ -494,6 +497,47 @@ function generateHazards(rooms) {
             logMessage('A Goblin Merchant lurks in the dungeon! (bump to trade)', 'magic');
         }
     }
+}
+
+// Phase XI: Level Feeling — gives the player a sense of what awaits on this floor
+function emitLevelFeeling() {
+    if (currentFloor <= 0) return;
+
+    // Calculate danger score based on monsters, traps, floor depth, vaults
+    let score = 0;
+    const monsterCount = entities.filter(e => !e.isPlayer && !e.isTownNPC && !e.isMerchant && e.hp > 0).length;
+    const vaultCount = entities.filter(e => e.isElite || e.miniBoss).length;
+    const trapCount = items.filter(i => i.isMimic).length;
+
+    score += monsterCount * 3;
+    score += vaultCount * 15;
+    score += trapCount * 8;
+    score += currentFloor * 2;
+    if (window.floorHazard) score += 10;
+    if (currentFloor >= 10) score += 20;
+
+    let msg, className;
+    if (score <= 15) {
+        msg = "You feel safe on this level.";
+        className = 'hint';
+    } else if (score <= 30) {
+        msg = "You sense a quiet danger nearby...";
+        className = 'hint';
+    } else if (score <= 50) {
+        msg = "You feel nervous... there is something lurking.";
+        className = 'hint';
+    } else if (score <= 75) {
+        msg = "A chill runs down your spine. This place is perilous!";
+        className = 'damage';
+    } else if (score <= 110) {
+        msg = "You sense overwhelming evil! Steel yourself!";
+        className = 'damage';
+    } else {
+        msg = "OMENS OF DEATH surround you. Tread carefully...";
+        className = 'damage';
+    }
+
+    logMessage(msg, className);
 }
 
 function generateCave() {

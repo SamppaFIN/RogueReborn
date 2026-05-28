@@ -432,6 +432,10 @@ if (!window.inputHandlersInitialized) {
             computeFOV();
             updateUI();
         }
+        if (e.ctrlKey && e.key === 'g') { // Toggle Tile Graphics
+            e.preventDefault();
+            if (typeof window.toggleRenderMode === 'function') window.toggleRenderMode();
+        }
     }
 
     // 's' — #33 Search for secret rooms
@@ -794,7 +798,11 @@ function executeRangedAttack() {
     if (player.ammo <= 0) return;
 
     // #17 Heavy Crossbow reload mechanic
-    const wep = player.equipment.weapon;
+    const wep = player.equipment.ranged;
+    if (!wep) {
+        logMessage("You need a ranged weapon equipped!", "damage");
+        return;
+    }
     if (wep && wep.effect === 'crossbow') {
         if (player.reloading > 0) {
             logMessage(`Reloading... (${player.reloading} turns left)`, 'hint');
@@ -828,7 +836,7 @@ function executeRangedAttack() {
     }
 
     if (hitEntity) {
-        let baseAtk = player.atk + (player.equipment.weapon.atkBonus || 0);
+        let baseAtk = player.atk + (wep ? (wep.atkBonus || 0) + (wep.plusAtk || 0) : 0);
         let dist = Math.sqrt(Math.pow(hitEntity.x - player.x, 2) + Math.pow(hitEntity.y - player.y, 2));
         let falloff = Math.max(0.5, 1.0 - (dist * 0.05));
         let dmg = Math.max(1, Math.floor(baseAtk * falloff) - hitEntity.def + (Math.floor(Math.random() * 3) - 1));
