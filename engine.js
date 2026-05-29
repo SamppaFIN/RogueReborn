@@ -709,6 +709,17 @@ function processPlayerTimedEffects() {
         }
     }
 
+    // Mana Regeneration (Mage & classes with mana)
+    if (player.mana !== undefined && player.mana < (player.maxMana || 30)) {
+        player.manaRegenTimer = (player.manaRegenTimer || 0) + 1;
+        // Regen rate: every 5 ticks base, faster with higher INT
+        const manaRate = Math.max(2, 5 - Math.floor((player.stats?.int || 10) / 6));
+        if (player.manaRegenTimer >= manaRate) {
+            player.mana = Math.min(player.maxMana || 30, player.mana + 1);
+            player.manaRegenTimer = 0;
+        }
+    }
+
     // #26 Poison Gas Damage
     if (map[player.x][player.y].type === 'gas') {
         const gasDmg = 2 + Math.floor(currentFloor / 4);
@@ -923,7 +934,8 @@ function saveGame() {
                 killCount: player.killCount || 0, combatSurgeTimer: 0,
                 inventory: player.inventory.map(i => ({ ...i })),
                 equipment: { ...player.equipment },
-                ammo: player.ammo || 0
+                ammo: player.ammo || 0,
+                mana: player.mana, maxMana: player.maxMana
             },
             currentFloor,
             identifiedTypes: { ...identifiedTypes }
@@ -953,6 +965,8 @@ function loadGame() {
         player.inventory = (pd.inventory || []).map(i => ({ ...i }));
         player.equipment = pd.equipment || { weapon: null, ranged: null, armor: null, helm: null, ring: null, amulet: null, offhand: null };
         player.ammo = pd.ammo || 0;
+        player.mana = pd.mana;
+        player.maxMana = pd.maxMana;
         if (pd.hasESP) player.hasESP = true;
         if (currentFloor === 0) generateTown();
         else generateDungeon();
