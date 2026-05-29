@@ -188,8 +188,16 @@ function updateUI() {
         }
     }
 
+    // Auto-hide sidebar on narrow screens
+    if (window.innerWidth < 900 && window.sidebarVisible === undefined) {
+        window.sidebarVisible = false;
+        const sidebar = document.getElementById('sidebar');
+        if (sidebar) sidebar.classList.add('mobile-sidebar-hidden');
+        const sBtn = document.getElementById('btn-toggle-sidebar');
+        if (sBtn) { sBtn.innerText = '📖'; sBtn.title = 'Show sidebar'; }
+    }
+
     // Mobile Controls visibility — actions ALWAYS visible, d-pad toggleable
-    const mobileControls = document.getElementById('mobile-controls');
     const mobileActions = document.getElementById('mobile-actions');
     if (mobileActions) {
         if (gameState === 'PLAYING') {
@@ -198,12 +206,9 @@ function updateUI() {
             mobileActions.classList.add('mobile-hidden');
         }
     }
-    if (mobileControls) {
-        if (gameState === 'PLAYING' && window.mobileDPadVisible !== false) {
-            mobileControls.classList.remove('mobile-hidden');
-        } else {
-            mobileControls.classList.add('mobile-hidden');
-        }
+    // Use centralized helper for d-pad (handles inline style + class)
+    if (typeof window.applyMobileDPadVisibility === 'function') {
+        window.applyMobileDPadVisibility();
     }
 }
 
@@ -315,17 +320,36 @@ function drawTileBuilding(ox, oy, char, color, w, h) {
 
 function isTileMode() { return window.renderMode === 'tiles'; }
 
+// ── Pinch-to-zoom (mobile) ──
+window.zoomScale = 1.0;
+window.zoomTarget = 1.0;
+const ZOOM_MIN = 0.5;
+const ZOOM_MAX = 2.0;
+
+function setZoom(scale) {
+    window.zoomTarget = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, scale));
+}
+
 function render() {
     if (!player || !map || !map.length) return;
 
     ctx.fillStyle = '#0b0c10';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+    // Smooth zoom lerp
+    window.zoomScale += (window.zoomTarget - window.zoomScale) * 0.12;
+
     ctx.font = `${TILE_SIZE}px "Fira Code", monospace`;
     ctx.textBaseline = 'top';
 
     const cx = Math.floor(canvas.width / 2);
     const cy = Math.floor(canvas.height / 2);
+
+    // Apply zoom transform (around center)
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.scale(window.zoomScale, window.zoomScale);
+    ctx.translate(-cx, -cy);
 
     // Smooth Camera Lerp
     const targetCamX = player.x * TILE_SIZE;
@@ -614,6 +638,9 @@ function render() {
         ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
 
+    // Restore zoom transform before drawing UI overlays
+    ctx.restore();
+
     // --- Minimap (top-left corner) ---
     if (currentFloor > 0 && gameState === 'PLAYING') {
         const mmScale = 2;
@@ -651,6 +678,79 @@ function render() {
         const pulse = 0.5 + 0.5 * Math.sin(Date.now() / 200);
         ctx.fillStyle = `rgba(102, 252, 241, ${pulse})`;
         ctx.fillRect(mmPad + player.x * mmScale - 1, mmPad + player.y * mmScale - 1, mmScale + 2, mmScale + 2);
+
+        // ── Mini-HUD: HP / Energy / Mana / Shield next to minimap ──
+        const hudX = mmPad + mmW + 10;
+        const hudY = mmPad;
+        const hudW = 120;
+        const barH = 8;
+        const gap = 4;
+        const labelW = 28;
+
+        ctx.save();
+        ctx.font = '9px "Fira Code", monospace';
+        ctx.textBaseline = 'top';
+
+        // Background panel
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
+        const panelH = (player.mana !== undefined ? 4 : 3) * (barH + gap) + 6 + (player.equipment?.offhand ? (barH + gap + 4) : 0);
+        ctx.fillRect(hudX - 4, hudY - 2, hudW + 8, panelH);
+
+        function drawMiniBar(label, current, max, color, yOffset) {
+            const pct = Math.max(0, Math.min(1, current / (max || 1)));
+            ctx.fillStyle = '#1f2833';
+            ctx.fillRect(hudX + labelW, hudY + yOffset, hudW - labelW - 4, barH);
+            ctx.fillStyle = color;
+            ctx.fillRect(hudX + labelW, hudY + yOffset, (hudW - labelW - 4) * pct, barH);
+            ctx.fillStyle = '#c5c6c7';
+            ctx.textAlign = 'left';
+            ctx.fillText(label, hudX, hudY + yOffset - 1);
+            ctx.fillStyle = '#fff';
+            ctx.textAlign = 'right';
+            ctx.fillText(`${Math.floor(current)}/${max}`, hudX + hudW - 2, hudY + yOffset - 1);
+        }
+
+        drawMiniBar('HP', player.hp, player.maxHp, '#ff3b3b', 0);
+        drawMiniBar('⚡', player.energy, 100, '#f1c40f', barH + gap);
+        let offsetY = 2 * (barH + gap);
+        if (player.mana !== undefined) {
+            drawMiniBar('🔮', player.mana, player.maxMana || 1, '#3498db', offsetY);
+            offsetY += barH + gap;
+        }
+        // Equipped shield icon
+        const shieldItem = player.equipment?.offhand || player.equipment?.shield;
+        if (shieldItem) {
+            const shieldY = hudY + offsetY + 2;
+            ctx.font = '14px "Segoe UI Emoji", "Apple Color Emoji", sans-serif';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = shieldItem.color || '#d35400';
+            ctx.fillText('🛡', hudX, shieldY);
+            ctx.font = '9px "Fira Code", monospace';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = '#c5c6c7';
+            const sName = shieldItem.name || 'Shield';
+            ctx.fillText(sName.length > 12 ? sName.slice(0, 11) + '…' : sName, hudX + 18, shieldY);
+            ctx.textBaseline = 'top';
+        }
+
+        // Zoom indicator (bottom-right of minimap area)
+        if (window.zoomScale && Math.abs(window.zoomScale - 1.0) > 0.05) {
+            ctx.save();
+            ctx.font = '10px "Fira Code", monospace';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'top';
+            ctx.fillStyle = 'rgba(0,0,0,0.6)';
+            const zText = `${Math.round(window.zoomScale * 100)}%`;
+            const zW = ctx.measureText(zText).width + 8;
+            const zY = mmPad + mmH + 6;
+            ctx.fillRect(mmPad, zY, zW, 16);
+            ctx.fillStyle = '#f1c40f';
+            ctx.fillText(zText, mmPad + 4, zY + 3);
+            ctx.restore();
+        }
+
+        ctx.restore();
     }
 
     // Native Canvas Tooltip Rendering

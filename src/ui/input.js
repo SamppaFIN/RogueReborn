@@ -164,6 +164,29 @@ if (!window.inputHandlersInitialized) {
         }
     }
 
+    // Zoom shortcuts (+ / -)
+    if (e.key === '=' || e.key === '+') {
+        if (typeof window.setZoom === 'function') {
+            window.setZoom((window.zoomTarget || 1.0) + 0.2);
+            e.preventDefault();
+        }
+        return;
+    }
+    if (e.key === '-') {
+        if (typeof window.setZoom === 'function') {
+            window.setZoom((window.zoomTarget || 1.0) - 0.2);
+            e.preventDefault();
+        }
+        return;
+    }
+    if (e.key === '0') {
+        if (typeof window.setZoom === 'function') {
+            window.setZoom(1.0);
+            e.preventDefault();
+        }
+        return;
+    }
+
     if (e.key === 'i' || e.key === 'I') {
         if (gameState === 'PLAYING') openInventory();
         else if (gameState === 'INVENTORY') closeInventory();

@@ -54,6 +54,8 @@
             box-sizing: border-box;
             z-index: 10;
             overflow-y: auto;
+            overscroll-behavior: contain;
+            -webkit-overflow-scrolling: touch;
         }
 
         h1 {
@@ -343,39 +345,182 @@
             border-radius: 8px;
         }
 
+        /* Mobile Sidebar Toggle */
+        #btn-toggle-sidebar {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 55;
+            background: rgba(0,0,0,0.7);
+            color: #45a29e;
+            border: 1px solid #45a29e;
+            border-radius: 4px;
+            padding: 6px 10px;
+            cursor: pointer;
+            display: none;
+            font-family: inherit;
+            font-size: 1rem;
+        }
+
         /* Responsiveness */
         @media (max-width: 900px) {
             #game-container {
                 flex-direction: column;
             }
 
-            #sidebar {
-                width: 100%;
-                border-left: none;
-                border-top: 2px solid #1f2833;
-                height: auto;
-                max-height: 40%;
+            #canvas-wrapper {
+                height: 100% !important;
             }
 
-            #mobile-controls, #mobile-actions {
-                display: flex;
+            #sidebar {
+                position: fixed;
+                top: 0;
+                right: 0;
+                width: 320px;
+                height: 100% !important;
+                max-height: 100% !important;
+                z-index: 100;
+                border-left: 2px solid #45a29e;
+                transform: translateX(0);
+                transition: transform 0.25s ease;
+                box-shadow: -5px 0 30px rgba(0,0,0,0.8);
             }
-            
+
+            #sidebar.mobile-sidebar-hidden {
+                transform: translateX(105%);
+            }
+
             #mobile-controls {
                 display: grid;
+                gap: 12px;
+            }
+
+            #mobile-actions {
+                display: flex;
+                bottom: 120px;
+                gap: 12px;
+            }
+
+            .mobile-btn {
+                width: 68px;
+                height: 68px;
+                font-size: 1.6rem;
+            }
+
+            .action-btn {
+                width: 58px;
+                height: 58px;
+                font-size: 1.2rem;
+                border-radius: 10px;
             }
 
             #btn-toggle-controls {
                 display: block !important;
             }
 
+            #btn-toggle-sidebar {
+                display: block !important;
+            }
+
             .modal-content {
-                width: 90% !important;
-                padding: 20px;
+                width: 92% !important;
+                padding: 16px;
             }
 
             .modal h2 {
-                font-size: 2rem;
+                font-size: 1.6rem;
+            }
+
+            /* Inventory: bigger touch targets for mobile */
+            .inventory-list li {
+                padding: 10px 4px !important;
+                min-height: 44px;
+            }
+
+            .inventory-list li:hover {
+                background: rgba(69, 162, 158, 0.12);
+            }
+
+            .inventory-list .inv-key {
+                font-size: 1.1rem;
+                min-width: 28px;
+                display: inline-block;
+            }
+
+            #ui-inventory li {
+                padding: 10px 4px !important;
+            }
+
+            /* Sidebar buttons bigger on mobile */
+            #sidebar .btn {
+                padding: 14px 16px;
+                font-size: 1rem;
+            }
+        }
+
+        /* Landscape orientation — D-pad moves to right side */
+        @media (max-width: 900px) and (orientation: landscape) {
+            #mobile-controls {
+                bottom: 10px;
+                left: 20px;
+                transform: none;
+                gap: 8px;
+            }
+
+            .mobile-btn {
+                width: 52px;
+                height: 52px;
+                font-size: 1.1rem;
+            }
+
+            #mobile-actions {
+                bottom: 10px;
+                right: 10px;
+                gap: 8px;
+            }
+
+            .action-btn {
+                width: 44px;
+                height: 44px;
+                font-size: 0.9rem;
+            }
+
+            #sidebar {
+                width: 260px;
+            }
+
+            #btn-toggle-sidebar {
+                top: 45px;
+            }
+        }
+
+        /* Extra small screens (≤480px) — tighter D-pad */
+        @media (max-width: 480px) {
+            #mobile-controls {
+                gap: 8px;
+                bottom: 10px;
+            }
+
+            .mobile-btn {
+                width: 56px;
+                height: 56px;
+                font-size: 1.3rem;
+            }
+
+            .action-btn {
+                width: 48px;
+                height: 48px;
+                font-size: 1.0rem;
+            }
+
+            #mobile-actions {
+                bottom: 80px;
+                right: 8px;
+                gap: 8px;
+            }
+
+            #sidebar {
+                width: 280px;
             }
         }
 
@@ -395,7 +540,9 @@
             <canvas id="gameCanvas"></canvas>
             
             <!-- Mobile Toggle -->
-            <button id="btn-toggle-controls" onclick="if(window.toggleMobileDPad)window.toggleMobileDPad()" style="position: absolute; top: 10px; right: 10px; z-index: 50; background: rgba(0,0,0,0.7); color: #f1c40f; border: 1px solid #f1c40f; border-radius: 4px; padding: 8px 12px; cursor: pointer; display: none; font-family: inherit;">Hide D-Pad</button>
+            <button id="btn-toggle-controls" onclick="if(window.toggleMobileDPad)window.toggleMobileDPad()" style="position: absolute; top: 10px; right: 10px; z-index: 50; background: rgba(0,0,0,0.7); color: #f1c40f; border: 1px solid #f1c40f; border-radius: 4px; padding: 8px 12px; cursor: pointer; display: none; font-family: inherit; font-size: 0.8rem;">Hide D-Pad</button>
+            <!-- Mobile Sidebar Toggle -->
+            <button id="btn-toggle-sidebar" onclick="if(window.toggleSidebar)window.toggleSidebar()" title="Toggle sidebar">📋</button>
 
             <!-- Mobile Controls -->
             <div id="mobile-controls">

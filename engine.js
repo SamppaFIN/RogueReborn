@@ -54,10 +54,70 @@ window.toggleMobileDPad = function() {
     const dPad = document.getElementById('mobile-controls');
     const btn = document.getElementById('btn-toggle-controls');
     if (dPad) {
-        if (window.mobileDPadVisible) dPad.classList.remove('mobile-hidden');
-        else dPad.classList.add('mobile-hidden');
+        // Use inline style to override any CSS media query
+        dPad.style.display = window.mobileDPadVisible ? '' : 'none';
+        dPad.classList.toggle('mobile-hidden', !window.mobileDPadVisible);
     }
     if (btn) btn.innerText = window.mobileDPadVisible ? 'Hide D-Pad' : 'Show D-Pad';
+};
+
+// Helper: set mobile d-pad display from updateUI() using inline style
+function applyMobileDPadVisibility() {
+    const dPad = document.getElementById('mobile-controls');
+    if (!dPad) return;
+    const show = gameState === 'PLAYING' && window.mobileDPadVisible !== false;
+    dPad.style.display = show ? '' : 'none';
+    dPad.classList.toggle('mobile-hidden', !show);
+}
+
+// ── Auto-hide D-pad after 3s inactivity (mobile only) ──
+window.mobileDpadIdleTimer = null;
+window.mobileDpadAutoHideEnabled = true;
+
+function resetDpadIdleTimer() {
+    if (!window.mobileDpadAutoHideEnabled || !window.mobileDPadVisible) return;
+    const dPad = document.getElementById('mobile-controls');
+    if (!dPad) return;
+    // Show D-pad on activity
+    dPad.style.opacity = '1';
+    dPad.style.pointerEvents = 'auto';
+    clearTimeout(window.mobileDpadIdleTimer);
+    window.mobileDpadIdleTimer = setTimeout(() => {
+        if (!window.mobileDPadVisible || !window.mobileDpadAutoHideEnabled) return;
+        // Fade out but keep layout (don't hide, just fade for quick re-show)
+        dPad.style.opacity = '0.15';
+        dPad.style.pointerEvents = 'none';
+    }, 3000);
+}
+
+// Tap canvas to re-show faded D-pad
+document.addEventListener('DOMContentLoaded', () => {
+    const canvas = document.getElementById('gameCanvas');
+    if (canvas) {
+        canvas.addEventListener('touchstart', () => {
+            const dPad = document.getElementById('mobile-controls');
+            if (dPad && parseFloat(dPad.style.opacity || '1') < 0.5) {
+                dPad.style.opacity = '1';
+                dPad.style.pointerEvents = 'auto';
+                resetDpadIdleTimer();
+            }
+        }, { passive: true });
+    }
+});
+
+// Mobile sidebar toggle
+window.sidebarVisible = true;
+window.toggleSidebar = function() {
+    window.sidebarVisible = !window.sidebarVisible;
+    const sidebar = document.getElementById('sidebar');
+    const btn = document.getElementById('btn-toggle-sidebar');
+    if (sidebar) {
+        sidebar.classList.toggle('mobile-sidebar-hidden', !window.sidebarVisible);
+    }
+    if (btn) {
+        btn.innerText = window.sidebarVisible ? '📋' : '📖';
+        btn.title = window.sidebarVisible ? 'Hide sidebar' : 'Show sidebar';
+    }
 };
 
 let lastTime = 0;

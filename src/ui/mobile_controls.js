@@ -53,6 +53,7 @@ function initMobileControls() {
                     if (typeof window.render === 'function') window.render();
                 }
             }
+            if (typeof window.resetDpadIdleTimer === 'function') window.resetDpadIdleTimer();
         });
     }
 
@@ -126,6 +127,107 @@ function initMobileControls() {
             showFadeFeedback('btn-stairs', 'BUSY', '#e74c3c');
         }
     });
+
+    // ── Pinch-to-zoom on canvas ──
+    if (gameCanvas) {
+        let lastPinchDist = 0;
+
+        gameCanvas.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 2) {
+                const dx = e.touches[0].clientX - e.touches[1].clientX;
+                const dy = e.touches[0].clientY - e.touches[1].clientY;
+                lastPinchDist = Math.sqrt(dx * dx + dy * dy);
+            }
+        }, { passive: true });
+
+        gameCanvas.addEventListener('touchmove', (e) => {
+            if (e.touches.length === 2 && typeof window.setZoom === 'function') {
+                e.preventDefault();
+                const dx = e.touches[0].clientX - e.touches[1].clientX;
+                const dy = e.touches[0].clientY - e.touches[1].clientY;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (lastPinchDist > 0) {
+                    const delta = dist / lastPinchDist;
+                    const newZoom = (window.zoomTarget || 1.0) * delta;
+                    window.setZoom(newZoom);
+                }
+                lastPinchDist = dist;
+            }
+        }, { passive: false });
+
+        gameCanvas.addEventListener('touchend', (e) => {
+            if (e.touches.length < 2) lastPinchDist = 0;
+        }, { passive: true });
+
+        // Reset zoom on double-tap
+        let lastTapTime = 0;
+        gameCanvas.addEventListener('touchend', (e) => {
+            if (e.changedTouches.length === 1 && e.touches.length === 0) {
+                const now = Date.now();
+                if (now - lastTapTime < 300 && typeof window.setZoom === 'function') {
+                    window.setZoom(1.0);
+                }
+                lastTapTime = now;
+            }
+        }, { passive: true });
+    }
+
+    // ── Swipe-to-move on canvas ──
+    const gameCanvas = document.getElementById('gameCanvas');
+    if (gameCanvas) {
+        let touchStartX = 0, touchStartY = 0;
+        let touchStartTime = 0;
+        let isSwiping = false;
+
+        gameCanvas.addEventListener('touchstart', (e) => {
+            if (e.touches.length !== 1) return; // ignore multi-touch (pinch)
+            const t = e.touches[0];
+            touchStartX = t.clientX;
+            touchStartY = t.clientY;
+            touchStartTime = Date.now();
+            isSwiping = true;
+        }, { passive: true });
+
+        gameCanvas.addEventListener('touchmove', (e) => {
+            if (!isSwiping || e.touches.length !== 1) return;
+            e.preventDefault(); // prevent page scroll
+        }, { passive: false });
+
+        gameCanvas.addEventListener('touchend', (e) => {
+            if (!isSwiping) return;
+            isSwiping = false;
+            if (gameState !== 'PLAYING' || !player || player.energy < ENERGY_THRESHOLD) return;
+
+            const dt = Date.now() - touchStartTime;
+            if (dt > 500) return; // too slow = not a swipe
+
+            // Get end position from changedTouches
+            const t = e.changedTouches[0];
+            const dx = t.clientX - touchStartX;
+            const dy = t.clientY - touchStartY;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < 20) return; // too short = tap, not swipe
+
+            // Determine primary direction (8-way)
+            const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+            let moveDx = 0, moveDy = 0;
+            if (angle >= -22.5 && angle < 22.5) { moveDx = 1; moveDy = 0; }           // Right
+            else if (angle >= 22.5 && angle < 67.5) { moveDx = 1; moveDy = 1; }        // Down-Right
+            else if (angle >= 67.5 && angle < 112.5) { moveDx = 0; moveDy = 1; }       // Down
+            else if (angle >= 112.5 && angle < 157.5) { moveDx = -1; moveDy = 1; }     // Down-Left
+            else if (angle >= -67.5 && angle < -22.5) { moveDx = 1; moveDy = -1; }     // Up-Right
+            else if (angle >= -112.5 && angle < -67.5) { moveDx = 0; moveDy = -1; }    // Up
+            else if (angle >= -157.5 && angle < -112.5) { moveDx = -1; moveDy = -1; }  // Up-Left
+            else { moveDx = -1; moveDy = 0; }                                          // Left
+
+            if (typeof window.attemptAction === 'function') {
+                window.attemptAction(player, { type: 'move', dx: moveDx, dy: moveDy });
+                if (typeof window.computeFOV === 'function') window.computeFOV();
+                if (typeof window.render === 'function') window.render();
+            }
+            if (typeof window.resetDpadIdleTimer === 'function') window.resetDpadIdleTimer();
+        }, { passive: true });
+    }
 
     // Fire button
     handleAction('btn-fire', () => {
