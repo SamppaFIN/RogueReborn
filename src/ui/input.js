@@ -810,7 +810,10 @@ function executeTargetSpell() {
                     }
                 }
             }
-            hitEntity = null; // Prevent the single-target damage block below from running
+            // Frost handles its own damage — skip single-target damage below
+            player.energy -= ENERGY_THRESHOLD;
+            updateUI();
+            return;
         }
         else if (sp === 'lightning') {
             spellDmg = 15 + Math.floor(Math.random() * 6) + spellBoostBonus + lvlBonus;
@@ -836,11 +839,13 @@ function executeTargetSpell() {
         else if (sp === 'arcane_blast') { spellDmg = 20 + Math.floor(Math.random() * 10) + spellBoostBonus + lvlBonus; spellColor = '#9b59b6'; }
         else { spellDmg = 10 + Math.floor(Math.random() * 5) + spellBoostBonus + lvlBonus; }
 
-        hitEntity.hp -= spellDmg;
-        spawnParticle(hitEntity.x, hitEntity.y, `-${spellDmg}`, spellColor);
-        logMessage(`The ${sp.replace('_',' ')} hits ${hitEntity.name}!`, 'magic');
-        if (hitEntity.hp <= 0) {
-            handleMonsterDeath(hitEntity);
+        if (hitEntity) {
+            hitEntity.hp -= spellDmg;
+            spawnParticle(hitEntity.x, hitEntity.y, `-${spellDmg}`, spellColor);
+            logMessage(`The ${sp.replace('_',' ')} hits ${hitEntity.name}!`, 'magic');
+            if (hitEntity.hp <= 0) {
+                handleMonsterDeath(hitEntity);
+            }
         }
     } else {
         logMessage(`The missile hits the wall.`, 'hint');
