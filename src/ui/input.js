@@ -328,9 +328,10 @@ if (!window.inputHandlersInitialized) {
 
     if (e.key === 'f' || e.key === 'F') {
         if (gameState === 'PLAYING') {
-            const wepEffect = player.equipment.weapon?.effect;
-            if (!player.equipment.weapon || (wepEffect !== 'bow' && wepEffect !== 'crossbow')) {
-                logMessage("You need a bow or crossbow to fire!", "damage");
+            const rangedWep = player.equipment.ranged;
+            const wepEffect = rangedWep?.effect;
+            if (!rangedWep || (wepEffect !== 'bow' && wepEffect !== 'crossbow')) {
+                logMessage("You need a bow or crossbow in your RANGED slot!", "damage");
                 return;
             }
             if (player.ammo <= 0) {
@@ -349,6 +350,36 @@ if (!window.inputHandlersInitialized) {
                 logMessage("Targeting... (f to fire)", "hint");
                 render();
             }
+        }
+        return;
+    }
+
+    // Phase XII: Mage Magic Missile (M key)
+    if (e.key === 'm' || e.key === 'M') {
+        if (gameState === 'PLAYING' && player.class === 'Mage') {
+            if (!player.mana || player.mana < 5) {
+                logMessage("Not enough mana! (Need 5)", "damage");
+                return;
+            }
+            const nearest = getNearestMonster(player.x, player.y);
+            if (!nearest) { logMessage("No target in sight.", "hint"); return; }
+            const dist = Math.abs(nearest.x - player.x) + Math.abs(nearest.y - player.y);
+            if (dist > 6) { logMessage("Target out of range.", "hint"); return; }
+            // Check LOS
+            const line = getLine(player.x, player.y, nearest.x, nearest.y);
+            for (let i = 1; i < line.length - 1; i++) {
+                if (map[line[i].x][line[i].y].type === 'wall') { logMessage("No line of sight.", "hint"); return; }
+            }
+            player.mana -= 5;
+            const dmg = Math.max(1, 4 + Math.floor((player.stats.int - 10) / 2) + Math.floor(Math.random() * 5));
+            nearest.hp -= dmg;
+            spawnParticle(nearest.x, nearest.y, `-${dmg}`, '#3498db');
+            logMessage(`Magic Missile hits ${nearest.name} for ${dmg}!`, 'magic');
+            if (typeof monsterSpeak === 'function') monsterSpeak(nearest, 'pain');
+            if (nearest.hp <= 0) handleMonsterDeath(nearest);
+            player.energy -= ENERGY_THRESHOLD;
+            updateUI();
+            render();
         }
         return;
     }
@@ -710,7 +741,7 @@ function executeTargetSpell() {
 
     item.charges--;
     const spellBoostBonus = player.equipment.armor?.spellBoost || 0;
-    logMessage(`You fire a ${activeSpell}!`, 'magic');
+    logMessage(`You fire a ${(activeSpell || '').replace(/_/g, ' ')}!`, 'magic');
 
     const line = getLine(player.x, player.y, targetX, targetY);
     let hitEntity = null;
@@ -847,6 +878,9 @@ function executeRangedAttack() {
 
     if (hitEntity) {
         let baseAtk = player.atk + (wep ? (wep.atkBonus || 0) + (wep.plusAtk || 0) : 0);
+        // Phase XII: Rogue gets +50% bow damage, Dex scaling
+        if (player.class === 'Rogue') baseAtk = Math.floor(baseAtk * 1.5);
+        baseAtk += Math.floor((player.stats.dex - 10) / 2);
         let dist = Math.sqrt(Math.pow(hitEntity.x - player.x, 2) + Math.pow(hitEntity.y - player.y, 2));
         let falloff = Math.max(0.5, 1.0 - (dist * 0.05));
         let dmg = Math.max(1, Math.floor(baseAtk * falloff) - hitEntity.def + (Math.floor(Math.random() * 3) - 1));

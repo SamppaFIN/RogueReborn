@@ -248,6 +248,38 @@ function spawnMonsterAt(x, y, packMember = false) {
             e.isElite = true;
         }
 
+        // Phase XII: Named monsters — unique names for some elites (3% chance, 15% in Insane Mode)
+        const insaneDropRate = player.insaneMode ? 0.15 : 0.03;
+        if (Math.random() < insaneDropRate && !t.miniBoss && !t.bossPhases) {
+            const prefixes = ['Bloodthirsty', 'Ravenous', 'Ancient', 'Cursed', 'Shadow', 'Dread', 'Frenzied', 'Venomous', 'Savage', 'Mystic'];
+            const suffix = prefixes[Math.floor(Math.random() * prefixes.length)];
+            e.name = suffix + ' ' + e.name;
+            e.hp *= 1.5; e.maxHp = e.hp;
+            e.atk += 3;
+            e.baseXP *= 3;
+            e.color = '#ff6600';
+            e._isNamed = true;
+        }
+
+        // Phase XII: Insane Mode — monsters are MUCH harder
+        if (player.insaneMode && !t.isTownNPC) {
+            const insaneMult = 1.5 + Math.random() * 0.5; // 1.5x - 2.0x multiplier
+            e.name = 'Insane ' + e.name;
+            e.hp = Math.floor(e.hp * insaneMult);
+            e.maxHp = e.hp;
+            e.atk = Math.floor(e.atk * 1.4);
+            e.def = Math.floor(e.def * 1.3);
+            e.speed = Math.ceil(e.speed * 1.2);
+            e.baseXP = Math.floor(e.baseXP * 3);
+            e.color = '#ff0040';
+            // Insane monsters get random special abilities
+            if (!e.ranged && !e.summoner && Math.random() < 0.4) {
+                const extraAbilities = ['confuser', 'fearAura', 'regenerator'];
+                const ab = extraAbilities[Math.floor(Math.random() * extraAbilities.length)];
+                e[ab] = true;
+            }
+        }
+
         // Phase XII: Pre-awakened monsters — some start awake and alert
         if (t.miniBoss || t.bossPhases || t.vaultSentry || t.elite) {
             e.sleeping = false; // Bosses & guards always awake

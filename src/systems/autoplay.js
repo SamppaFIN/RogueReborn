@@ -126,7 +126,7 @@ function autoUseConsumables() {
         const recallIdx = player.inventory.findIndex(i => i.name === 'Word of Recall');
         if (recallIdx >= 0) {
             console.log('[Autoplay] Emergency Recall! HP: ' + player.hp + '/' + player.maxHp + ', Inv: ' + player.inventory.length);
-            window.townTeleport();
+            window.useItem(recallIdx);
             return true;
         }
     }
@@ -717,8 +717,25 @@ function processAutoPlay() {
                 return;
             }
 
-            // 2. Wand attacks — use when low HP or at range
-            if (hasWand && (player.hp < player.maxHp * 0.6 || mDist >= 3)) {
+            // 1b. Mage: use M-key Magic Missile (mana-based) instead of wand if possible
+            if (player.class === 'Mage' && player.mana >= 5 && player.level >= 1 && losClear && mDist <= 6) {
+                console.log(`[Autoplay] Mage casts Magic Missile at ${monster.name} (mana: ${player.mana})`);
+                // Simulate M-key press: fire a bolt for ATK + INT*2 damage
+                player.mana -= 5;
+                const dmg = Math.max(1, 4 + Math.floor((player.stats.int - 10) / 2) + Math.floor(Math.random() * 5));
+                monster.hp -= dmg;
+                spawnParticle(monster.x, monster.y, `-${dmg}`, '#3498db');
+                logMessage(`Magic Missile hits ${monster.name} for ${dmg}!`, 'magic');
+                if (typeof monsterSpeak === 'function') monsterSpeak(monster, 'pain');
+                if (monster.hp <= 0) handleMonsterDeath(monster);
+                player.energy -= ENERGY_THRESHOLD;
+                updateUI();
+                return;
+            }
+
+            // 2. Wand attacks — only vs dangerous (boss/large/ranged) or low HP emergencies
+            const monsterIsRangedOrDangerous = monster && (monster.ranged || monster.miniBoss || monster.bossPhases || (monster.w||1)>1 || (monster.h||1)>1 || (monster.atk||0) > player.atk + 5);
+            if (hasWand && (monsterIsRangedOrDangerous || player.hp < player.maxHp * 0.4)) {
                 const wandIdx = player.inventory.findIndex(i =>
                     (i.effect === 'wand_fire' || i.effect === 'wand_frost' || i.effect === 'wand_lightning' || i.effect === 'target_spell') &&
                     (i.charges || 0) > 0);

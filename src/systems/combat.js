@@ -206,9 +206,16 @@ function attemptAction(entity, action, energyCost = ENERGY_THRESHOLD) {
                 } else if (mapTile.type === 'bank') {
                     openBank();
                 } else if (mapTile.type === 'mayor') {
+                    // Phase XII: Insane Mode — after Balrog slain, bump Mayor to activate
+                    if (player.balrogSlain && !player.insaneMode) {
+                        player.insaneMode = true;
+                        logMessage('🔥 INSANE MODE ACTIVATED! Monsters are 1.5-2x stronger and drop 3x XP!', 'kill');
+                        logMessage('💀 Entry to the Abyss descends... May the Champion survive!', 'damage');
+                        return;
+                    }
                     // Only bark if the player isn't in high-speed auto-explore mode
                     if (!isAutoExploring && !activePath) {
-                        if (!bountyTarget) {
+                        if (!bountyTarget && !player.balrogSlain) {
                             const targets = ['Rat', 'Goblin', 'Kobold', 'Fire Hound', 'Orc'];
                             bountyTarget = targets[Math.floor(Math.random() * targets.length)];
                             logMessage(`Mayor says: "Bounty active for a ${bountyTarget}! Return when it's dead."`, 'magic');
@@ -478,6 +485,9 @@ function collectItems(x, y) {
                 }
             }
             logMessage(`You pick up a scattered note and read it.`, 'pickup');
+        } else if (item.type === 'material') {
+            // Phase XII: Skip scrap materials — never pick up (no inventory space wasted)
+            logMessage(`You ignore the ${item.name} — it's not worth carrying.`, 'hint');
         } else {
             if (player.inventory.length < 30) {
                 player.inventory.push(item);
@@ -601,8 +611,13 @@ function combat(attacker, defender) {
         atkPower += Math.floor(Math.random() * 4);
     }
 
-    // Final Damage Calculation
+    // Final Damage Calculation with soft floor — ensure minimum damage scales
     let dmg = Math.max(1, atkPower - defPower + (Math.floor(Math.random() * 3) - 1));
+    // Phase XII: Damage floor — guaranteed minimum based on level and ATK
+    if (attacker.isPlayer) {
+        const minDmg = Math.max(1, Math.floor(player.level * 0.5), Math.floor(atkPower * 0.25));
+        if (dmg < minDmg) dmg = minDmg;
+    }
 
     // Phase XI: Critical Hit system (DEX-based, + weapon/scimitar bonuses)
     let critMultiplier = 1.0;
@@ -707,11 +722,15 @@ function combat(attacker, defender) {
                 spawnParticle(player.x, player.y, 'DISSOLVED!', '#2ecc71');
             }
         }
-        // Phase XII: Confusion attack — Beholder, Mind Flayer
+        // Phase XII: Confusion attack — Beholder, Mind Flayer (resist with Amulet of Clarity)
         if (attacker.confuser && Math.random() < 0.25) {
-            player.confusedTimer = (player.confusedTimer || 0) + 8;
-            logMessage(`${attacker.name} scrambles your mind! You are confused!`, 'damage');
-            spawnParticle(defender.x, defender.y, 'CONFUSED!', '#9b59b6');
+            if (player.equipment.amulet?.effect === 'resist_confuse') {
+                logMessage(`${attacker.name} tries to confuse you, but your amulet protects you!`, 'magic');
+            } else {
+                player.confusedTimer = (player.confusedTimer || 0) + 8;
+                logMessage(`${attacker.name} scrambles your mind! You are confused!`, 'damage');
+                spawnParticle(defender.x, defender.y, 'CONFUSED!', '#9b59b6');
+            }
         }
         // Phase XII: Fear aura — Demon Lord, Wraith, Balrog
         if (attacker.fearAura && Math.random() < 0.2) {
@@ -719,21 +738,29 @@ function combat(attacker, defender) {
             logMessage(`${attacker.name} terrifies you! You freeze in fear!`, 'damage');
             spawnParticle(defender.x, defender.y, 'FEAR!', '#8e44ad');
         }
-        // Phase XII: Stat drain — Phantom, Wraith, Mind Flayer, Shadow Assassin
+        // Phase XII: Stat drain — resist with Ring of Drain Resist
         if (attacker.statDrain && Math.random() < 0.15) {
-            const stats = ['str', 'int', 'dex'];
-            const stat = stats[Math.floor(Math.random() * stats.length)];
-            if (player.stats[stat] > 3) {
-                player.stats[stat]--;
-                logMessage(`${attacker.name} drains your ${stat.toUpperCase()}! (-1)`, 'damage');
-                spawnParticle(defender.x, defender.y, `-1 ${stat.toUpperCase()}`, '#8e44ad');
+            if (player.equipment.ring?.effect === 'resist_drain' || (player.equipment.ring2 && player.equipment.ring2.effect === 'resist_drain')) {
+                logMessage(`${attacker.name} tries to drain your stats, but your ring protects you!`, 'magic');
+            } else {
+                const stats = ['str', 'int', 'dex'];
+                const stat = stats[Math.floor(Math.random() * stats.length)];
+                if (player.stats[stat] > 3) {
+                    player.stats[stat]--;
+                    logMessage(`${attacker.name} drains your ${stat.toUpperCase()}! (-1)`, 'damage');
+                    spawnParticle(defender.x, defender.y, `-1 ${stat.toUpperCase()}`, '#8e44ad');
+                }
             }
         }
-        // Phase XII: Web/Paralyze — Giant Spider
+        // Phase XII: Web/Paralyze — Giant Spider (resist with Ring of Paralysis Resist)
         if (attacker.webber && Math.random() < 0.3) {
-            player.paralyzedTimer = (player.paralyzedTimer || 0) + 4;
-            logMessage(`${attacker.name} entangles you in webs!`, 'damage');
-            spawnParticle(defender.x, defender.y, 'WEBBED!', '#bdc3c7');
+            if (player.equipment.ring?.effect === 'resist_para' || (player.equipment.ring2 && player.equipment.ring2.effect === 'resist_para')) {
+                logMessage(`${attacker.name} shoots webs at you, but you resist!`, 'magic');
+            } else {
+                player.paralyzedTimer = (player.paralyzedTimer || 0) + 4;
+                logMessage(`${attacker.name} entangles you in webs!`, 'damage');
+                spawnParticle(defender.x, defender.y, 'WEBBED!', '#bdc3c7');
+            }
         }
     }
 
@@ -777,8 +804,10 @@ function combat(attacker, defender) {
     }
 
     let msgClass = attacker.isPlayer ? 'magic' : 'damage';
-    if (isCrit) logMessage(`${attacker.name} lands a CRITICAL HIT on ${defender.name} for ${dmg}!`, 'magic');
-    else logMessage(`${attacker.name} hits ${defender.name} for ${dmg}.`, msgClass);
+    const attackerName = attacker.isPlayer ? (player.name || 'You') : attacker.name;
+    const defenderName = defender.isPlayer ? (player.name || 'You') : defender.name;
+    if (isCrit) logMessage(`${attackerName} lands a CRITICAL HIT on ${defenderName} for ${dmg}!`, 'magic');
+    else logMessage(`${attackerName} hits ${defenderName} for ${dmg}.`, msgClass);
 
     // Phase XI: Track weapon damage & armor block stats
     if (attacker.isPlayer && player.equipment.weapon) {
@@ -930,6 +959,9 @@ function handleMonsterDeath(defender) {
         player.isChampion = true;
         player.abyssUnlocked = true;
         player.balrogSlainFloor = currentFloor;
+        player.balrogSlain = true;
+        
+        logMessage("🏛️ Visit the Mayor in Town to claim your reward and unlock INSANE MODE!", 'magic');
         
         // Drop Balrog's Heart artifact at death location
         const balrogHeart = ITEM_DB.find(i => i.name === "Balrog's Heart");
@@ -1075,6 +1107,16 @@ function handleMonsterDeath(defender) {
     }
 
     // Item Drop Logic
+    // Phase XII: Named monsters drop artifacts (10% chance)
+    if (defender._isNamed && Math.random() < 0.10) {
+        const artifacts = ITEM_DB.filter(i => i.artifact && currentFloor >= (i.minFloor || 1));
+        if (artifacts.length > 0) {
+            const art = artifacts[Math.floor(Math.random() * artifacts.length)];
+            items.push({ x: defender.x, y: defender.y, ...art });
+            spawnParticle(defender.x, defender.y, 'ARTIFACT!', '#f1c40f');
+            logMessage(`${defender.name} drops ${art.name}!`, 'magic');
+        }
+    }
     if (defender.isTreasureBoss) {
         let magicItems = ITEM_DB.filter(i => i.type === 'weapon' || i.type === 'armor' || i.type === 'ring' || i.type === 'amulet' || i.type === 'helm' || i.type === 'shield');
         if (magicItems.length > 0) {

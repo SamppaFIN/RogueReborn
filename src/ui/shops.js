@@ -103,6 +103,8 @@ window.startGame = function (className) {
     } else if (className === 'Mage') {
         player.maxHp = 25; player.hp = 25; player.atk = 4; player.def = 2; player.speed = 22;
         player.spellMastery = true; // Spells scale with level
+        // Phase XII: Mana system
+        player.maxMana = 30; player.mana = 30;
         
         // Mage equipment
         const wandBase = ITEM_DB.find(i => i.name === 'Wand of Magic Missile');

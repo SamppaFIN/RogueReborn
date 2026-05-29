@@ -137,6 +137,20 @@ function updateUI() {
     document.getElementById('ui-maxhp').innerText = player.maxHp;
     document.getElementById('ui-hp-bar').style.width = `${Math.max(0, (player.hp / player.maxHp) * 100)}%`;
 
+    // Phase XII: Mana bar for Mage
+    const manaRow = document.getElementById('mana-row');
+    const manaBarBg = document.getElementById('mana-bar-bg');
+    if (player.mana !== undefined) {
+        if (manaRow) manaRow.style.display = 'flex';
+        if (manaBarBg) manaBarBg.style.display = 'block';
+        document.getElementById('ui-mana').innerText = player.mana;
+        document.getElementById('ui-maxmana').innerText = player.maxMana || 0;
+        document.getElementById('ui-mana-bar').style.width = `${Math.max(0, (player.mana / (player.maxMana || 1)) * 100)}%`;
+    } else {
+        if (manaRow) manaRow.style.display = 'none';
+        if (manaBarBg) manaBarBg.style.display = 'none';
+    }
+
     const displayEnergy = Math.max(0, Math.min(110, Math.floor(player.energy)));
     document.getElementById('ui-energy').innerText = displayEnergy;
     document.getElementById('ui-energy-bar').style.width = `${Math.min(100, (player.energy / 100) * 100)}%`;

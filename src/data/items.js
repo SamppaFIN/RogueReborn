@@ -96,6 +96,12 @@ const ITEM_DB = [
     { type: 'ring', char: CHARS.RING, color: '#e67e22', name: 'Ring of Power', effect: 'power', equip: true, atkBonus: 3, minFloor: 6, cost: 500 },
     { type: 'ring', char: CHARS.RING, color: '#85c1e9', name: 'Ring of Evasion', effect: 'evasion', equip: true, minFloor: 4, cost: 300 },
     { type: 'ring', char: CHARS.RING, color: '#27ae60', name: 'Ring of Poison Resist', effect: 'resist_poison', equip: true, minFloor: 3, cost: 180 },
+    // Phase XII: Elemental resistance rings
+    { type: 'ring', char: CHARS.RING, color: '#3498db', name: 'Ring of Ice Resist', effect: 'resist_ice', equip: true, minFloor: 4, cost: 200 },
+    { type: 'ring', char: CHARS.RING, color: '#f39c12', name: 'Ring of Earth Resist', effect: 'resist_earth', equip: true, minFloor: 4, cost: 200 },
+    { type: 'ring', char: CHARS.RING, color: '#85c1e9', name: 'Ring of Wind Resist', effect: 'resist_wind', equip: true, minFloor: 5, cost: 250 },
+    { type: 'ring', char: CHARS.RING, color: '#8e44ad', name: 'Ring of Drain Resist', effect: 'resist_drain', equip: true, minFloor: 6, cost: 350 },
+    { type: 'ring', char: CHARS.RING, color: '#c0392b', name: 'Ring of Paralysis Resist', effect: 'resist_para', equip: true, minFloor: 5, cost: 300 },
 
     // ─── Amulets ───
     { type: 'amulet', char: '"', color: '#2ecc71', name: 'Amulet of Regeneration', effect: 'regeneration', equip: true, minFloor: 4, cost: 300 },
