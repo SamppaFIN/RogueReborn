@@ -10,6 +10,107 @@
  *   src/world/generation.js (generateTown, generateDungeon)
  */
 
+// ── Global Error Catcher ──
+// Shows copyable crash info on screen (mobile-friendly)
+(function installGlobalErrorHandler() {
+    // Create overlay once
+    let overlay = document.getElementById('crash-overlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'crash-overlay';
+        overlay.innerHTML = `
+            <div id="crash-box">
+                <h2 style="color:#e74c3c;margin:0 0 8px 0;">⚠️ Crash</h2>
+                <textarea id="crash-text" readonly style="width:100%;height:200px;background:#1a1a2e;color:#66fcf1;border:1px solid #e74c3c;border-radius:4px;padding:8px;font-family:'Fira Code',monospace;font-size:12px;resize:vertical;"></textarea>
+                <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
+                    <button id="crash-copy-btn" style="flex:1;padding:10px;background:#45a29e;color:#fff;border:none;border-radius:4px;font-family:inherit;cursor:pointer;">📋 Copy</button>
+                    <button id="crash-dismiss-btn" style="flex:1;padding:10px;background:#1f2833;color:#c5c6c7;border:1px solid #1f2833;border-radius:4px;font-family:inherit;cursor:pointer;">✕ Dismiss</button>
+                    <button id="crash-save-btn" style="flex:1;padding:10px;background:#f1c40f;color:#000;border:none;border-radius:4px;font-family:inherit;cursor:pointer;">💾 Save & Reload</button>
+                </div>
+                <p style="color:#888;font-size:11px;margin:8px 0 0 0;">Copy the text above and email to the developer.</p>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+
+        // Copy button
+        document.getElementById('crash-copy-btn').addEventListener('click', () => {
+            const ta = document.getElementById('crash-text');
+            ta.select();
+            try { document.execCommand('copy'); } catch(e) {}
+            // Fallback for modern browsers
+            if (navigator.clipboard) navigator.clipboard.writeText(ta.value).catch(() => {});
+        });
+
+        // Dismiss button
+        document.getElementById('crash-dismiss-btn').addEventListener('click', () => {
+            overlay.classList.remove('active');
+            if (typeof render === 'function') render();
+        });
+
+        // Save & Reload button
+        document.getElementById('crash-save-btn').addEventListener('click', () => {
+            overlay.classList.remove('active');
+            if (typeof saveGame === 'function') saveGame();
+            setTimeout(() => location.reload(), 300);
+        });
+    }
+
+    // Format error for display
+    function formatError(msg, url, line, col, err) {
+        const now = new Date().toISOString();
+        let s = `=== CRASH REPORT ===\n`;
+        s += `Time: ${now}\n`;
+        s += `URL:  ${location.href}\n`;
+        s += `Screen: ${screen.width}x${screen.height}\n`;
+        s += `UA:   ${navigator.userAgent}\n\n`;
+        s += `Message: ${msg}\n`;
+        if (url) s += `File:    ${url}\n`;
+        if (line) s += `Line:    ${line}:${col}\n\n`;
+        if (err && err.stack) s += `Stack:\n${err.stack}\n`;
+        else if (err) s += `Error: ${err}\n`;
+        // Add game state snapshot
+        if (typeof player !== 'undefined' && player) {
+            s += `\n--- Game State ---\n`;
+            s += `Floor: ${typeof currentFloor !== 'undefined' ? currentFloor : '?'}\n`;
+            s += `HP: ${player.hp}/${player.maxHp} | Energy: ${player.energy}\n`;
+            s += `Pos: (${player.x},${player.y})\n`;
+            s += `Entities: ${typeof entities !== 'undefined' ? entities.length : '?'}\n`;
+            s += `Items: ${typeof items !== 'undefined' ? items.length : '?'}\n`;
+        }
+        s += `\n=== END REPORT ===`;
+        return s;
+    }
+
+    // Show crash overlay
+    function showCrash(text) {
+        const ta = document.getElementById('crash-text');
+        if (ta) ta.value = text;
+        overlay.classList.add('active');
+        // Auto-scroll textarea to top
+        if (ta) ta.scrollTop = 0;
+    }
+
+    // Hook global errors
+    window.addEventListener('error', (e) => {
+        e.preventDefault();
+        const report = formatError(e.message, e.filename, e.lineno, e.colno, e.error);
+        console.error('[CrashCatcher]', report);
+        showCrash(report);
+    });
+
+    // Hook unhandled promise rejections
+    window.addEventListener('unhandledrejection', (e) => {
+        e.preventDefault();
+        const err = e.reason;
+        const msg = err?.message || String(err);
+        const report = formatError(msg, '', 0, 0, err);
+        console.error('[CrashCatcher:Promise]', report);
+        showCrash(report);
+    });
+
+    console.log('[CrashCatcher] Installed. Any crash will show a copyable report.');
+})();
+
 let currentShopItems = [];
 let identifiedTypes = {};
 

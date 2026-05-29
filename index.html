@@ -532,6 +532,50 @@
 
 <body>
 
+    <!-- Crash Overlay -->
+    <style>
+        #crash-overlay {
+            display: none;
+            position: fixed;
+            z-index: 99999;
+            left: 0; top: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.92);
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        #crash-overlay.active {
+            display: flex;
+        }
+        #crash-box {
+            background: #0b0c10;
+            border: 2px solid #e74c3c;
+            border-radius: 12px;
+            padding: 20px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 0 50px rgba(231,76,60,0.3);
+        }
+        #crash-text {
+            -webkit-user-select: text;
+            user-select: text;
+        }
+        #crash-overlay button:active {
+            transform: scale(0.97);
+        }
+        @media (max-width: 480px) {
+            #crash-box {
+                padding: 14px;
+            }
+            #crash-text {
+                height: 140px !important;
+                font-size: 11px !important;
+            }
+        }
+    </style>
+
     <div id="tooltip"
         style="position: absolute; display: none; background: rgba(0,0,0,0.85); border: 1px solid #4FC3F7; color: white; padding: 5px 10px; border-radius: 4px; pointer-events: none; z-index: 1000; font-family: 'Fira Code', monospace; font-size: 14px; box-shadow: 0 0 10px rgba(79, 195, 247, 0.3);">
     </div>
