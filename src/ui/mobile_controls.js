@@ -129,6 +129,7 @@ function initMobileControls() {
     });
 
     // ── Pinch-to-zoom on canvas ──
+    const gameCanvas = document.getElementById('gameCanvas');
     if (gameCanvas) {
         let lastPinchDist = 0;
 
@@ -173,7 +174,6 @@ function initMobileControls() {
     }
 
     // ── Swipe-to-move on canvas ──
-    const gameCanvas = document.getElementById('gameCanvas');
     if (gameCanvas) {
         let touchStartX = 0, touchStartY = 0;
         let touchStartTime = 0;
